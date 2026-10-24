@@ -1,0 +1,30 @@
+model Payment {
+  id          String        @id @default(uuid()) @db.Uuid
+  orderId     String        @unique @map("order_id") @db.Uuid
+  method      PaymentMethod
+  status      PaymentStatus @default(PENDING)
+  amount      Decimal       @db.Decimal(14, 2)
+  provider    String?       @db.VarChar(100)
+  reference   String?       @map("reference") @db.VarChar(255)
+  paidAt      DateTime?     @map("paid_at") @db.Timestamptz(6)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@map("payments")
+}
+
+model Shipment {
+  id                String            @id @default(uuid()) @db.Uuid
+  vendorOrderId     String            @unique @map("vendor_order_id") @db.Uuid
+  carrier           String?           @db.VarChar(120)
+  trackingNumber    String?           @map("tracking_number") @db.VarChar(150)
+  status            VendorOrderStatus @default(PENDING)
+  estimatedDelivery DateTime?         @map("estimated_delivery") @db.Timestamptz(6)
+  shippedAt         DateTime?         @map("shipped_at") @db.Timestamptz(6)
+  deliveredAt       DateTime?         @map("delivered_at") @db.Timestamptz(6)
+
+  vendorOrder VendorOrder @relation(fields: [vendorOrderId], references: [id], onDelete: Restrict)
+
+  @@map("shipments")
+}

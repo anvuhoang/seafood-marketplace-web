@@ -1,0 +1,27 @@
+model Vendor {
+  id            String       @id @default(uuid()) @db.Uuid
+  ownerId        String       @unique @map("owner_id") @db.Uuid
+  name           String       @db.VarChar(180)
+  slug           String       @unique @db.VarChar(200)
+  description    String?      @db.Text
+  logoUrl        String?      @map("logo_url") @db.VarChar(1000)
+  coverUrl       String?      @map("cover_url") @db.VarChar(1000)
+  phone          String?      @db.VarChar(30)
+  email          String?      @db.VarChar(255)
+  province       String       @db.VarChar(100)
+  district       String       @db.VarChar(100)
+  ward           String?      @db.VarChar(100)
+  streetAddress  String       @map("street_address") @db.VarChar(255)
+  status         VendorStatus @default(PENDING)
+  ratingAverage  Decimal      @default(0) @map("rating_average") @db.Decimal(3, 2)
+  ratingCount    Int          @default(0) @map("rating_count")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  owner  User         @relation("VendorOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  offers VendorOffer[]
+  orders VendorOrder[]
+
+  @@index([status])
+  @@map("vendors")
+}

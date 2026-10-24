@@ -1,0 +1,67 @@
+enum UserRoleType {
+  CUSTOMER
+  VENDOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum VendorStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  SUSPENDED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+}
+
+enum OfferStatus {
+  ACTIVE
+  PAUSED
+  OUT_OF_STOCK
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPING
+  COMPLETED
+  CANCELLED
+}
+
+enum VendorOrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  SHIPPING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD
+  BANK_TRANSFER
+  E_WALLET
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum ReviewStatus {
+  PUBLISHED
+  HIDDEN
+}
