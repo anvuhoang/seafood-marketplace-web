@@ -16,10 +16,10 @@ export default function HomePage() {
         <HeroSection />
         <PopularCategories />
         <FeaturedSeafood />
-        <HomeBenefits />
         <TrustedVendors />
         <VisualSearchSection />
         <AIChatbotBanner />
+        <HomeBenefits />
       </main>
       <CustomerFooter />
     </div>

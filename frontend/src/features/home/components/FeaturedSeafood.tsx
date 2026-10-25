@@ -126,6 +126,10 @@ export function FeaturedSeafood() {
                 <option value="Phan Thiết">Phan Thiết</option>
                 <option value="Côn Đảo">Côn Đảo</option>
                 <option value="Cà Mau">Cà Mau</option>
+                <option value="Nha Trang">Nha Trang</option>
+                <option value="Vũng Tàu">Vũng Tàu</option>
+                <option value="Quảng Ninh">Quảng Ninh</option>
+                <option value="Quảng Ngãi">Quảng Ngãi</option>
                 <option value="Nhập khẩu Na Uy">Nhập khẩu Na Uy</option>
               </select>
             </div>
@@ -203,7 +207,7 @@ export function FeaturedSeafood() {
         {/* Product Grid (4 columns) */}
         {filteredList.length > 0 ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {filteredList.slice(0, 4).map((product) => (
+            {filteredList.slice(0, 12).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
