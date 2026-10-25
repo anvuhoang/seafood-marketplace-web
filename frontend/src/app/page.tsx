@@ -7,10 +7,15 @@ import { TrustedVendors } from "@/features/home/components/TrustedVendors";
 import { VisualSearchSection } from "@/features/home/components/VisualSearchSection";
 import { AIChatbotBanner } from "@/features/home/components/AIChatbotBanner";
 import { CustomerFooter } from "@/components/shared/CustomerFooter";
+import {
+  ScrollProgressBar,
+  ScrollToTopButton,
+} from "@/components/ui/ScrollProgressBar";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      <ScrollProgressBar />
       <CustomerHeader />
       <main className="flex-1">
         <HeroSection />
@@ -22,6 +27,7 @@ export default function HomePage() {
         <HomeBenefits />
       </main>
       <CustomerFooter />
+      <ScrollToTopButton />
     </div>
   );
 }

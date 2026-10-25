@@ -6,6 +6,7 @@ import { RotateCcw } from "lucide-react";
 import { featuredProducts } from "../data/home.mock";
 import { ProductCard } from "./ProductCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 
 export function FeaturedSeafood() {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -74,17 +75,20 @@ export function FeaturedSeafood() {
   return (
     <section id="featured-seafood" className="bg-slate-50/60 py-12 sm:py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="TUYỂN CHỌN TƯƠI NGON"
-          title="Hải sản nổi bật"
-          description="Sản phẩm đánh bắt mới về trong ngày từ các vựa đối tác uy tín"
-          note="*Giá có thể thay đổi nhẹ tùy theo ngày đánh bắt và kích cỡ"
-          actionHref="#featured-seafood"
-          actionLabel="Xem tất cả hải sản"
-        />
+        <ScrollReveal animation="fade-up-3d">
+          <SectionHeading
+            eyebrow="TUYỂN CHỌN TƯƠI NGON"
+            title="Hải sản nổi bật"
+            description="Sản phẩm đánh bắt mới về trong ngày từ các vựa đối tác uy tín"
+            note="*Giá có thể thay đổi nhẹ tùy theo ngày đánh bắt và kích cỡ"
+            actionHref="#featured-seafood"
+            actionLabel="Xem tất cả hải sản"
+          />
+        </ScrollReveal>
 
         {/* Filter and Control Bar matching the design */}
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+        <ScrollReveal animation="fade-up-3d" delay={80}>
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
             {/* Category Filter */}
             <div>
@@ -192,10 +196,10 @@ export function FeaturedSeafood() {
                 onClick={() =>
                   setQuickFilter(quickFilter === chip.label ? null : chip.label)
                 }
-                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${
                   quickFilter === chip.label
-                    ? "bg-[#0F3860] text-white shadow-xs"
-                    : "border border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white"
+                    ? "bg-[#0F3860] text-white shadow-md shadow-blue-950/20"
+                    : "border border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white hover:shadow-xs"
                 }`}
               >
                 {chip.label}
@@ -203,12 +207,20 @@ export function FeaturedSeafood() {
             ))}
           </div>
         </div>
+        </ScrollReveal>
 
         {/* Product Grid (4 columns) */}
         {filteredList.length > 0 ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {filteredList.slice(0, 12).map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {filteredList.slice(0, 12).map((product, idx) => (
+              <ScrollReveal
+                key={product.id}
+                animation="fade-up-3d"
+                delay={(idx % 4) * 80}
+                className="h-full"
+              >
+                <ProductCard product={product} />
+              </ScrollReveal>
             ))}
           </div>
         ) : (

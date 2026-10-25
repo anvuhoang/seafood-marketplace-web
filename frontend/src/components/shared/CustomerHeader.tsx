@@ -41,7 +41,7 @@ export function CustomerHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white shadow-xs">
+    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md shadow-xs transition-shadow duration-300">
       {/* 1. Top Utility Bar */}
       <div className="bg-[#0A192F] text-xs text-slate-300">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
@@ -81,11 +81,11 @@ export function CustomerHeader() {
       </div>
 
       {/* 2. Main Navbar */}
-      <div className="border-b border-slate-100 bg-white">
+      <div className="border-b border-slate-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:gap-8 lg:px-8">
-          {/* Logo */}
-          <Link href="/" className="flex shrink-0 items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0F3860] text-xl text-white shadow-sm">
+          {/* Logo with 3D hover scale */}
+          <Link href="/" className="group flex shrink-0 items-center gap-2.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0F3860] text-xl text-white shadow-sm transition-transform duration-300 group-hover:scale-105 group-hover:rotate-[-6deg]">
               🐟
             </div>
             <div>
@@ -101,7 +101,7 @@ export function CustomerHeader() {
           {/* Search bar with Camera Visual Search button */}
           <form
             onSubmit={handleSearch}
-            className="hidden flex-1 max-w-2xl items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 transition-all focus-within:border-[#0F3860] focus-within:bg-white md:flex"
+            className="hidden flex-1 max-w-2xl items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 transition-all duration-300 focus-within:border-[#0F3860] focus-within:bg-white focus-within:shadow-lg focus-within:shadow-blue-950/10 md:flex"
           >
             <div className="flex flex-1 items-center px-3">
               <Search className="h-4 w-4 text-slate-400 shrink-0" />
@@ -115,7 +115,7 @@ export function CustomerHeader() {
               <Link
                 href="#visual-search"
                 title="Tìm kiếm hải sản bằng hình ảnh (AI)"
-                className="flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 transition hover:bg-sky-100"
+                className="flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 transition-all duration-200 hover:bg-sky-100 hover:scale-102 active:scale-95"
               >
                 <Camera className="h-3.5 w-3.5 text-sky-600" />
                 <span className="hidden lg:inline">Tìm bằng ảnh</span>
@@ -123,7 +123,7 @@ export function CustomerHeader() {
             </div>
             <button
               type="submit"
-              className="rounded-lg bg-[#0F3860] px-5 py-2 text-sm font-bold text-white shadow-xs transition hover:bg-[#0A2744]"
+              className="rounded-lg bg-[#0F3860] px-5 py-2 text-sm font-bold text-white shadow-xs transition-all duration-200 hover:bg-[#0A2744] hover:shadow-md hover:shadow-blue-950/20 active:scale-95"
             >
               Tìm kiếm
             </button>
@@ -133,7 +133,7 @@ export function CustomerHeader() {
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/customer/login"
-              className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-[#0F3860]"
+              className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:text-[#0F3860] active:scale-95"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600">
                 <User className="h-4 w-4" />
@@ -143,7 +143,7 @@ export function CustomerHeader() {
 
             <Link
               href="/customer/wishlist"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-50 hover:text-[#E63946]"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:text-[#E63946] hover:scale-105 active:scale-95"
               title="Danh sách yêu thích"
             >
               <Heart className="h-5 w-5" />
@@ -151,7 +151,7 @@ export function CustomerHeader() {
 
             <Link
               href="/customer/cart"
-              className="flex items-center gap-2 rounded-xl bg-[#0F3860] px-3.5 py-2 text-white shadow-xs transition hover:bg-[#0A2744]"
+              className="flex items-center gap-2 rounded-xl bg-[#0F3860] px-3.5 py-2 text-white shadow-xs transition-all duration-200 hover:bg-[#0A2744] hover:shadow-md hover:shadow-blue-950/20 hover:scale-102 active:scale-95"
             >
               <ShoppingCart className="h-4 w-4" />
               <span className="hidden text-xs font-bold sm:inline">Giỏ hàng</span>

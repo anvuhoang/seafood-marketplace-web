@@ -9,6 +9,7 @@ import {
   Mail,
   ShieldCheck,
 } from "lucide-react";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 
 export function CustomerFooter() {
   const guarantees = [
@@ -43,22 +44,26 @@ export function CustomerFooter() {
             {guarantees.map((item, index) => {
               const Icon = item.icon;
               return (
-                <div
+                <ScrollReveal
                   key={index}
-                  className="flex items-start gap-3.5 rounded-xl border border-slate-100 bg-white p-4 shadow-xs"
+                  animation="fade-up-3d"
+                  delay={index * 80}
+                  className="h-full"
                 >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-[#0F3860]">
-                    <Icon className="h-5 w-5" />
+                  <div className="group flex h-full items-start gap-3.5 rounded-xl border border-slate-100 bg-white p-4 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-slate-200 hover:shadow-lg hover:shadow-blue-900/5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-[#0F3860] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 transition-colors group-hover:text-[#0F3860]">
+                        {item.title}
+                      </h4>
+                      <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900">
-                      {item.title}
-                    </h4>
-                    <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-                      {item.desc}
-                    </p>
-                  </div>
-                </div>
+                </ScrollReveal>
               );
             })}
           </div>
