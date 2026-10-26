@@ -16,14 +16,17 @@ import {
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
-import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
-import { CurrentUser } from './decorators/current-user.decorator.js';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../../common/guards/roles.guard.js';
+import { Public } from '../../common/decorators/public.decorator.js';
+import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
+  @Public()
   @Post('register')
   @ApiOperation({ summary: 'Đăng ký tài khoản người dùng mới' })
   @ApiResponse({ status: 201, description: 'Đăng ký tài khoản thành công' })
@@ -33,6 +36,7 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng nhập người dùng' })
@@ -50,7 +54,7 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy thông tin người dùng hiện tại' })
   @ApiResponse({
