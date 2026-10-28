@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
@@ -15,12 +16,18 @@ import {
   X,
   LogOut,
   ChevronDown,
+  ShieldCheck,
+  LayoutDashboard,
+  Package,
+  ClipboardList,
+  Users,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
 import { formatPrice } from "@/lib/utils";
 
 export function CustomerHeader() {
+  const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
   const { itemCount, totalPrice } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,9 +48,7 @@ export function CustomerHeader() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/customer/search?q=${encodeURIComponent(
-        searchQuery.trim()
-      )}`;
+      router.push(`/customer/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -80,14 +85,41 @@ export function CustomerHeader() {
               <Phone className="h-3.5 w-3.5 text-cyan-400" />
               <span>Hotline: <strong className="text-white">1900 6868</strong></span>
             </a>
-            <span className="hidden text-slate-600 sm:inline">|</span>
-            <Link
-              href="/vendor/register"
-              className="hidden items-center gap-1.5 transition-colors hover:text-white sm:flex"
-            >
-              <Store className="h-3.5 w-3.5 text-amber-400" />
-              <span>Kênh Người Bán</span>
-            </Link>
+            {/* Role-specific top bar action (hides register for existing vendors/admins) */}
+            {user?.role === "VENDOR" ? (
+              <>
+                <span className="hidden text-slate-600 sm:inline">|</span>
+                <Link
+                  href="/vendor/dashboard"
+                  className="hidden items-center gap-1.5 transition-colors text-amber-300 hover:text-white sm:flex font-semibold"
+                >
+                  <Store className="h-3.5 w-3.5" />
+                  <span>Kênh Vựa / Dashboard</span>
+                </Link>
+              </>
+            ) : user?.role === "ADMIN" ? (
+              <>
+                <span className="hidden text-slate-600 sm:inline">|</span>
+                <Link
+                  href="/admin/dashboard"
+                  className="hidden items-center gap-1.5 transition-colors text-purple-300 hover:text-white sm:flex font-semibold"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>Cổng Quản Trị Admin</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <span className="hidden text-slate-600 sm:inline">|</span>
+                <Link
+                  href="/vendor/register"
+                  className="hidden items-center gap-1.5 transition-colors hover:text-white sm:flex"
+                >
+                  <Store className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Kênh Người Bán</span>
+                </Link>
+              </>
+            )}
             <span className="hidden text-slate-600 sm:inline">|</span>
             <Link
               href="/help"
@@ -172,33 +204,139 @@ export function CustomerHeader() {
                       </button>
 
                       {userMenuOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl z-50 animate-slide-up">
+                        <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl z-50 animate-slide-up">
                           <div className="px-3 py-2 border-b border-slate-100">
-                            <p className="text-xs font-bold text-slate-900 truncate">
-                              {displayName}
-                            </p>
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <p className="text-xs font-bold text-slate-900 truncate">
+                                {displayName}
+                              </p>
+                              {user.role === "ADMIN" ? (
+                                <span className="rounded-md bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-200">
+                                  Quản trị
+                                </span>
+                              ) : user.role === "VENDOR" ? (
+                                <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                  Chủ Vựa
+                                </span>
+                              ) : (
+                                <span className="rounded-md bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 border border-sky-200">
+                                  Khách Hàng
+                                </span>
+                              )}
+                            </div>
                             <p className="text-[11px] text-slate-400 truncate">
                               {displayContact}
                             </p>
                           </div>
-                          <Link
-                            href="/customer/orders"
-                            onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0F3860]"
-                          >
-                            <span>Đơn mua của tôi</span>
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              logout();
-                              setUserMenuOpen(false);
-                            }}
-                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50"
-                          >
-                            <LogOut className="h-3.5 w-3.5" />
-                            <span>Đăng xuất</span>
-                          </button>
+
+                          <div className="py-1">
+                            {/* Role-specific menu options */}
+                            {user.role === "ADMIN" ? (
+                              <>
+                                <Link
+                                  href="/admin/dashboard"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-purple-900 hover:bg-purple-50 transition"
+                                >
+                                  <LayoutDashboard className="h-3.5 w-3.5 text-purple-600" />
+                                  <span>Bảng điều khiển Admin</span>
+                                </Link>
+                                <Link
+                                  href="/admin/vendors"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+                                >
+                                  <Store className="h-3.5 w-3.5 text-slate-400" />
+                                  <span>Duyệt Vựa & Người bán</span>
+                                </Link>
+                                <Link
+                                  href="/admin/users"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+                                >
+                                  <Users className="h-3.5 w-3.5 text-slate-400" />
+                                  <span>Quản lý Người dùng</span>
+                                </Link>
+                              </>
+                            ) : user.role === "VENDOR" ? (
+                              <>
+                                <Link
+                                  href="/vendor/dashboard"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-50 transition"
+                                >
+                                  <LayoutDashboard className="h-3.5 w-3.5 text-emerald-600" />
+                                  <span>Bảng điều khiển Vựa</span>
+                                </Link>
+                                <Link
+                                  href="/vendor/products"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+                                >
+                                  <Package className="h-3.5 w-3.5 text-slate-400" />
+                                  <span>Quản lý Sản phẩm</span>
+                                </Link>
+                                <Link
+                                  href="/vendor/orders"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+                                >
+                                  <ClipboardList className="h-3.5 w-3.5 text-slate-400" />
+                                  <span>Quản lý Đơn hàng</span>
+                                </Link>
+                                <Link
+                                  href="/vendor/vua-thuy-san-phu-quoc-xanh"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+                                >
+                                  <Store className="h-3.5 w-3.5 text-slate-400" />
+                                  <span>Gian hàng của bạn</span>
+                                </Link>
+                              </>
+                            ) : (
+                              <>
+                                <Link
+                                  href="/customer/orders"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0F3860] transition"
+                                >
+                                  <ClipboardList className="h-3.5 w-3.5 text-slate-400" />
+                                  <span>Đơn mua của tôi</span>
+                                </Link>
+                                <Link
+                                  href="/customer/profile"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0F3860] transition"
+                                >
+                                  <User className="h-3.5 w-3.5 text-slate-400" />
+                                  <span>Hồ sơ tài khoản</span>
+                                </Link>
+                                <Link
+                                  href="/vendor/register"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50 transition"
+                                >
+                                  <Store className="h-3.5 w-3.5 text-amber-500" />
+                                  <span>Đăng ký mở Vựa</span>
+                                </Link>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="border-t border-slate-100 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                logout();
+                                setUserMenuOpen(false);
+                                router.push("/");
+                              }}
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
+                            >
+                              <LogOut className="h-3.5 w-3.5" />
+                              <span>Đăng xuất</span>
+                            </button>
+                          </div>
                         </div>
                       )}
                     </>
@@ -315,7 +453,85 @@ export function CustomerHeader() {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="border-b border-slate-200 bg-white p-4 shadow-lg md:hidden">
+        <div className="border-b border-slate-200 bg-white p-4 shadow-lg md:hidden space-y-4">
+          {isAuthenticated && user && (
+            <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-slate-900">
+                  {user.name || user.fullName}
+                </span>
+                <span className="rounded bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-[#0F3860]">
+                  {user.role}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-200/60 text-xs">
+                {user.role === "ADMIN" ? (
+                  <>
+                    <Link
+                      href="/admin/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="font-semibold text-purple-700"
+                    >
+                      Bảng điều khiển Admin
+                    </Link>
+                    <Link
+                      href="/admin/vendors"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-slate-600"
+                    >
+                      Duyệt Vựa & Người bán
+                    </Link>
+                  </>
+                ) : user.role === "VENDOR" ? (
+                  <>
+                    <Link
+                      href="/vendor/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="font-semibold text-emerald-700"
+                    >
+                      Bảng điều khiển Vựa
+                    </Link>
+                    <Link
+                      href="/vendor/products"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-slate-600"
+                    >
+                      Quản lý sản phẩm
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/customer/orders"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-slate-700"
+                    >
+                      Đơn mua của tôi
+                    </Link>
+                    <Link
+                      href="/customer/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-slate-700"
+                    >
+                      Hồ sơ tài khoản
+                    </Link>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                    router.push("/");
+                  }}
+                  className="text-left font-semibold text-rose-600 pt-1"
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            </div>
+          )}
+
           <ul className="space-y-2 text-sm font-semibold text-slate-700">
             {navCategories.map((cat, idx) => (
               <li key={idx}>
