@@ -2,7 +2,8 @@ import { CustomerHeader } from "@/components/shared/CustomerHeader";
 import { CustomerFooter } from "@/components/shared/CustomerFooter";
 import { flagshipProductMock } from "@/features/product/data/product-detail.mock";
 import { ProductCard } from "@/features/home/components/ProductCard";
-import { Anchor, ShieldCheck, MapPin, Star, Clock } from "lucide-react";
+import { Product } from "@/features/home/data/home.mock";
+import { Anchor, ShieldCheck, MapPin } from "lucide-react";
 import Link from "next/link";
 
 interface VendorPageProps {
@@ -12,10 +13,10 @@ interface VendorPageProps {
 export default async function VendorStorefrontPage({
   params,
 }: VendorPageProps) {
-  const { slug } = await params;
+  await params;
   const vendor = flagshipProductMock.vendor;
 
-  const vendorProducts = [
+  const vendorProducts: Product[] = [
     {
       id: "prod-1",
       name: "Tôm Sú Biển Tươi Sống Loại 1 (Size 15 - 20 con/kg)",
@@ -24,7 +25,7 @@ export default async function VendorStorefrontPage({
       originDetail: "Nước mặn / Phú Quốc",
       shopName: vendor.name,
       badge: "Bán chạy",
-      badgeType: "red" as const,
+      badgeType: "red",
       note: "Được đóng thùng oxy sống",
       price: 420000,
       unit: "kg",
@@ -121,7 +122,7 @@ export default async function VendorStorefrontPage({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {vendorProducts.map((prod) => (
-              <ProductCard key={prod.id} product={prod as any} />
+              <ProductCard key={prod.id} product={prod} />
             ))}
           </div>
         </div>

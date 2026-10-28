@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ProductDetail } from "../types/product.types";
 import { useCart } from "@/features/cart/context/CartContext";
 import { addToCartBackendApi } from "../api/product.api";
@@ -13,17 +14,15 @@ import {
   Sparkles,
   ShoppingCart,
   Zap,
-  Info,
   AlertCircle,
-  HelpCircle,
 } from "lucide-react";
-import Link from "next/link";
 
 interface ProductPurchaseBoxProps {
   product: ProductDetail;
 }
 
 export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
+  const router = useRouter();
   const { addToCart } = useCart();
   const [selectedPrep, setSelectedPrep] = useState<string>(
     product.preparationOptions.find((o) => o.isDefault)?.label ||
@@ -105,7 +104,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
 
   const handleBuyNow = async () => {
     await handleAddToCart();
-    window.location.href = "/customer/cart";
+    router.push("/customer/cart");
   };
 
   const calculatedTotal = product.price * quantity;

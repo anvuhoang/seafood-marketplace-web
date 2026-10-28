@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ReviewsSummary } from "../types/product.types";
-import { Star, ShieldCheck, CheckCircle2, Image as ImageIcon } from "lucide-react";
+import { Star, CheckCircle2 } from "lucide-react";
 
 interface ProductReviewsSectionProps {
   summary: ReviewsSummary;

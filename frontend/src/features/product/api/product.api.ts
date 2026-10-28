@@ -82,7 +82,7 @@ export async function addToCartBackendApi(data: {
     }
 
     return { success: true, message: body?.message || "Đã thêm vào giỏ hàng" };
-  } catch (err) {
+  } catch {
     return { success: false, message: "Lỗi kết nối tới máy chủ" };
   }
 }

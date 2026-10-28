@@ -56,7 +56,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setItems(parsed);
+          // Defer update to avoid synchronous cascading renders during mount
+          setTimeout(() => {
+            setItems(parsed);
+          }, 0);
         }
       }
     } catch {
