@@ -20,6 +20,7 @@ import {
   registerApi,
   getMeApi,
   ApiError,
+  setUnauthorizedHandler
 } from "../api/auth.api";
 
 interface AuthContextType extends AuthState {
@@ -150,6 +151,15 @@ export function AuthProvider({
   /**
    * Restore the session only after the backend validates the stored token.
    */
+
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+
+    return () => {
+      setUnauthorizedHandler(null);
+    };
+  }, [logout]);
+
   useEffect(() => {
     let cancelled = false;
 
