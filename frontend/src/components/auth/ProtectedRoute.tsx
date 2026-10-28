@@ -27,9 +27,8 @@ export function ProtectedRoute({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const currentPathWithSearch = `${pathname}${
-    searchParams.toString() ? `?${searchParams.toString()}` : ""
-  }`;
+  const currentPathWithSearch = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""
+    }`;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -87,17 +86,27 @@ export function ProtectedRoute({
   }
 
   // 3. Role authorization check
-  const userRole = (user.role || "CUSTOMER") as "CUSTOMER" | "VENDOR" | "ADMIN";
+  const validRoles = ["CUSTOMER", "VENDOR", "ADMIN"] as const;
+
+  const userRole = user.role;
+
+  const isValidRole = validRoles.some((role) => role === userRole);
+
   const isAuthorized =
-    !allowedRoles || allowedRoles.length === 0 || allowedRoles.includes(userRole);
+    isValidRole &&
+    (!allowedRoles ||
+      allowedRoles.length === 0 ||
+      allowedRoles.includes(
+        userRole as "CUSTOMER" | "VENDOR" | "ADMIN"
+      ));
 
   if (!isAuthorized) {
     const requiredRoleLabel =
       allowedRoles?.[0] === "ADMIN"
         ? "Quản trị viên (Admin)"
         : allowedRoles?.[0] === "VENDOR"
-        ? "Chủ Vựa / Người Bán (Vendor)"
-        : "Khách hàng";
+          ? "Chủ Vựa / Người Bán (Vendor)"
+          : "Khách hàng";
 
     return (
       <div className="min-h-[75vh] flex flex-col items-center justify-center p-6 bg-slate-50/40">
@@ -133,8 +142,8 @@ export function ProtectedRoute({
                 userRole === "VENDOR"
                   ? "/vendor/dashboard"
                   : userRole === "ADMIN"
-                  ? "/admin/dashboard"
-                  : "/customer/orders"
+                    ? "/admin/dashboard"
+                    : "/customer/orders"
               }
               className="flex items-center justify-center gap-1.5 rounded-xl bg-[#0F3860] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#0A2744]"
             >

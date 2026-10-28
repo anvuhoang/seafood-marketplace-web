@@ -1,19 +1,22 @@
+
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-/**
- * Route paths configuration for authentication and role-based access.
- */
-const PROTECTED_ROUTES = [
-  { prefix: "/customer/orders", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
-  { prefix: "/customer/profile", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
-  { prefix: "/customer/checkout", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
-  { prefix: "/vendor/dashboard", roles: ["VENDOR", "ADMIN"] },
-  { prefix: "/vendor/products", roles: ["VENDOR", "ADMIN"] },
-  { prefix: "/vendor/orders", roles: ["VENDOR", "ADMIN"] },
-  { prefix: "/vendor/settings", roles: ["VENDOR", "ADMIN"] },
-  { prefix: "/admin", roles: ["ADMIN"] },
-];
+type UserRole = "CUSTOMER" | "VENDOR" | "ADMIN";
+
+const PROTECTED_ROUTES: {
+  prefix: string;
+  roles: UserRole[];
+}[] = [
+    { prefix: "/customer/orders", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
+    { prefix: "/customer/profile", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
+    { prefix: "/customer/checkout", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
+    { prefix: "/vendor/dashboard", roles: ["VENDOR", "ADMIN"] },
+    { prefix: "/vendor/products", roles: ["VENDOR", "ADMIN"] },
+    { prefix: "/vendor/orders", roles: ["VENDOR", "ADMIN"] },
+    { prefix: "/vendor/settings", roles: ["VENDOR", "ADMIN"] },
+    { prefix: "/admin", roles: ["ADMIN"] },
+  ];
 
 const AUTH_PAGES = [
   "/login",
@@ -22,61 +25,90 @@ const AUTH_PAGES = [
   "/customer/register",
 ];
 
+function matchesRoute(pathname: string, prefix: string): boolean {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
+function isUserRole(role: string | undefined): role is UserRole {
+  return role === "CUSTOMER" || role === "VENDOR" || role === "ADMIN";
+}
+
+function getDashboardPath(role: UserRole): string {
+  if (role === "ADMIN") return "/admin/dashboard";
+  if (role === "VENDOR") return "/vendor/dashboard";
+  return "/";
+}
+
+function getSafeRedirect(
+  redirect: string | null,
+  origin: string,
+): URL | null {
+  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
+    return null;
+  }
+
+  try {
+    const target = new URL(redirect, origin);
+
+    // Only allow redirects to the same origin.
+    if (target.origin !== origin) return null;
+
+    return target;
+  } catch {
+    return null;
+  }
+}
+
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
-  const tokenCookie = request.cookies.get("haisan_token")?.value;
-  const roleCookie = request.cookies.get("haisan_role")?.value || "CUSTOMER";
+  const token = request.cookies.get("haisan_token")?.value;
+  const roleValue = request.cookies.get("haisan_role")?.value;
 
-  const isAuthenticated = !!tokenCookie;
+  // These cookies are only hints for frontend navigation.
+  // They do not prove that a JWT is valid.
+  const hasTokenCookie = Boolean(token);
+  const validRole = isUserRole(roleValue) ? roleValue : null;
 
-  // 1. Check if the current route matches any protected path
   const matchingRule = PROTECTED_ROUTES.find((rule) =>
-    pathname.startsWith(rule.prefix)
+    matchesRoute(pathname, rule.prefix),
   );
 
   if (matchingRule) {
-    // Unauthenticated user attempting to access protected route
-    if (!isAuthenticated) {
-      const redirectTarget = encodeURIComponent(`${pathname}${search}`);
-      const loginUrl = new URL(
-        `/customer/login?redirect=${redirectTarget}`,
-        request.url
-      );
+    if (!hasTokenCookie || !validRole) {
+      const loginUrl = new URL("/customer/login", request.url);
+      loginUrl.searchParams.set("redirect", `${pathname}${search}`);
+
       return NextResponse.redirect(loginUrl);
     }
 
-    // Role-based authorization check
-    if (!matchingRule.roles.includes(roleCookie)) {
-      const requiredRole = matchingRule.roles[0];
-      const unauthorizedUrl = new URL(
-        `/unauthorized?required=${requiredRole}&current=${roleCookie}`,
-        request.url
+    if (!matchingRule.roles.includes(validRole)) {
+      return NextResponse.redirect(
+        new URL("/unauthorized", request.url),
       );
-      return NextResponse.redirect(unauthorizedUrl);
     }
   }
 
-  // 2. Redirect already authenticated users away from login/register pages
-  if (isAuthenticated && AUTH_PAGES.some((authPath) => pathname === authPath)) {
-    const redirectParam = request.nextUrl.searchParams.get("redirect");
-    if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
-      return NextResponse.redirect(new URL(redirectParam, request.url));
+  const isAuthPage = AUTH_PAGES.includes(pathname);
+
+  if (hasTokenCookie && validRole && isAuthPage) {
+    const redirectTarget = getSafeRedirect(
+      request.nextUrl.searchParams.get("redirect"),
+      request.nextUrl.origin,
+    );
+
+    if (redirectTarget) {
+      return NextResponse.redirect(redirectTarget);
     }
 
-    if (roleCookie === "ADMIN") {
-      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-    }
-    if (roleCookie === "VENDOR") {
-      return NextResponse.redirect(new URL("/vendor/dashboard", request.url));
-    }
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(
+      new URL(getDashboardPath(validRole), request.url),
+    );
   }
 
   return NextResponse.next();
 }
 
-// Support both proxy and default export
 export default proxy;
 
 export const config = {
@@ -88,4 +120,3 @@ export const config = {
     "/register",
   ],
 };
-

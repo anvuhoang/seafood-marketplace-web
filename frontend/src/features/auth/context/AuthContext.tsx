@@ -46,6 +46,17 @@ const COOKIE_ROLE = "haisan_role";
 const REMEMBER_MAX_AGE = 7 * 24 * 60 * 60;
 const SESSION_MAX_AGE = 24 * 60 * 60;
 
+const VALID_ROLES = ["CUSTOMER", "VENDOR", "ADMIN"] as const;
+
+function isValidRole(
+  role: unknown,
+): role is (typeof VALID_ROLES)[number] {
+  return (
+    typeof role === "string" &&
+    VALID_ROLES.some((validRole) => validRole === role)
+  );
+}
+
 /**
  * Synchronize authentication cookies used by the Next.js proxy.
  *
@@ -223,7 +234,7 @@ export function AuthProvider({
 
         if (cancelled) return;
 
-        if (!freshUser?.id || !freshUser?.role) {
+        if (!freshUser?.id || !isValidRole(freshUser.role)) {
           throw new Error("Dữ liệu người dùng trả về không hợp lệ.");
         }
 
