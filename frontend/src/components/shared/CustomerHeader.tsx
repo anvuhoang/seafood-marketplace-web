@@ -17,9 +17,12 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useCart } from "@/features/cart/context/CartContext";
+import { formatPrice } from "@/lib/utils";
 
 export function CustomerHeader() {
   const { user, isAuthenticated, logout } = useAuth();
+  const { itemCount, totalPrice } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -149,46 +152,58 @@ export function CustomerHeader() {
           <div className="flex items-center gap-2 sm:gap-4">
             {isAuthenticated && user ? (
               <div ref={userMenuRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:text-[#0F3860] active:scale-95"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 font-bold text-xs text-[#0F3860]">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="hidden text-xs font-bold sm:inline truncate max-w-[120px]">
-                    {user.name}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-                </button>
+                {(() => {
+                  const displayName = user.name || user.fullName || "Tài khoản";
+                  const displayContact = user.emailOrPhone || user.phone || user.email;
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setUserMenuOpen(!userMenuOpen)}
+                        className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:text-[#0F3860] active:scale-95"
+                      >
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 font-bold text-xs text-[#0F3860]">
+                          {displayName.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="hidden text-xs font-bold sm:inline truncate max-w-[120px]">
+                          {displayName}
+                        </span>
+                        <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                      </button>
 
-                {userMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl z-50 animate-slide-up">
-                    <div className="px-3 py-2 border-b border-slate-100">
-                      <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
-                      <p className="text-[11px] text-slate-400 truncate">{user.emailOrPhone}</p>
-                    </div>
-                    <Link
-                      href="/customer/orders"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0F3860]"
-                    >
-                      <span>Đơn mua của tôi</span>
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        logout();
-                        setUserMenuOpen(false);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50"
-                    >
-                      <LogOut className="h-3.5 w-3.5" />
-                      <span>Đăng xuất</span>
-                    </button>
-                  </div>
-                )}
+                      {userMenuOpen && (
+                        <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl z-50 animate-slide-up">
+                          <div className="px-3 py-2 border-b border-slate-100">
+                            <p className="text-xs font-bold text-slate-900 truncate">
+                              {displayName}
+                            </p>
+                            <p className="text-[11px] text-slate-400 truncate">
+                              {displayContact}
+                            </p>
+                          </div>
+                          <Link
+                            href="/customer/orders"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0F3860]"
+                          >
+                            <span>Đơn mua của tôi</span>
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              logout();
+                              setUserMenuOpen(false);
+                            }}
+                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                          >
+                            <LogOut className="h-3.5 w-3.5" />
+                            <span>Đăng xuất</span>
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             ) : (
               <Link
@@ -212,10 +227,19 @@ export function CustomerHeader() {
 
             <Link
               href="/customer/cart"
-              className="flex items-center gap-2 rounded-xl bg-[#0F3860] px-3.5 py-2 text-white shadow-xs transition-all duration-200 hover:bg-[#0A2744] hover:shadow-md hover:shadow-blue-950/20 hover:scale-102 active:scale-95"
+              className="flex items-center gap-2.5 rounded-xl bg-[#0F3860] px-3.5 py-2 text-white shadow-xs transition-all duration-200 hover:bg-[#0A2744] hover:shadow-md hover:shadow-blue-950/20 hover:scale-102 active:scale-95"
             >
-              <ShoppingCart className="h-4 w-4" />
-              <span className="hidden text-xs font-bold sm:inline">Giỏ hàng</span>
+              <div className="relative">
+                <ShoppingCart className="h-4 w-4" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#E63946] text-[10px] font-black text-white shadow-xs">
+                    {itemCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs font-bold sm:inline">
+                {itemCount > 0 ? formatPrice(totalPrice) : "Giỏ hàng"}
+              </span>
             </Link>
 
             {/* Mobile menu trigger */}

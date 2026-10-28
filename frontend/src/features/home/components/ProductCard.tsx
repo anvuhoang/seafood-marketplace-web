@@ -1,14 +1,43 @@
+"use client";
+
 import Link from "next/link";
-import { ShoppingCart, MapPin } from "lucide-react";
+import { ShoppingCart, MapPin, Check } from "lucide-react";
 import { Product } from "../data/home.mock";
 import { formatPrice } from "@/lib/utils";
 import { TiltCard } from "@/components/ui/TiltCard";
+import { useCart } from "@/features/cart/context/CartContext";
+import { useState } from "react";
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart();
+  const [justAdded, setJustAdded] = useState(false);
+
+  const productHref =
+    product.id === "prod-1"
+      ? "/products/tom-su-bien-tuoi-song-loai-1"
+      : `/products/${product.id}`;
+
+  const handleAddToCart = () => {
+    addToCart({
+      productId: product.id,
+      productName: product.name,
+      productImage: product.image,
+      price: product.price,
+      quantity: 1,
+      unit: product.unit,
+      preparationOption: "Bơi sống (bao oxy)",
+      vendorName: product.shopName,
+      availableStock: product.inStock ? 14 : 0,
+      isDiscontinued: !product.inStock,
+    });
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 2000);
+  };
+
   const getBadgeStyle = (type?: string) => {
     switch (type) {
       case "red":
@@ -31,7 +60,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <div>
           {/* Product Image & Badges */}
           <Link
-            href={`#product-${product.id}`}
+            href={productHref}
             className="relative block aspect-[4/3] overflow-hidden bg-slate-100"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -79,7 +108,7 @@ export function ProductCard({ product }: ProductCardProps) {
               style={{ transform: "translateZ(16px)" }}
               className="mt-1.5 text-sm font-bold text-slate-900 leading-snug line-clamp-2 transition-colors group-hover:text-[#0F3860]"
             >
-              <Link href={`#product-${product.id}`}>
+              <Link href={productHref}>
                 {product.name}
               </Link>
             </h3>
@@ -110,10 +139,24 @@ export function ProductCard({ product }: ProductCardProps) {
 
           <button
             type="button"
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#E63946] py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-[#D62839] hover:shadow-md hover:shadow-red-500/25 active:scale-95 active:translate-y-0.5"
+            onClick={handleAddToCart}
+            className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold text-white shadow-xs transition-all active:scale-95 active:translate-y-0.5 ${
+              justAdded
+                ? "bg-emerald-600 hover:bg-emerald-700"
+                : "bg-[#E63946] hover:bg-[#D62839] hover:shadow-md hover:shadow-red-500/25"
+            }`}
           >
-            <ShoppingCart className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
-            <span>Thêm vào giỏ</span>
+            {justAdded ? (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                <span>Đã thêm vào giỏ!</span>
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+                <span>Thêm vào giỏ</span>
+              </>
+            )}
           </button>
         </div>
       </article>

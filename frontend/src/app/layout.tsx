@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
+import { CartProvider } from "@/features/cart/context/CartContext";
 
 export const metadata: Metadata = {
   title: "HaiSanExpress - Sàn Thương Mại Điện Tử Hải Sản Tươi Sống",
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className="min-h-screen flex flex-col bg-white text-slate-800 antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <CartProvider>{children}</CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
