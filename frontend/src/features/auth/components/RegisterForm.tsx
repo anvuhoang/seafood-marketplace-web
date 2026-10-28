@@ -1,15 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { AuthCardWrapper } from "./AuthCardWrapper";
 
-export function RegisterForm() {
+function RegisterFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
   const { register } = useAuth();
+
+  const handlePostRegisterRedirect = () => {
+    if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
+      router.push(redirectParam);
+    } else {
+      router.push("/");
+    }
+  };
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -86,7 +96,7 @@ export function RegisterForm() {
       });
 
       if (result.success) {
-        router.push("/");
+        handlePostRegisterRedirect();
       } else {
         setError(result.error || "Đăng ký không thành công. Vui lòng thử lại.");
       }
@@ -108,7 +118,7 @@ export function RegisterForm() {
         agreeTerms: true,
       });
       if (result.success) {
-        router.push("/");
+        handlePostRegisterRedirect();
       } else {
         setError(result.error || "Đăng ký Google không thành công.");
         setIsSubmitting(false);
@@ -357,7 +367,11 @@ export function RegisterForm() {
         <p className="pt-1.5 text-center text-xs text-slate-500 font-medium">
           Đã có tài khoản?{" "}
           <Link
-            href="/customer/login"
+            href={
+              redirectParam
+                ? `/customer/login?redirect=${encodeURIComponent(redirectParam)}`
+                : "/customer/login"
+            }
             className="font-bold text-[#E63946] hover:underline hover:text-[#D62839] transition-colors"
           >
             Đăng nhập ngay
@@ -365,5 +379,19 @@ export function RegisterForm() {
         </p>
       </form>
     </AuthCardWrapper>
+  );
+}
+
+export function RegisterForm() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[500px] flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0F3860]" />
+        </div>
+      }
+    >
+      <RegisterFormContent />
+    </Suspense>
   );
 }

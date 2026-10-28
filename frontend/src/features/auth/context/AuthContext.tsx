@@ -10,8 +10,8 @@ import {
 import { loginApi, registerApi, getMeApi, ApiError } from "../api/auth.api";
 
 interface AuthContextType extends AuthState {
-  login: (data: LoginFormData) => Promise<{ success: boolean; error?: string }>;
-  register: (data: RegisterFormData) => Promise<{ success: boolean; error?: string }>;
+  login: (data: LoginFormData) => Promise<{ success: boolean; error?: string; user?: User }>;
+  register: (data: RegisterFormData) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
 }
 
@@ -19,6 +19,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY_USER = "haisan_express_user";
 const STORAGE_KEY_TOKEN = "haisan_express_token";
+
+/**
+ * Synchronize authentication tokens with document cookies for middleware access.
+ */
+function setAuthCookies(token: string, role: string, rememberMe = true) {
+  if (typeof document === "undefined") return;
+  const maxAge = rememberMe ? 604800 : 86400; // 7 days or 1 day
+  document.cookie = `haisan_token=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  document.cookie = `haisan_role=${encodeURIComponent(role)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+}
+
+/**
+ * Clear authentication cookies on logout or session expiration.
+ */
+function clearAuthCookies() {
+  if (typeof document === "undefined") return;
+  document.cookie = "haisan_token=; path=/; max-age=0; SameSite=Lax";
+  document.cookie = "haisan_role=; path=/; max-age=0; SameSite=Lax";
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -39,19 +58,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const parsedUser = JSON.parse(storedUser);
           setUser(parsedUser);
           setAccessToken(storedToken);
+          setAuthCookies(storedToken, parsedUser.role || "CUSTOMER", true);
 
           // Verify token with backend in background
           try {
             const freshUser = await getMeApi(storedToken);
             setUser(freshUser);
             localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(freshUser));
+            setAuthCookies(storedToken, freshUser.role || "CUSTOMER", true);
           } catch (e) {
             if (e instanceof ApiError && e.statusCode === 401) {
-              // Token expired, clear storage
+              // Token expired, clear storage and cookies
               localStorage.removeItem(STORAGE_KEY_USER);
               localStorage.removeItem(STORAGE_KEY_TOKEN);
               sessionStorage.removeItem(STORAGE_KEY_USER);
               sessionStorage.removeItem(STORAGE_KEY_TOKEN);
+              clearAuthCookies();
               setUser(null);
               setAccessToken(null);
             }
@@ -69,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (
     data: LoginFormData,
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<{ success: boolean; error?: string; user?: User }> => {
     setIsLoading(true);
     try {
       const response = await loginApi(data);
@@ -81,8 +103,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const storage = data.rememberMe ? localStorage : sessionStorage;
       storage.setItem(STORAGE_KEY_USER, JSON.stringify(authUser));
       storage.setItem(STORAGE_KEY_TOKEN, token);
+      setAuthCookies(token, authUser.role || "CUSTOMER", data.rememberMe ?? true);
 
-      return { success: true };
+      return { success: true, user: authUser };
     } catch (err: unknown) {
       const errorMessage =
         err instanceof ApiError
@@ -98,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (
     data: RegisterFormData,
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<{ success: boolean; error?: string; user?: User }> => {
     setIsLoading(true);
     try {
       const response = await registerApi({
@@ -114,8 +137,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(authUser));
       localStorage.setItem(STORAGE_KEY_TOKEN, token);
+      setAuthCookies(token, authUser.role || "CUSTOMER", true);
 
-      return { success: true };
+      return { success: true, user: authUser };
     } catch (err: unknown) {
       const errorMessage =
         err instanceof ApiError
@@ -136,6 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(STORAGE_KEY_TOKEN);
     sessionStorage.removeItem(STORAGE_KEY_USER);
     sessionStorage.removeItem(STORAGE_KEY_TOKEN);
+    clearAuthCookies();
   };
 
   return (

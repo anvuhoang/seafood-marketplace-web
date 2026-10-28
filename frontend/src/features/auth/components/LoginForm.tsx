@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { User, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { User, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2, Info } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { AuthCardWrapper } from "./AuthCardWrapper";
 
-export function LoginForm() {
+function LoginFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
   const { login } = useAuth();
 
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -17,6 +19,21 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  /**
+   * Navigate to the target route after successful authentication based on redirect query or user role.
+   */
+  const handlePostLoginRedirect = (userRole?: string) => {
+    if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
+      router.push(redirectParam);
+    } else if (userRole === "ADMIN") {
+      router.push("/admin/dashboard");
+    } else if (userRole === "VENDOR") {
+      router.push("/vendor/dashboard");
+    } else {
+      router.push("/");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +68,7 @@ export function LoginForm() {
       });
 
       if (result.success) {
-        router.push("/");
+        handlePostLoginRedirect(result.user?.role);
       } else {
         setError(result.error || "Đăng nhập không thành công. Vui lòng thử lại.");
       }
@@ -65,12 +82,12 @@ export function LoginForm() {
   const handleGoogleLogin = () => {
     setIsSubmitting(true);
     setTimeout(async () => {
-      await login({
+      const result = await login({
         emailOrPhone: "khachhang.demo@gmail.com",
         password: "google_oauth_token",
         rememberMe: true,
       });
-      router.push("/");
+      handlePostLoginRedirect(result.user?.role);
     }, 600);
   };
 
@@ -80,6 +97,15 @@ export function LoginForm() {
       subtitle="Khám phá và đặt mua hải sản tươi sống trực tiếp từ các vựa uy tín tại Phú Quốc, Nha Trang, Cà Mau."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Protected route redirect notification */}
+        {redirectParam && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs text-sky-800 animate-slide-up">
+            <Info className="h-4 w-4 shrink-0 text-sky-600 mt-0.5" />
+            <p className="font-medium leading-relaxed">
+              Vui lòng đăng nhập để tiếp tục truy cập trang bạn yêu cầu.
+            </p>
+          </div>
+        )}
         {/* Error notification banner */}
         {error && (
           <div className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 animate-slide-up">
@@ -236,7 +262,11 @@ export function LoginForm() {
         <p className="pt-2 text-center text-xs text-slate-500 font-medium">
           Bạn chưa có tài khoản?{" "}
           <Link
-            href="/customer/register"
+            href={
+              redirectParam
+                ? `/customer/register?redirect=${encodeURIComponent(redirectParam)}`
+                : "/customer/register"
+            }
             className="font-bold text-[#E63946] hover:underline hover:text-[#D62839] transition-colors"
           >
             Đăng ký ngay
@@ -244,5 +274,19 @@ export function LoginForm() {
         </p>
       </form>
     </AuthCardWrapper>
+  );
+}
+
+export function LoginForm() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[500px] flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0F3860]" />
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
   );
 }
