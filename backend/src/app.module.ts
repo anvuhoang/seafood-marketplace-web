@@ -7,12 +7,14 @@ import { AuthModule } from './module/auth/auth.module.js';
 import { ProductModule } from './module/product/product.module.js';
 import { CartModule } from './module/cart/cart.module.js';
 import configuration from './config/configuration.js';
+import { validateEnv } from './config/env.validation.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+      validate: validateEnv,
     }),
     PrismaModule,
     AuthModule,
