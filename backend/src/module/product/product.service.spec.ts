@@ -1,44 +1,196 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { NotFoundException } from '@nestjs/common';
 import { ProductService } from './product.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 
+const vendor = (slug: string, status = 'ACTIVE') => ({
+  id: `v-${slug}`,
+  name: `Vựa ${slug}`,
+  slug,
+  description: null,
+  logoUrl: null,
+  coverUrl: null,
+  streetAddress: 'Cảng cá',
+  district: 'Nha Trang',
+  province: 'Khánh Hòa',
+  status,
+  ratingAverage: { toString: () => '4.70' },
+  ratingCount: 98,
+});
+
+const offer = (id: string, price: number, stock: number, v = vendor('a'), status = 'ACTIVE') => ({
+  id,
+  price,
+  stock,
+  status,
+  vendor: v,
+});
+
+const productRow = (overrides: Record<string, unknown> = {}) => ({
+  id: 'p1',
+  name: 'Tôm Hùm Bông Nha Trang',
+  slug: 'tom-hum-bong-nha-trang',
+  description: null,
+  status: 'ACTIVE',
+  isFeatured: true,
+  species: null,
+  categories: [
+    { category: { id: 'c1', name: 'Hải Sản Đặc Sản', slug: 'hai-san-dac-san', isActive: true } },
+    { category: { id: 'c2', name: 'Ẩn', slug: 'an', isActive: false } },
+  ],
+  images: [],
+  variants: [
+    {
+      sku: null,
+      unit: 'kg',
+      sizeLabel: '1 - 1.2 kg/con',
+      isActive: true,
+      offers: [offer('o1', 1450000, 6)],
+    },
+  ],
+  ...overrides,
+});
+
 describe('ProductService', () => {
-  let productService: ProductService;
-  let prismaService: any;
+  let service: ProductService;
+  let prisma: any;
 
   beforeEach(() => {
-    prismaService = {
-      product: {
-        findFirst: vi.fn(),
+    prisma = {
+      product: { findFirst: vi.fn() },
+      review: {
+        groupBy: vi.fn().mockResolvedValue([]),
+        findMany: vi.fn().mockResolvedValue([]),
       },
     };
-    productService = new ProductService(prismaService as PrismaService);
+    service = new ProductService(prisma as PrismaService);
   });
 
-  it('should be defined', () => {
-    expect(productService).toBeDefined();
+  it('throws NotFound for an unknown product instead of returning mock data', async () => {
+    prisma.product.findFirst.mockResolvedValue(null);
+
+    await expect(service.findByIdOrSlug('khong-ton-tai')).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('should return product detail for prod-1 fallback', async () => {
-    prismaService.product.findFirst.mockResolvedValue(null);
+  it('looks up slugs by slug and UUIDs by id, never returning drafts', async () => {
+    prisma.product.findFirst.mockResolvedValue(productRow());
 
-    const result = await productService.findByIdOrSlug('prod-1');
-    expect(result).toBeDefined();
-    expect(result.id).toBe('prod-1');
-    expect(result.name).toContain('Tôm Sú Biển Tươi Sống');
-    expect(result.price).toBe(420000);
-    expect(result.stock).toBe(14);
-    expect(result.inStock).toBe(true);
-    expect(result.vendor.name).toBe('Vựa Thủy Sản Phú Quốc Xanh');
+    await service.findByIdOrSlug('tom-hum-bong-nha-trang');
+    await service.findByIdOrSlug('e44b0e7e-84db-45bd-9629-d612a4a4cc46');
+
+    expect(prisma.product.findFirst.mock.calls[0][0].where).toEqual({
+      slug: 'tom-hum-bong-nha-trang',
+      status: { not: 'DRAFT' },
+    });
+    expect(prisma.product.findFirst.mock.calls[1][0].where).toEqual({
+      id: 'e44b0e7e-84db-45bd-9629-d612a4a4cc46',
+      status: { not: 'DRAFT' },
+    });
   });
 
-  it('should identify discontinued product correctly', async () => {
-    prismaService.product.findFirst.mockResolvedValue(null);
+  it('returns only real data: no fake discount, specs or vendor stats', async () => {
+    prisma.product.findFirst.mockResolvedValue(productRow());
 
-    const result = await productService.findByIdOrSlug('discontinued-sample');
-    expect(result).toBeDefined();
-    expect(result.isDiscontinued).toBe(true);
-    expect(result.inStock).toBe(false);
-    expect(result.stock).toBe(0);
+    const result = await service.findByIdOrSlug('tom-hum-bong-nha-trang');
+
+    expect(result).toMatchObject({
+      price: 1450000,
+      originalPrice: null,
+      discountPercent: null,
+      sizeLabel: '1 - 1.2 kg/con',
+      stock: 6,
+      inStock: true,
+      offerId: 'o1',
+      specifications: { commonName: null, scientificName: null, origin: 'Nha Trang, Khánh Hòa' },
+    });
+    expect(result.vendor).toMatchObject({ slug: 'a', ratingAverage: 4.7, verified: true });
+    expect(result.vendor).not.toHaveProperty('positiveRatingPercent');
+    expect(result.categories.map((c) => c.slug)).toEqual(['hai-san-dac-san']);
+  });
+
+  it('prefers the cheapest in-stock offer from an ACTIVE vendor', async () => {
+    prisma.product.findFirst.mockResolvedValue(
+      productRow({
+        variants: [
+          {
+            sku: null,
+            unit: 'kg',
+            sizeLabel: null,
+            isActive: true,
+            offers: [
+              offer('sold-out', 1000000, 0, vendor('a')),
+              offer('suspended', 900000, 9, vendor('b', 'SUSPENDED')),
+              offer('ok', 1200000, 4, vendor('c')),
+            ],
+          },
+        ],
+      }),
+    );
+
+    const result = await service.findByIdOrSlug('p1');
+
+    expect(result).toMatchObject({ offerId: 'ok', price: 1200000, stock: 4, inStock: true });
+    expect(result.vendor?.slug).toBe('c');
+  });
+
+  it('does not present a suspended vendor as the seller', async () => {
+    prisma.product.findFirst.mockResolvedValue(
+      productRow({
+        variants: [
+          { sku: null, unit: 'kg', sizeLabel: null, isActive: true, offers: [offer('o1', 280000, 10, vendor('ha-long', 'SUSPENDED'))] },
+        ],
+      }),
+    );
+
+    const result = await service.findByIdOrSlug('p1');
+
+    expect(result).toMatchObject({ vendor: null, offerId: null, inStock: false, stock: 0 });
+    expect(result.specifications.origin).toBeNull();
+  });
+
+  it('marks inactive products as discontinued and not purchasable', async () => {
+    prisma.product.findFirst.mockResolvedValue(
+      productRow({
+        status: 'INACTIVE',
+        variants: [
+          { sku: null, unit: 'kg', sizeLabel: null, isActive: false, offers: [offer('o1', 1850000, 0, vendor('a'), 'OUT_OF_STOCK')] },
+        ],
+      }),
+    );
+
+    const result = await service.findByIdOrSlug('p1');
+
+    expect(result).toMatchObject({ isDiscontinued: true, inStock: false, stock: 0, offerId: null, price: 1850000 });
+  });
+
+  it('summarises published reviews from the database', async () => {
+    prisma.product.findFirst.mockResolvedValue(productRow());
+    prisma.review.groupBy.mockResolvedValue([
+      { rating: 5, _count: { _all: 3 } },
+      { rating: 4, _count: { _all: 1 } },
+    ]);
+    prisma.review.findMany.mockResolvedValue([
+      {
+        id: 'r1',
+        rating: 5,
+        content: 'Tôm còn sống khoẻ',
+        createdAt: new Date('2026-10-01T00:00:00Z'),
+        user: { fullName: 'Nguyễn A' },
+      },
+    ]);
+
+    const { reviewsSummary } = await service.findByIdOrSlug('p1');
+
+    expect(reviewsSummary).toEqual({
+      ratingAverage: 4.8,
+      reviewCount: 4,
+      ratingBreakdown: { 5: 3, 4: 1, 3: 0, 2: 0, 1: 0 },
+      reviews: [
+        { id: 'r1', authorName: 'Nguyễn A', rating: 5, content: 'Tôm còn sống khoẻ', createdAt: '2026-10-01T00:00:00.000Z' },
+      ],
+    });
+    expect(prisma.review.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { productId: 'p1', status: 'PUBLISHED' } }),
+    );
   });
 });

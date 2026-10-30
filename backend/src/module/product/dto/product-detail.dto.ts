@@ -2,23 +2,28 @@ export interface ProductDetailDto {
   id: string;
   name: string;
   slug: string;
-  description?: string | null;
+  description: string | null;
   status: string;
   isFeatured: boolean;
-  sku?: string | null;
+  sku: string | null;
   unit: string;
+  /** Size of the displayed variant, e.g. "15 - 20 con/kg". */
+  sizeLabel: string | null;
   price: number;
-  originalPrice?: number | null;
-  discountPercent?: number | null;
+  /** Not stored yet; null until vendors can set a list price. */
+  originalPrice: number | null;
+  discountPercent: number | null;
   stock: number;
   inStock: boolean;
   isDiscontinued: boolean;
-  species?: {
-    id?: string;
+  /** Offer the price and stock come from; null when nothing is for sale. */
+  offerId: string | null;
+  species: {
+    id: string;
     commonName: string;
-    scientificName?: string | null;
-    slug?: string;
-    description?: string | null;
+    scientificName: string | null;
+    slug: string;
+    description: string | null;
   } | null;
   categories: Array<{
     id: string;
@@ -28,7 +33,7 @@ export interface ProductDetailDto {
   images: Array<{
     id: string;
     imageUrl: string;
-    altText?: string | null;
+    altText: string | null;
     sortOrder: number;
     isPrimary: boolean;
   }>;
@@ -36,33 +41,33 @@ export interface ProductDetailDto {
     id: string;
     name: string;
     slug: string;
-    description?: string | null;
-    logoUrl?: string | null;
-    coverUrl?: string | null;
+    description: string | null;
+    logoUrl: string | null;
+    coverUrl: string | null;
     address: string;
     province: string;
     district: string;
     ratingAverage: number;
     ratingCount: number;
     verified: boolean;
-    responseTimeMinutes?: number;
-    positiveRatingPercent?: number;
-  };
+  } | null;
+  /** Only facts stored in the database; other spec fields are not modelled yet. */
   specifications: {
-    commonName: string;
-    scientificName: string;
-    habitat: string;
-    origin: string;
-    catchMethod: string;
-    storageCondition: string;
-    packagingStandard: string;
-    wasteRatio: string;
-    culinaryAdvice?: string;
+    commonName: string | null;
+    scientificName: string | null;
+    origin: string | null;
   };
   reviewsSummary: {
     ratingAverage: number;
     reviewCount: number;
     ratingBreakdown: Record<number, number>;
+    reviews: Array<{
+      id: string;
+      authorName: string;
+      rating: number;
+      content: string | null;
+      createdAt: string;
+    }>;
   };
   preparationOptions: Array<{
     id: string;
