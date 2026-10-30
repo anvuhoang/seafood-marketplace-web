@@ -62,12 +62,13 @@ export function CustomerHeader() {
 
   const navCategories = [
     { name: "Trang chủ", href: "/", active: true },
-    { name: "Cá Tươi & Đông Lạnh", href: "#featured-seafood" },
-    { name: "Tôm Sống & Tự Nhiên", href: "#featured-seafood" },
-    { name: "Cua & Ghẹ Cà Mau", href: "#featured-seafood" },
-    { name: "Mực & Bạch Tuộc", href: "#featured-seafood" },
-    { name: "Nghêu, Sò, Ốc", href: "#featured-seafood" },
-    { name: "Hải Sản Đặc Sản", href: "#featured-seafood" },
+    { name: "Danh Mục Hải Sản", href: "/categories" },
+    { name: "Cá Tươi & Đông Lạnh", href: "/categories/ca-bien-tuoi" },
+    { name: "Tôm Sống & Tự Nhiên", href: "/categories/tom-song" },
+    { name: "Cua & Ghẹ Cà Mau", href: "/categories/cua-ghe" },
+    { name: "Mực & Bạch Tuộc", href: "/categories/muc-bach-tuoc" },
+    { name: "Nghêu, Sò, Ốc", href: "/categories/ngheu-so-oc" },
+    { name: "Hải Sản Đặc Sản", href: "/categories/hai-san-dac-san" },
     { name: "Vựa Hải Sản", href: "#trusted-vendors" },
     { name: "Tìm Bằng AI", href: "#visual-search", highlight: true },
   ];
@@ -426,12 +427,12 @@ export function CustomerHeader() {
 
       {/* 3. Sub-Navigation (Category Pills) */}
       <nav className="hidden border-b border-slate-200/80 bg-white md:block">
-        <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-4 scrollbar-none sm:px-6 lg:px-8">
           {navCategories.map((cat, idx) => (
             <Link
               key={idx}
               href={cat.href}
-              className={`relative shrink-0 whitespace-nowrap px-3.5 py-3 text-xs font-bold transition-colors ${cat.active
+              className={`relative shrink-0 whitespace-nowrap px-3 py-3 text-xs font-bold transition-colors ${cat.active
                 ? "text-[#0F3860] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-[#0F3860]"
                 : cat.highlight
                   ? "flex items-center gap-1 text-sky-600 hover:text-sky-700"
