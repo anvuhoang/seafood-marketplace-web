@@ -38,6 +38,7 @@ export interface VendorStorefrontProfile {
   district: string;
   ratingAverage: number;
   ratingCount: number;
+  joinedAt: string;
 }
 
 export interface VendorSummary {
