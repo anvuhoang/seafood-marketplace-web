@@ -147,9 +147,8 @@ export class ProductService {
         );
 
       const product = await this.prisma.product.findFirst({
-        where: isUuid
-          ? { id: identifier }
-          : { OR: [{ slug: identifier }, { id: identifier }] },
+        // Only query the UUID column with UUID values; a slug on `id` makes Prisma throw.
+        where: isUuid ? { id: identifier } : { slug: identifier },
         include: {
           species: true,
           categories: {
