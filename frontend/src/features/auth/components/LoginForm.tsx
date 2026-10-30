@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { User, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2, Info } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { AuthCardWrapper } from "./AuthCardWrapper";
+import { getSafeRedirectPath } from "../utils/safe-redirect";
 
 function LoginFormContent() {
   const router = useRouter();
@@ -24,8 +25,10 @@ function LoginFormContent() {
    * Navigate to the target route after successful authentication based on redirect query or user role.
    */
   const handlePostLoginRedirect = (userRole?: string) => {
-    if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
-      router.push(redirectParam);
+    const safeRedirect = getSafeRedirectPath(redirectParam, window.location.origin);
+
+    if (safeRedirect) {
+      router.push(safeRedirect);
     } else if (userRole === "ADMIN") {
       router.push("/admin/dashboard");
     } else if (userRole === "VENDOR") {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { Suspense, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { ShieldAlert, ArrowLeft, Loader2, LogIn } from "lucide-react";
@@ -13,10 +13,39 @@ interface ProtectedRouteProps {
   fallbackMessage?: string;
 }
 
+function AuthLoadingState() {
+  return (
+    <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 bg-slate-50/50">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0F3860] text-white shadow-md">
+          <Loader2 className="h-7 w-7 animate-spin text-cyan-400" />
+        </div>
+        <h3 className="text-sm font-bold text-slate-800">
+          Đang xác thực thông tin đăng nhập...
+        </h3>
+        <p className="text-xs text-slate-400 max-w-sm">
+          Vui lòng đợi giây lát trong khi hệ thống kiểm tra quyền hạn tài khoản.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Client-side route protection guard enforcing authentication and role authorization.
+ *
+ * The guard reads search params to build the login redirect, so it renders
+ * inside Suspense; otherwise prerendering protected pages fails at build time.
  */
-export function ProtectedRoute({
+export function ProtectedRoute(props: ProtectedRouteProps) {
+  return (
+    <Suspense fallback={<AuthLoadingState />}>
+      <ProtectedRouteContent {...props} />
+    </Suspense>
+  );
+}
+
+function ProtectedRouteContent({
   children,
   allowedRoles,
   fallbackTitle = "Yêu Cầu Quyền Truy Cập",
@@ -41,21 +70,7 @@ export function ProtectedRoute({
 
   // 1. Loading state while authentication is being resolved
   if (isLoading) {
-    return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 bg-slate-50/50">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0F3860] text-white shadow-md">
-            <Loader2 className="h-7 w-7 animate-spin text-cyan-400" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-800">
-            Đang xác thực thông tin đăng nhập...
-          </h3>
-          <p className="text-xs text-slate-400 max-w-sm">
-            Vui lòng đợi giây lát trong khi hệ thống kiểm tra quyền hạn tài khoản.
-          </p>
-        </div>
-      </div>
-    );
+    return <AuthLoadingState />;
   }
 
   // 2. Unauthenticated state (while redirect is in progress)
