@@ -29,24 +29,15 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+/**
+ * Id of a demo item older builds put in every new cart. Browsers that saved
+ * it to local storage still have it, so it is dropped when the cart loads.
+ */
+const LEGACY_DEMO_ITEM_ID = "cart-item-initial";
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    // Seed initial demo cart state with 1 item (755.000đ total as visible in header design)
-    return [
-      {
-        id: "cart-item-initial",
-        productId: "prod-2",
-        productName: "Cá Hồi Na Uy Tươi Cắt Thỏi",
-        productImage:
-          "https://images.unsplash.com/photo-1534482421-64566f976cfa?auto=format&fit=crop&w=400&q=80",
-        price: 755000,
-        quantity: 1,
-        unit: "kg",
-        preparationOption: "Hút chân không",
-        vendorName: "Hải Sản Nhập Khẩu Sài Gòn Ocean",
-      },
-    ];
-  });
+  // The cart starts empty; saved items are restored after mount.
+  const [items, setItems] = useState<CartItem[]>([]);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -54,11 +45,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       const stored = localStorage.getItem("haisan_cart");
       if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        const parsed: unknown = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const restored = (parsed as CartItem[]).filter(
+            (item) => item && item.id !== LEGACY_DEMO_ITEM_ID,
+          );
+          if (restored.length !== parsed.length) {
+            localStorage.setItem("haisan_cart", JSON.stringify(restored));
+          }
           // Defer update to avoid synchronous cascading renders during mount
           setTimeout(() => {
-            setItems(parsed);
+            setItems(restored);
           }, 0);
         }
       }
