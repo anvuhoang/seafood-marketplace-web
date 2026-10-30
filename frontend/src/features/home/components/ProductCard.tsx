@@ -16,10 +16,9 @@ export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
   const [justAdded, setJustAdded] = useState(false);
 
-  const productHref =
-    product.id === "prod-1"
-      ? "/products/tom-su-bien-tuoi-song-loai-1"
-      : `/products/${product.id}`;
+  const fallbackIdentifier =
+    product.id === "prod-1" ? "tom-su-bien-tuoi-song-loai-1" : product.id;
+  const productHref = `/products/${product.slug ?? fallbackIdentifier}`;
 
   const handleAddToCart = () => {
     addToCart({
