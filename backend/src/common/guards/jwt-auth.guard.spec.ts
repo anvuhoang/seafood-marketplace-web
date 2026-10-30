@@ -19,14 +19,15 @@ describe('JwtAuthGuard', () => {
 
   function createContext(authHeader?: string, isPublic = false): ExecutionContext {
     vi.spyOn(reflector, 'getAllAndOverride').mockReturnValue(isPublic);
+    const mockReq = {
+      headers: { authorization: authHeader },
+      user: undefined,
+    };
     return {
       getHandler: () => ({}),
       getClass: () => ({}),
       switchToHttp: () => ({
-        getRequest: () => ({
-          headers: { authorization: authHeader },
-          user: undefined,
-        }),
+        getRequest: () => mockReq,
       }),
     } as unknown as ExecutionContext;
   }
@@ -68,15 +69,16 @@ describe('JwtAuthGuard', () => {
     const mockPayload = { sub: 'user-1', email: 'a@b.com', role: 'CUSTOMER' };
     jwtService.verifyAsync.mockResolvedValue(mockPayload);
 
+    const mockReq = {
+      headers: { authorization: 'Bearer valid-token' },
+      body: { role: 'ADMIN' }, // Client tries to inject ADMIN role
+      user: undefined,
+    };
     const ctx = {
       getHandler: () => ({}),
       getClass: () => ({}),
       switchToHttp: () => ({
-        getRequest: () => ({
-          headers: { authorization: 'Bearer valid-token' },
-          body: { role: 'ADMIN' }, // Client tries to inject ADMIN role
-          user: undefined,
-        }),
+        getRequest: () => mockReq,
       }),
     } as unknown as ExecutionContext;
 
