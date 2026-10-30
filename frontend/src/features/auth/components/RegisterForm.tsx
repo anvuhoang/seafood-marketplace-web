@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { AuthCardWrapper } from "./AuthCardWrapper";
+import { getSafeRedirectPath } from "../utils/safe-redirect";
 
 function RegisterFormContent() {
   const router = useRouter();
@@ -14,11 +15,8 @@ function RegisterFormContent() {
   const { register } = useAuth();
 
   const handlePostRegisterRedirect = () => {
-    if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
-      router.push(redirectParam);
-    } else {
-      router.push("/");
-    }
+    const safeRedirect = getSafeRedirectPath(redirectParam, window.location.origin);
+    router.push(safeRedirect ?? "/");
   };
 
   const [fullName, setFullName] = useState("");

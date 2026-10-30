@@ -1,6 +1,7 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getSafeRedirectPath } from "@/features/auth/utils/safe-redirect";
 
 type UserRole = "CUSTOMER" | "VENDOR" | "ADMIN";
 
@@ -39,26 +40,6 @@ function getDashboardPath(role: UserRole): string {
   return "/";
 }
 
-function getSafeRedirect(
-  redirect: string | null,
-  origin: string,
-): URL | null {
-  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
-    return null;
-  }
-
-  try {
-    const target = new URL(redirect, origin);
-
-    // Only allow redirects to the same origin.
-    if (target.origin !== origin) return null;
-
-    return target;
-  } catch {
-    return null;
-  }
-}
-
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
@@ -92,13 +73,13 @@ export function proxy(request: NextRequest) {
   const isAuthPage = AUTH_PAGES.includes(pathname);
 
   if (hasTokenCookie && validRole && isAuthPage) {
-    const redirectTarget = getSafeRedirect(
+    const redirectPath = getSafeRedirectPath(
       request.nextUrl.searchParams.get("redirect"),
       request.nextUrl.origin,
     );
 
-    if (redirectTarget) {
-      return NextResponse.redirect(redirectTarget);
+    if (redirectPath) {
+      return NextResponse.redirect(new URL(redirectPath, request.url));
     }
 
     return NextResponse.redirect(
