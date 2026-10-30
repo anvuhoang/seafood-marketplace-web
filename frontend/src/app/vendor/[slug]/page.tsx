@@ -6,14 +6,8 @@ import { Product } from "@/features/home/data/home.mock";
 import { Anchor, ShieldCheck, MapPin } from "lucide-react";
 import Link from "next/link";
 
-interface VendorPageProps {
-  params: Promise<{ slug: string }>;
-}
-
-export default async function VendorStorefrontPage({
-  params,
-}: VendorPageProps) {
-  await params;
+// Mock storefront: the slug is not used yet, so params is not read here.
+export default function VendorStorefrontPage() {
   const vendor = flagshipProductMock.vendor;
 
   const vendorProducts: Product[] = [

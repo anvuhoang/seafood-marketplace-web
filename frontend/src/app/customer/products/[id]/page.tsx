@@ -1,5 +1,6 @@
 import { ProductDetailPage } from "@/features/product/components/ProductDetailPage";
 import { Metadata } from "next";
+import { Suspense } from "react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -12,7 +13,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function CustomerProductPage({ params }: PageProps) {
+export default function CustomerProductPage({ params }: PageProps) {
+  return (
+    <Suspense>
+      <ProductDetailRoute params={params} />
+    </Suspense>
+  );
+}
+
+async function ProductDetailRoute({ params }: PageProps) {
   const { id } = await params;
   return <ProductDetailPage productId={id} />;
 }
