@@ -1,6 +1,7 @@
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { CustomerHeader } from "@/components/shared/CustomerHeader";
 import { CustomerFooter } from "@/components/shared/CustomerFooter";
+import { AlertActionButton } from "@/components/shared/AlertActionButton";
 import { Store, Check, X, ArrowLeft, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
@@ -95,13 +96,12 @@ export default function AdminVendorsPage() {
                     </td>
                     <td className="py-3.5 px-4 text-right space-x-1.5">
                       {v.status === "PENDING" && (
-                        <button
-                          type="button"
-                          onClick={() => alert(`Đã phê duyệt vựa ${v.name}!`)}
+                        <AlertActionButton
+                          message={`Đã phê duyệt vựa ${v.name}!`}
                           className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-700"
                         >
                           Duyệt vựa
-                        </button>
+                        </AlertActionButton>
                       )}
                     </td>
                   </tr>

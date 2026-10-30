@@ -1,6 +1,7 @@
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { CustomerHeader } from "@/components/shared/CustomerHeader";
 import { CustomerFooter } from "@/components/shared/CustomerFooter";
+import { AlertActionButton } from "@/components/shared/AlertActionButton";
 import { ClipboardList, ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
@@ -105,14 +106,13 @@ export default function VendorOrdersPage() {
                     <div className="text-base font-black text-[#E63946]">
                       {formatPrice(ord.total)}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => alert(`Đã xác nhận đóng thùng đơn ${ord.id}!`)}
+                    <AlertActionButton
+                      message={`Đã xác nhận đóng thùng đơn ${ord.id}!`}
                       className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       <span>Xác nhận đóng thùng</span>
-                    </button>
+                    </AlertActionButton>
                   </div>
                 </div>
               </div>
