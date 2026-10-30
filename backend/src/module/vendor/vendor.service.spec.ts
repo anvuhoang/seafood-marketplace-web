@@ -19,6 +19,7 @@ const vendorRow = (status: string) => ({
   status,
   ratingAverage: { toString: () => '4.90' },
   ratingCount: 342,
+  createdAt: new Date('2023-11-01T00:00:00.000Z'),
 });
 
 const offerRow = (
@@ -126,6 +127,7 @@ describe('VendorService', () => {
 
     expect(result.vendor.ratingAverage).toBe(4.9);
     expect(result.vendor.address).toBe('12 Bến Cảng, Phú Quốc, Kiên Giang');
+    expect(result.vendor.joinedAt).toBe('2023-11-01T00:00:00.000Z');
     expect(result.vendor).not.toHaveProperty('email');
   });
 

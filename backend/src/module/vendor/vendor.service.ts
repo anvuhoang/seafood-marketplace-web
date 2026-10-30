@@ -94,6 +94,7 @@ export class VendorService {
         district: vendor.district,
         ratingAverage: Number(vendor.ratingAverage),
         ratingCount: vendor.ratingCount,
+        joinedAt: vendor.createdAt.toISOString(),
       },
       status,
       isActive,

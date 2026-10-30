@@ -52,6 +52,7 @@ export interface VendorStorefrontDto {
     district: string;
     ratingAverage: number;
     ratingCount: number;
+    joinedAt: string;
   };
   status: VendorStorefrontStatus;
   isActive: boolean;
