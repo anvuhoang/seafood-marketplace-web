@@ -8,6 +8,7 @@ export interface Category {
 
 export interface Product {
   id: string;
+  slug?: string;
   name: string;
   scientificName?: string;
   category: string;
@@ -22,18 +23,6 @@ export interface Product {
   image: string;
   inStock: boolean;
   rating?: number;
-}
-
-export interface Vendor {
-  id: string;
-  name: string;
-  location: string;
-  rating: number;
-  reviewCount: number;
-  productCount: number;
-  description: string;
-  image: string;
-  verified: boolean;
 }
 
 export interface Benefit {
@@ -310,61 +299,6 @@ export const featuredProducts: Product[] = [
       "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=800&q=80",
     inStock: true,
     rating: 4.8,
-  },
-];
-
-export const trustedVendors: Vendor[] = [
-  {
-    id: "ven-1",
-    name: "Vựa Hải Sản Biển Xanh",
-    location: "Nha Trang, Khánh Hòa",
-    rating: 4.9,
-    reviewCount: 128,
-    productCount: 150,
-    description:
-      "Chuyên hải sản miền Trung, cá ngừ đại dương, tôm hùm bông cao cấp đánh bắt tự nhiên.",
-    image:
-      "https://images.unsplash.com/photo-1534482421-64566f976cfa?auto=format&fit=crop&w=800&q=80",
-    verified: true,
-  },
-  {
-    id: "ven-2",
-    name: "Hải Sản Phú Quốc",
-    location: "Hàm Ninh, Phú Quốc",
-    rating: 4.8,
-    reviewCount: 95,
-    productCount: 85,
-    description:
-      "Cung cấp mực trứng, tôm mũ ni và ghẹ xanh tươi mới được kéo lưới về cảng mỗi rạng sáng.",
-    image:
-      "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=800&q=80",
-    verified: true,
-  },
-  {
-    id: "ven-3",
-    name: "Vựa Hải Sản Hồ Sài Gòn",
-    location: "Bình Thạnh, TP. Hồ Chí Minh",
-    rating: 4.9,
-    reviewCount: 210,
-    productCount: 200,
-    description:
-      "Hồ nuôi chứa công nghệ lọc tuần hoàn, hải sản bơi sống tại hồ, đóng gói giao nhanh 2h tận nhà.",
-    image:
-      "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=800&q=80",
-    verified: true,
-  },
-  {
-    id: "ven-4",
-    name: "Hải Sản Tươi Mỗi Ngày",
-    location: "Bến Đá, Vũng Tàu",
-    rating: 4.7,
-    reviewCount: 82,
-    productCount: 90,
-    description:
-      "Cập bến hải thuyền mỗi ngày, mực ống chớp, ốc móng tay chúa và cá chim trắng tự nhiên.",
-    image:
-      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80",
-    verified: true,
   },
 ];
 
