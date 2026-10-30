@@ -1,59 +1,30 @@
 import { ProductDetail } from "../types/product.types";
-import {
-  flagshipProductMock,
-  discontinuedProductMock,
-} from "../data/product-detail.mock";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 /**
  * Fetch seafood product details by identifier (slug or UUID).
- * Connects to the backend API with seamless fallback to rich mock data.
+ * Returns null when the product does not exist; throws on other failures so
+ * the page can show an error instead of made-up data.
  */
 export async function getProductDetail(
   identifier: string
-): Promise<ProductDetail> {
-  // Check special mock cases for immediate response or testing
-  if (identifier === "discontinued-sample" || identifier === "prod-discontinued") {
-    return discontinuedProductMock;
+): Promise<ProductDetail | null> {
+  const res = await fetch(
+    `${API_BASE_URL}/products/${encodeURIComponent(identifier)}`,
+    { cache: "no-store" },
+  );
+
+  if (res.status === 404) {
+    return null;
   }
 
-  try {
-    const res = await fetch(`${API_BASE_URL}/products/${identifier}`, {
-      cache: "no-store",
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      return {
-        ...flagshipProductMock,
-        ...data,
-        images:
-          data.images && data.images.length > 0
-            ? data.images
-            : flagshipProductMock.images,
-        vendor: {
-          ...flagshipProductMock.vendor,
-          ...(data.vendor || {}),
-        },
-        specifications: {
-          ...flagshipProductMock.specifications,
-          ...(data.specifications || {}),
-        },
-        reviewsSummary: {
-          ...flagshipProductMock.reviewsSummary,
-          ...(data.reviewsSummary || {}),
-        },
-        relatedProducts: flagshipProductMock.relatedProducts,
-      };
-    }
-  } catch (err) {
-    console.warn("Backend API unavailable, loading local product data:", err);
+  if (!res.ok) {
+    throw new Error(`Product detail request failed with status ${res.status}`);
   }
 
-  // Graceful fallback to flagship mock product
-  return flagshipProductMock;
+  return res.json();
 }
 
 /**

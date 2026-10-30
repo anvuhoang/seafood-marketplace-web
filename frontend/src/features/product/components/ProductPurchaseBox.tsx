@@ -36,8 +36,10 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
     text: string;
   } | null>(null);
 
-  const isAvailable = product.inStock && !product.isDiscontinued && product.stock > 0;
+  const isAvailable =
+    product.inStock && !product.isDiscontinued && product.stock > 0 && product.offerId !== null;
   const maxStock = product.stock || 0;
+  const { reviewsSummary, vendor } = product;
 
   const handleQuantityChange = (delta: number) => {
     if (!isAvailable) return;
@@ -75,17 +77,19 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
       quantity,
       unit: product.unit,
       preparationOption: selectedPrep,
-      vendorName: product.vendor.name,
+      vendorName: vendor?.name ?? "",
       availableStock: maxStock,
       isDiscontinued: product.isDiscontinued,
     });
 
-    // 2. Call backend API asynchronously
-    await addToCartBackendApi({
-      offerId: product.id,
-      quantity,
-      preparationOption: selectedPrep,
-    });
+    // 2. Call backend API asynchronously with the offer being sold
+    if (product.offerId) {
+      await addToCartBackendApi({
+        offerId: product.offerId,
+        quantity,
+        preparationOption: selectedPrep,
+      });
+    }
 
     setIsSubmitting(false);
     if (contextResult.success) {
@@ -113,12 +117,16 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
     <div className="space-y-5">
       {/* 1. Header Badges & Product SKU */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-md bg-sky-50 px-2.5 py-1 text-xs font-bold text-[#0F3860] border border-sky-200">
-          Hải sản Đảo Phú Quốc
-        </span>
-        <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-mono font-medium text-slate-600">
-          Mã: {product.sku || "SBD-TZ04-QSC"}
-        </span>
+        {vendor && (
+          <span className="rounded-md bg-sky-50 px-2.5 py-1 text-xs font-bold text-[#0F3860] border border-sky-200">
+            Hải sản {vendor.district}
+          </span>
+        )}
+        {product.sku && (
+          <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-mono font-medium text-slate-600">
+            Mã: {product.sku}
+          </span>
+        )}
 
         {/* Dynamic Availability Status Indicator */}
         {product.isDiscontinued ? (
@@ -134,7 +142,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
         ) : (
           <span className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            Tình trạng: Còn tươi sống (Bơi trong hồ)
+            Tình trạng: Còn hàng
           </span>
         )}
       </div>
@@ -146,33 +154,40 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
 
       {/* 3. Rating & Sales Statistics */}
       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-        <div className="flex items-center gap-1 font-bold text-amber-500">
-          <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-          <span className="text-sm text-slate-900 font-extrabold">
-            {product.reviewsSummary.ratingAverage.toFixed(1)}
-          </span>
-        </div>
-        <span className="text-slate-300">|</span>
-        <span className="underline cursor-pointer hover:text-[#0F3860]">
-          {product.reviewsSummary.reviewCount} Đánh giá thực tế người mua
-        </span>
-        <span className="text-slate-300">|</span>
-        <span>{product.reviewsSummary.soldCount.toLocaleString()} Đã bán</span>
-        <span className="text-slate-300">|</span>
-        <span className="underline cursor-pointer hover:text-[#0F3860]">
-          {product.reviewsSummary.questionCount} Câu hỏi (Hỏi đáp)
-        </span>
+        {reviewsSummary.reviewCount > 0 ? (
+          <>
+            <div className="flex items-center gap-1 font-bold text-amber-500">
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+              <span className="text-sm text-slate-900 font-extrabold">
+                {reviewsSummary.ratingAverage.toFixed(1)}
+              </span>
+            </div>
+            <span className="text-slate-300">|</span>
+            <a href="#product-reviews" className="underline hover:text-[#0F3860]">
+              {reviewsSummary.reviewCount} đánh giá từ người mua
+            </a>
+          </>
+        ) : (
+          <span>Chưa có đánh giá</span>
+        )}
       </div>
 
       {/* 4. Price Box */}
       <div className="rounded-2xl border border-rose-100 bg-rose-50/40 p-4 sm:p-5 space-y-3">
         <div className="flex flex-wrap items-baseline gap-3">
-          <span className="text-3xl font-black text-[#E63946] tracking-tight">
-            {formatPrice(product.price)}
-          </span>
-          <span className="text-sm font-medium text-slate-500">
-            / 1 {product.unit}
-          </span>
+          {product.offerId || product.isDiscontinued ? (
+            <>
+              <span className="text-3xl font-black text-[#E63946] tracking-tight">
+                {formatPrice(product.price)}
+              </span>
+              <span className="text-sm font-medium text-slate-500">
+                / 1 {product.unit}
+              </span>
+            </>
+          ) : (
+            // No approved vendor sells it, so there is no price to show.
+            <span className="text-xl font-black text-slate-500">Chưa có giá bán</span>
+          )}
           {product.originalPrice && product.originalPrice > product.price && (
             <>
               <span className="text-sm text-slate-400 line-through">
@@ -189,15 +204,11 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
         <div className="space-y-1.5 border-t border-rose-100/80 pt-3 text-xs text-slate-600">
           <p className="flex items-start gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
-            <span>
-              Cam kết cân đúng tươi sống tại vựa, tặng thùng xốp oxy muối kèm đá gel giữ nhiệt.
-            </span>
+            <span>Đóng thùng xốp oxy/đá gel chuyên dụng giữ tươi khi vận chuyển.</span>
           </p>
           <p className="flex items-start gap-2">
             <ShieldCheck className="h-4 w-4 shrink-0 text-sky-600 mt-0.5" />
-            <span>
-              Được hoàn tiền x2 nếu giao hàng sai trọng lượng hoặc tôm chết ươn.
-            </span>
+            <span>Đổi trả 1 đổi 1: hoàn tiền hoặc đổi mới nếu sản phẩm không đúng mô tả.</span>
           </p>
         </div>
       </div>
@@ -245,11 +256,16 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
           </label>
           {isAvailable ? (
             <span className="text-xs font-semibold text-emerald-600">
-              Còn <strong>{maxStock} {product.unit}</strong> có sẵn tại hồ vựa Phú Quốc
+              Còn <strong>{maxStock} {product.unit}</strong>
+              {vendor ? ` tại ${vendor.name}` : ""}
             </span>
           ) : (
             <span className="text-xs font-bold text-rose-600">
-              {product.isDiscontinued ? "Ngừng kinh doanh" : "Tạm hết hàng trong kho"}
+              {product.isDiscontinued
+                ? "Ngừng kinh doanh"
+                : product.offerId
+                  ? "Tạm hết hàng trong kho"
+                  : "Hiện chưa có vựa mở bán"}
             </span>
           )}
         </div>
@@ -283,22 +299,25 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
             </button>
           </div>
 
-          {/* Estimation note */}
-          <span className="text-xs text-slate-500">
-            Tương đương ước tính: <strong>{15 * quantity} - {20 * quantity} con</strong>
-          </span>
+          {product.sizeLabel && (
+            <span className="text-xs text-slate-500">
+              Quy cách: <strong>{product.sizeLabel}</strong>
+            </span>
+          )}
         </div>
       </div>
 
       {/* 7. Total Price Preview */}
-      <div className="flex items-baseline justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-200/80">
-        <span className="text-xs font-bold text-slate-600 uppercase">
-          Tổng tiền tạm tính:
-        </span>
-        <span className="text-2xl font-black text-[#0F3860]">
-          {formatPrice(calculatedTotal)}
-        </span>
-      </div>
+      {isAvailable && (
+        <div className="flex items-baseline justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-200/80">
+          <span className="text-xs font-bold text-slate-600 uppercase">
+            Tổng tiền tạm tính:
+          </span>
+          <span className="text-2xl font-black text-[#0F3860]">
+            {formatPrice(calculatedTotal)}
+          </span>
+        </div>
+      )}
 
       {/* Action Feedback Alert */}
       {actionFeedback && (
@@ -347,7 +366,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
           type="button"
           onClick={() =>
             alert(
-              "Chính sách bảo hành: Khi shipper giao đến, bạn được mở thùng xốp kiểm tra tôm sống trước khi thanh toán. Nếu không hài lòng có thể từ chối nhận hàng không mất phí."
+              "Chính sách bảo hành: Khi shipper giao đến, bạn được mở thùng xốp kiểm tra hải sản trước khi thanh toán. Nếu không hài lòng có thể từ chối nhận hàng không mất phí."
             )
           }
           className="text-xs font-semibold text-[#0F3860] hover:underline"

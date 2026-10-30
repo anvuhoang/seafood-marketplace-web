@@ -14,7 +14,7 @@ export function ColdChainStandardCard() {
       </div>
 
       <p className="text-xs text-slate-300 leading-relaxed">
-        Mỗi đơn hàng tôm sống được đóng thùng xốp đặc biệt kèm đá gel cay duy trì độ mặn và nhiệt độ tự nhiên. Tỉ lệ tôm sống khi giao tận tay đạt 100% nhờ nén khí oxy tinh khiết.
+        Mỗi đơn hàng hải sản sống được đóng thùng xốp đặc biệt kèm đá gel cay duy trì độ mặn và nhiệt độ tự nhiên. Tỉ lệ hải sản sống khi giao tận tay đạt 100% nhờ nén khí oxy tinh khiết.
       </p>
 
       {/* Specifications list */}

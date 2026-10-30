@@ -17,87 +17,62 @@ export interface VendorDetail {
   id: string;
   name: string;
   slug: string;
-  description?: string | null;
-  logoUrl?: string | null;
-  coverUrl?: string | null;
+  description: string | null;
+  logoUrl: string | null;
+  coverUrl: string | null;
   address: string;
   province: string;
   district: string;
   ratingAverage: number;
   ratingCount: number;
   verified: boolean;
-  responseTimeMinutes: number;
-  positiveRatingPercent: number;
 }
 
+/** Only facts stored in the database; missing ones are null. */
 export interface TechnicalSpecifications {
-  commonName: string;
-  scientificName: string;
-  habitat: string;
-  origin: string;
-  catchMethod: string;
-  storageCondition: string;
-  packagingStandard: string;
-  wasteRatio: string;
-  culinaryAdvice?: string;
+  commonName: string | null;
+  scientificName: string | null;
+  origin: string | null;
 }
 
 export interface ReviewItem {
   id: string;
   authorName: string;
-  authorSub?: string;
-  avatar?: string;
   rating: number;
-  date: string;
-  content: string;
-  verifiedPurchase: boolean;
-  photos?: string[];
-  vendorFeedback?: string;
+  content: string | null;
+  createdAt: string;
 }
 
 export interface ReviewsSummary {
   ratingAverage: number;
   reviewCount: number;
-  soldCount: number;
-  questionCount: number;
   ratingBreakdown: Record<number, number>;
   reviews: ReviewItem[];
-}
-
-export interface RelatedProductItem {
-  id: string;
-  name: string;
-  slug: string;
-  price: number;
-  unit: string;
-  image: string;
-  badge?: string;
-  tag?: string;
-  inStock: boolean;
-  soldNote?: string;
 }
 
 export interface ProductDetail {
   id: string;
   name: string;
   slug: string;
-  description?: string | null;
-  status: 'ACTIVE' | 'INACTIVE' | 'DRAFT';
+  description: string | null;
+  status: "ACTIVE" | "INACTIVE" | "DRAFT";
   isFeatured: boolean;
-  sku: string;
+  sku: string | null;
   unit: string;
+  sizeLabel: string | null;
   price: number;
-  originalPrice: number;
-  discountPercent: number;
+  originalPrice: number | null;
+  discountPercent: number | null;
   stock: number;
   inStock: boolean;
   isDiscontinued: boolean;
-  species?: {
-    id?: string;
+  offerId: string | null;
+  species: {
+    id: string;
     commonName: string;
-    scientificName?: string | null;
-    slug?: string;
-    description?: string | null;
+    scientificName: string | null;
+    slug: string;
+    description: string | null;
   } | null;
   categories: Array<{
     id: string;
@@ -105,11 +80,10 @@ export interface ProductDetail {
     slug: string;
   }>;
   images: ProductImage[];
-  vendor: VendorDetail;
+  vendor: VendorDetail | null;
   specifications: TechnicalSpecifications;
   preparationOptions: PreparationOption[];
   reviewsSummary: ReviewsSummary;
-  relatedProducts: RelatedProductItem[];
 }
 
 export interface CartItem {
