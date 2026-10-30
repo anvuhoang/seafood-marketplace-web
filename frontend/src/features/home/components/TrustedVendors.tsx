@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { unstable_rethrow } from "next/navigation";
 import { Star, MapPin, CheckCircle2, ArrowRight, Anchor } from "lucide-react";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { TiltCard } from "@/components/ui/TiltCard";
@@ -37,6 +38,8 @@ async function TrustedVendorGrid() {
   try {
     vendors = await getActiveVendors();
   } catch (error) {
+    // Let Next.js prerender interrupts through; only real failures are handled here.
+    unstable_rethrow(error);
     console.error("Failed to load vendors:", error);
     return (
       <p className="py-10 text-center text-sm text-slate-500">

@@ -1,11 +1,12 @@
-import { notFound } from "next/navigation";
+import { notFound, unstable_rethrow } from "next/navigation";
 import { CustomerHeader } from "@/components/shared/CustomerHeader";
 import { CustomerFooter } from "@/components/shared/CustomerFooter";
 import { getVendorStorefront } from "@/features/vendor/api/vendor.api";
 import { VendorStorefrontView } from "@/features/vendor/components/VendorStorefrontView";
 
-// Block on the storefront lookup so a missing vendor returns a real 404
-// instead of a streamed 200 with a not-found UI.
+// The page blocks on the storefront lookup. With Partial Prerendering the
+// shell is already sent in production, so a missing vendor renders the
+// not-found UI with status 200 and a noindex tag (a real 404 in `next dev`).
 export const instant = false;
 
 interface VendorPageProps {
@@ -26,6 +27,8 @@ export default async function VendorStorefrontPage({
   try {
     storefront = await getVendorStorefront(slug, categorySlug);
   } catch (error) {
+    // Let Next.js prerender interrupts through; only real failures are handled here.
+    unstable_rethrow(error);
     console.error("Failed to load vendor storefront:", error);
     storefront = undefined;
   }
