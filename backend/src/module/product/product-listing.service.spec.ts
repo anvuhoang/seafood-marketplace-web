@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ProductListingService, slugify } from './product-listing.service.js';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { ProductListingService, searchTokens, slugify } from './product-listing.service.js';
+import { ProductListingQueryDto } from './dto/product-listing.dto.js';
 import { CategoryService } from '../category/category.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 
@@ -168,5 +171,64 @@ describe('ProductListingService', () => {
         topCategories: ['Cua', 'Tôm'],
       },
     ]);
+  });
+
+  describe('keyword search', () => {
+    it('splits queries into accent-free keywords', () => {
+      expect(searchTokens('  Ghẹ   XANH! ')).toEqual(['ghe', 'xanh']);
+      expect(searchTokens(undefined)).toEqual([]);
+    });
+
+    it('matches without accents across name, category, vendor and region', async () => {
+      const byName = await service.listProducts({ q: 'cua' });
+      expect(byName.items.map((i) => i.id)).toEqual(['cua-both']);
+
+      const byRegion = await service.listProducts({ q: 'nam can' });
+      expect(byRegion.items.map((i) => i.id).sort()).toEqual(['cua-both', 'tom-cm']);
+
+      const bySpecies = await service.listProducts({ q: 'species tom' });
+      expect(bySpecies.items.map((i) => i.id).sort()).toEqual(['tom-cm', 'tom-pq']);
+    });
+
+    it('requires every keyword and matches from the start of words', async () => {
+      expect((await service.listProducts({ q: 'tom alaska' })).items).toEqual([]);
+      // "om" is inside "tom" but does not start a word.
+      expect((await service.listProducts({ q: 'om' })).items).toEqual([]);
+    });
+
+    it('combines keywords with filters and narrows facet counts', async () => {
+      const result = await service.listProducts({ q: 'tom', region: 'phu-quoc' });
+
+      expect(result.items.map((i) => i.id)).toEqual(['tom-pq']);
+      expect(result.facets.categories.find((c) => c.value === 'cua-ghe')?.count).toBe(0);
+      expect(result.facets.regions.find((r) => r.value === 'nam-can')?.count).toBe(1);
+    });
+  });
+
+  it('treats a reversed price range like the same range', async () => {
+    const normal = await service.listProducts({ minPrice: 300000, maxPrice: 450000 });
+    const reversed = await service.listProducts({ minPrice: 450000, maxPrice: 300000 });
+
+    expect(reversed.items.map((i) => i.id)).toEqual(normal.items.map((i) => i.id));
+    expect(normal.items.map((i) => i.id).sort()).toEqual(['tom-cm', 'tom-pq']);
+  });
+
+  describe('query validation', () => {
+    const errorsFor = async (query: Record<string, string>) =>
+      (await validate(plainToInstance(ProductListingQueryDto, query))).map((e) => e.property);
+
+    it('accepts a valid combined query', async () => {
+      expect(
+        await errorsFor({ q: ' ghe ', category: 'cua-ghe', minPrice: '100000', maxPrice: '500000', sort: 'price-asc', page: '2', limit: '12' }),
+      ).toEqual([]);
+    });
+
+    it('rejects invalid values', async () => {
+      expect(await errorsFor({ q: 'x'.repeat(101) })).toEqual(['q']);
+      expect(await errorsFor({ minPrice: '-1' })).toEqual(['minPrice']);
+      expect(await errorsFor({ maxPrice: 'abc' })).toEqual(['maxPrice']);
+      expect(await errorsFor({ sort: 'cheapest' })).toEqual(['sort']);
+      expect(await errorsFor({ page: '0' })).toEqual(['page']);
+    });
   });
 });
