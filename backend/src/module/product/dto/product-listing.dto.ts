@@ -1,17 +1,28 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export const PRODUCT_SORT_KEYS = ['featured', 'newest', 'price-asc', 'price-desc'] as const;
 export type ProductSortKey = (typeof PRODUCT_SORT_KEYS)[number];
 
 export const PRODUCT_LISTING_MAX_LIMIT = 48;
+export const PRODUCT_SEARCH_MAX_LENGTH = 100;
 
 /**
  * Query for GET /products. Multi-value filters are comma-separated slugs,
  * e.g. `category=tom-song,cua-ghe`.
  */
 export class ProductListingQueryDto {
+  @ApiPropertyOptional({
+    example: 'ghe xanh',
+    description: 'Keywords matched against name, species, category, vendor and region (accents optional)',
+  })
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MaxLength(PRODUCT_SEARCH_MAX_LENGTH)
+  q?: string;
+
   @ApiPropertyOptional({ example: 'tom-song,cua-ghe' })
   @IsOptional()
   @IsString()
