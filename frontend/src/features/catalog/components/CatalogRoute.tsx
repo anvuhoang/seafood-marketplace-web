@@ -7,10 +7,13 @@ import {
   CategoryStateMessage,
   ProductGridSkeleton,
 } from "@/features/category/components/CategoryStates";
-import { getProductListing } from "../api/catalog.api";
-import { ProductListing } from "../types/catalog.types";
-import { parseCatalogQuery } from "../utils/catalog-query";
+import { getProductListing, getRegions } from "../api/catalog.api";
+import { ProductListing, ProductListingItem, RegionSummary } from "../types/catalog.types";
+import { CatalogQuery, parseCatalogQuery } from "../utils/catalog-query";
 import { CatalogView } from "./CatalogView";
+import { CatalogSearchEmpty } from "./CatalogSearchEmpty";
+
+const SUGGESTION_LIMIT = 4;
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
 
@@ -74,22 +77,37 @@ async function CatalogContent({ searchParams, categorySlug }: CatalogRouteProps)
     );
   }
 
-  if (!fixedCategory) {
+  // Facets only list visible categories, so unknown or inactive ones are not found.
+  const category = fixedCategory
+    ? listing.facets.categories.find((c) => c.value === fixedCategory)
+    : undefined;
+  if (fixedCategory && !category) {
+    notFound();
+  }
+
+  if (query.q && listing.items.length === 0) {
+    const { suggestions, regions } = await loadSearchSuggestions();
+    return <CatalogSearchEmpty query={query} listing={listing} suggestions={suggestions} regions={regions} />;
+  }
+
+  if (!category) {
     return (
       <CatalogView
         listing={listing}
         query={query}
-        title="Tất cả hải sản"
-        description={ALL_SEAFOOD_DESCRIPTION}
-        breadcrumb={[{ label: "Trang chủ", href: "/" }, { label: "Tất cả hải sản" }]}
+        title={query.q ? `Kết quả cho "${query.q}"` : "Tất cả hải sản"}
+        description={
+          query.q
+            ? "Sản phẩm khớp với từ khóa của bạn. Có thể lọc thêm theo loại, ngư trường, mức giá hoặc vựa."
+            : ALL_SEAFOOD_DESCRIPTION
+        }
+        breadcrumb={
+          query.q
+            ? [{ label: "Trang chủ", href: "/" }, { label: "Tìm kiếm sản phẩm", href: "/products" }, { label: `Kết quả cho "${query.q}"` }]
+            : [{ label: "Trang chủ", href: "/" }, { label: "Tất cả hải sản" }]
+        }
       />
     );
-  }
-
-  // Facets only list visible categories, so unknown or inactive ones are not found.
-  const category = listing.facets.categories.find((c) => c.value === fixedCategory);
-  if (!category) {
-    notFound();
   }
 
   return (
@@ -105,4 +123,35 @@ async function CatalogContent({ searchParams, categorySlug }: CatalogRouteProps)
       ]}
     />
   );
+}
+
+/**
+ * Featured products and regions for an empty search. Either may fail
+ * without breaking the page.
+ */
+async function loadSearchSuggestions(): Promise<{ suggestions: ProductListingItem[]; regions: RegionSummary[] }> {
+  const featured: CatalogQuery = {
+    q: "",
+    categories: [],
+    regions: [],
+    vendors: [],
+    inStock: true,
+    sort: "featured",
+    page: 1,
+    view: "grid",
+  };
+  const [listingResult, regionsResult] = await Promise.allSettled([getProductListing(featured), getRegions()]);
+
+  for (const result of [listingResult, regionsResult]) {
+    if (result.status === "rejected") {
+      // Let Next.js prerender interrupts through; only real failures are logged.
+      unstable_rethrow(result.reason);
+      console.error("Failed to load search suggestions:", result.reason);
+    }
+  }
+
+  return {
+    suggestions: listingResult.status === "fulfilled" ? listingResult.value.items.slice(0, SUGGESTION_LIMIT) : [],
+    regions: regionsResult.status === "fulfilled" ? regionsResult.value : [],
+  };
 }
