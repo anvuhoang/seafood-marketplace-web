@@ -134,7 +134,7 @@ export function CatalogView({ listing, query, title, description, breadcrumb }: 
                 Thử bỏ bớt bộ lọc hoặc chọn danh mục khác để xem thêm hải sản đang bán.
               </p>
               <Link
-                href={buildCatalogHref(query, { categories: [], regions: [], vendors: [], minPrice: undefined, maxPrice: undefined, inStock: false })}
+                href={buildCatalogHref(query, { q: "", categories: [], regions: [], vendors: [], minPrice: undefined, maxPrice: undefined, inStock: false })}
                 className="mt-5 rounded-xl bg-[#0F3860] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#0A2744]"
               >
                 Xem tất cả hải sản
@@ -177,7 +177,7 @@ export function CatalogView({ listing, query, title, description, breadcrumb }: 
   );
 }
 
-type HrefFn = (overrides: Partial<CatalogQuery>) => string;
+export type HrefFn = (overrides: Partial<CatalogQuery>) => string;
 
 function CatalogFilters({ listing, query, href }: { listing: ProductListing; query: CatalogQuery; href: HrefFn }) {
   const { facets, totalProducts } = listing;
@@ -353,11 +353,12 @@ function CheckOption({ label, count, checked, href }: { label: string; count?: n
   );
 }
 
-function ActiveFilterChips({ listing, query, href }: { listing: ProductListing; query: CatalogQuery; href: HrefFn }) {
+export function ActiveFilterChips({ listing, query, href }: { listing: ProductListing; query: CatalogQuery; href: HrefFn }) {
   const labelOf = (options: ProductListing["facets"]["categories"], value: string) =>
     options.find((o) => o.value === value)?.label ?? value;
 
   const chips: Array<{ label: string; href: string }> = [
+    ...(query.q ? [{ label: `Từ khóa: "${query.q}"`, href: href({ q: "" }) }] : []),
     ...query.categories.map((value) => ({
       label: `Loại: ${labelOf(listing.facets.categories, value)}`,
       href: href({ categories: toggle(query.categories, value) }),
@@ -398,7 +399,7 @@ function ActiveFilterChips({ listing, query, href }: { listing: ProductListing; 
         </Link>
       ))}
       <Link
-        href={href({ categories: [], regions: [], vendors: [], minPrice: undefined, maxPrice: undefined, inStock: false })}
+        href={href({ q: "", categories: [], regions: [], vendors: [], minPrice: undefined, maxPrice: undefined, inStock: false })}
         scroll={false}
         className="text-slate-500 underline hover:text-[#E63946]"
       >
