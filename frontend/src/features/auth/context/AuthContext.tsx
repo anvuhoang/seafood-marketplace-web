@@ -33,6 +33,9 @@ interface AuthContextType extends AuthState {
   ) => Promise<{ success: boolean; error?: string; user?: User }>;
 
   logout: () => void;
+
+  /** Merge profile changes into the signed-in user, e.g. after editing the profile. */
+  updateUser: (changes: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -157,6 +160,32 @@ export function AuthProvider({
     setUser(null);
     setAccessToken(null);
     clearStoredAuth();
+  }, []);
+
+  /**
+   * Merge profile changes into the signed-in user and the stored session, so
+   * the header shows the new name without signing in again.
+   */
+  const updateUser = useCallback((changes: Partial<User>): void => {
+    setUser((current) => {
+      if (!current) return current;
+
+      const next: User = { ...current, ...changes };
+      next.name = next.fullName;
+      next.emailOrPhone = next.phone || next.email;
+
+      for (const storage of [localStorage, sessionStorage]) {
+        try {
+          // Only the storage that holds the session is updated.
+          if (storage.getItem(STORAGE_KEY_TOKEN)) {
+            storage.setItem(STORAGE_KEY_USER, JSON.stringify(next));
+          }
+        } catch {
+          // Storage may be unavailable; the in-memory user is still updated.
+        }
+      }
+      return next;
+    });
   }, []);
 
   /**
@@ -377,6 +406,7 @@ export function AuthProvider({
         login,
         register,
         logout,
+        updateUser,
       }}
     >
       {children}
