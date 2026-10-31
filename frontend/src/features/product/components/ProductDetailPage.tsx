@@ -66,6 +66,7 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
       if (product.vendor) {
         try {
           const listing = await getProductListing({
+            q: "",
             categories: [],
             regions: [],
             vendors: [product.vendor.slug],

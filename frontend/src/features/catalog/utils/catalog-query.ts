@@ -12,10 +12,15 @@ export const SORT_OPTIONS = [
   { key: "price-desc", label: "Giá cao đến thấp" },
 ] as const;
 
+/** Same limit as the backend, which rejects longer queries. */
+export const SEARCH_MAX_LENGTH = 100;
+
 export type SortKey = (typeof SORT_OPTIONS)[number]["key"];
 export type ViewMode = "grid" | "list";
 
 export interface CatalogQuery {
+  /** Search keywords; empty string when not searching. */
+  q: string;
   categories: string[];
   regions: string[];
   vendors: string[];
@@ -65,6 +70,7 @@ export function parseCatalogQuery(params: RawSearchParams, fixedCategory?: strin
   }
 
   return {
+    q: (first(params.q) ?? "").trim().replace(/\s+/g, " ").slice(0, SEARCH_MAX_LENGTH),
     categories,
     regions: list(params.region),
     vendors: list(params.vendor),
@@ -87,6 +93,7 @@ export function buildCatalogHref(query: CatalogQuery, overrides: Partial<Catalog
   if (!("page" in overrides)) next.page = 1;
 
   const params = new URLSearchParams();
+  if (next.q) params.set("q", next.q);
   const singleCategory = next.categories.length === 1 ? next.categories[0] : undefined;
 
   if (!singleCategory && next.categories.length > 0) params.set("category", next.categories.join(","));
@@ -112,6 +119,7 @@ export function toggle(values: string[], value: string): string[] {
 /** Query string for the backend GET /products endpoint. */
 export function toApiSearchParams(query: CatalogQuery, limit: number): URLSearchParams {
   const params = new URLSearchParams();
+  if (query.q) params.set("q", query.q);
   if (query.categories.length > 0) params.set("category", query.categories.join(","));
   if (query.regions.length > 0) params.set("region", query.regions.join(","));
   if (query.vendors.length > 0) params.set("vendor", query.vendors.join(","));
