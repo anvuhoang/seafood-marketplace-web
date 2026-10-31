@@ -11,6 +11,8 @@ const PROTECTED_ROUTES: {
 }[] = [
     { prefix: "/customer/orders", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
     { prefix: "/customer/profile", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
+    { prefix: "/customer/addresses", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
+    { prefix: "/customer/password", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
     { prefix: "/customer/checkout", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
     { prefix: "/vendor/dashboard", roles: ["VENDOR", "ADMIN"] },
     { prefix: "/vendor/products", roles: ["VENDOR", "ADMIN"] },
