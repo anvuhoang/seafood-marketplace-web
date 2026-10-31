@@ -27,6 +27,19 @@ export function slugify(text: string): string {
     .replace(/^-|-$/g, '');
 }
 
+/**
+ * Lowercase, accent-free text for keyword matching, so "ghe xanh" finds
+ * "Ghẹ xanh". Punctuation becomes spaces.
+ */
+export function normalizeSearchText(text: string): string {
+  return slugify(text).replace(/-/g, ' ');
+}
+
+/** Keywords of a search query; a product must contain all of them. */
+export function searchTokens(query?: string): string[] {
+  return query ? normalizeSearchText(query).split(' ').filter(Boolean) : [];
+}
+
 function splitList(value?: string): string[] {
   return value ? value.split(',').map((v) => v.trim()).filter(Boolean) : [];
 }
@@ -48,12 +61,15 @@ interface ListingProduct {
   imageUrl: string | null;
   isFeatured: boolean;
   createdAt: Date;
+  /** Normalized name, description, species, categories, vendors and regions. */
+  searchText: string;
   categorySlugs: Set<string>;
   categories: Array<{ name: string; slug: string }>;
   offers: ListingOffer[];
 }
 
 interface ListingFilters {
+  keywords: string[];
   categories: string[];
   regions: string[];
   vendors: string[];
@@ -82,12 +98,19 @@ export class ProductListingService {
     const visibleCategories = await this.categoryService.findVisibleCategories();
     const products = await this.loadProducts(visibleCategories);
 
+    // A reversed price range is treated as the same range, not an error.
+    const [minPrice, maxPrice] =
+      query.minPrice !== undefined && query.maxPrice !== undefined && query.minPrice > query.maxPrice
+        ? [query.maxPrice, query.minPrice]
+        : [query.minPrice, query.maxPrice];
+
     const filters: ListingFilters = {
+      keywords: searchTokens(query.q),
       categories: splitList(query.category),
       regions: splitList(query.region),
       vendors: splitList(query.vendor),
-      minPrice: query.minPrice,
-      maxPrice: query.maxPrice,
+      minPrice,
+      maxPrice,
       inStock: query.inStock === 'true',
     };
 
@@ -168,7 +191,7 @@ export class ProductListingService {
         description: true,
         isFeatured: true,
         createdAt: true,
-        species: { select: { commonName: true } },
+        species: { select: { commonName: true, scientificName: true } },
         images: { select: { imageUrl: true, isPrimary: true }, orderBy: { sortOrder: 'asc' } },
         categories: { select: { categoryId: true } },
         variants: {
@@ -197,6 +220,20 @@ export class ProductListingService {
           .some((id) => ownIds.has(id)),
       );
       const primaryImage = row.images.find((image) => image.isPrimary) ?? row.images[0];
+      const searchText = normalizeSearchText(
+        [
+          row.name,
+          row.description,
+          row.species?.commonName,
+          row.species?.scientificName,
+          ...productCategories.map((c) => c.name),
+          ...row.variants.flatMap((variant) =>
+            variant.offers.flatMap((offer) => [offer.vendor.name, offer.vendor.district, offer.vendor.province]),
+          ),
+        ]
+          .filter(Boolean)
+          .join(' '),
+      );
 
       return {
         id: row.id,
@@ -207,6 +244,7 @@ export class ProductListingService {
         imageUrl: primaryImage?.imageUrl ?? null,
         isFeatured: row.isFeatured,
         createdAt: row.createdAt,
+        searchText,
         categorySlugs: new Set(productCategories.map((c) => c.slug)),
         categories: productCategories
           .filter((c) => ownIds.has(c.id))
@@ -233,6 +271,12 @@ export class ProductListingService {
     filters: ListingFilters,
     skip?: FacetKey,
   ): ListingOffer[] {
+    // Keywords apply to every facet; each keyword must appear as a word prefix.
+    const words = ` ${product.searchText}`;
+    if (filters.keywords.some((keyword) => !words.includes(` ${keyword}`))) {
+      return [];
+    }
+
     if (
       skip !== 'category' &&
       filters.categories.length > 0 &&
