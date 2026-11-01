@@ -1,27 +1,59 @@
 "use client";
 
-import { useScrollProgress } from "@/hooks/useScrollProgress";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUp } from "lucide-react";
 
+/**
+ * Thin reading-progress bar. The bar is scaled straight in the DOM once per
+ * frame, which only touches compositing and never re-renders React.
+ */
 export function ScrollProgressBar() {
-  const { progress } = useScrollProgress();
+  const barRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let frame: number | null = null;
+
+    const update = () => {
+      frame = null;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = maxScroll > 0 ? Math.min(Math.max(window.scrollY / maxScroll, 0), 1) : 0;
+      if (barRef.current) barRef.current.style.transform = `scaleX(${progress})`;
+    };
+    const onScroll = () => {
+      if (frame === null) frame = requestAnimationFrame(update);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    update();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
+  }, []);
 
   return (
-    <div
-      aria-hidden="true"
-      className="fixed top-0 left-0 right-0 z-50 h-[3px] bg-transparent pointer-events-none"
-    >
+    <div aria-hidden="true" className="fixed top-0 left-0 right-0 z-50 h-[3px] bg-transparent pointer-events-none">
       <div
-        className="h-full bg-gradient-to-r from-sky-400 via-[#0F3860] to-[#E63946] shadow-[0_0_8px_rgba(56,189,248,0.6)] transition-all duration-150 ease-out"
-        style={{ width: `${progress * 100}%` }}
+        ref={barRef}
+        className="h-full origin-left bg-linear-to-r from-sky-400 via-[#0F3860] to-[#E63946] shadow-[0_0_8px_rgba(56,189,248,0.6)]"
+        style={{ transform: "scaleX(0)" }}
       />
     </div>
   );
 }
 
+const SHOW_AFTER_PX = 400;
+
 export function ScrollToTopButton() {
-  const { scrollY } = useScrollProgress();
-  const isVisible = scrollY > 400;
+  // Only re-renders when the button crosses the visibility threshold.
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setIsVisible(window.scrollY > SHOW_AFTER_PX);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({

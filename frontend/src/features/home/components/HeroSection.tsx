@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -13,7 +13,6 @@ import {
   Radio,
   Sparkles,
 } from "lucide-react";
-import { useScrollProgress } from "@/hooks/useScrollProgress";
 
 interface HeroSlide {
   id: number;
@@ -52,7 +51,7 @@ const slides: HeroSlide[] = [
     secondaryBtnText: "TÌM VỰA GẦN BẠN",
     secondaryBtnHref: "#trusted-vendors",
     bgImage:
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2400&q=90",
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=75",
     featuredProduct: {
       tag: "⚡ BÁN CHẠY NHẤT",
       name: "Tôm Sú Biển Phú Quốc (Size 15 - 20 con/kg)",
@@ -78,7 +77,7 @@ const slides: HeroSlide[] = [
     secondaryBtnText: "XEM GIAN HÀNG VỰA",
     secondaryBtnHref: "#trusted-vendors",
     bgImage:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=90",
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=75",
     featuredProduct: {
       tag: "🔥 CUA GẠCH NĂM CĂN",
       name: "Cua Biển Cà Mau Gạch Son (400g - 600g/con)",
@@ -104,7 +103,7 @@ const slides: HeroSlide[] = [
     secondaryBtnText: "CHÍNH SÁCH ĐÓNG GÓI",
     secondaryBtnHref: "#trusted-vendors",
     bgImage:
-      "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=2400&q=90",
+      "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=1600&q=75",
     featuredProduct: {
       tag: "✨ CHUẨN ĂN SỐNG SASHIMI",
       name: "Cá Hồi Na Uy Phi Lê Tươi (Sashimi Grade)",
@@ -130,7 +129,6 @@ export function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [liveOrderIndex, setLiveOrderIndex] = useState(0);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const heroRef = useRef<HTMLElement>(null);
 
   // Auto-play slider every 5.5 seconds
@@ -150,17 +148,79 @@ export function HeroSection() {
     return () => clearInterval(orderTimer);
   }, []);
 
-  // 3D Mouse Parallax Tracker
+  // Parallax writes transforms straight to the few moving elements once per
+  // frame, so mouse moves and scrolling neither re-render React nor restyle
+  // the rest of the hero.
+  const frameRef = useRef<number | null>(null);
+  const pointerRef = useRef({ x: 0, y: 0 });
+  const slideRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const deckRef = useRef<HTMLDivElement>(null);
+  const badgeTopRef = useRef<HTMLDivElement>(null);
+  const badgeBottomRef = useRef<HTMLDivElement>(null);
+  const currentSlideRef = useRef(currentSlide);
+
+  const applyParallax = useCallback(() => {
+    frameRef.current = null;
+    const hero = heroRef.current;
+    if (!hero) return;
+    const { x, y } = pointerRef.current;
+    // Scroll depth only matters while the hero is on screen.
+    const sy = Math.min(window.scrollY, hero.offsetHeight);
+
+    slideRefs.current.forEach((slideEl, index) => {
+      if (!slideEl) return;
+      slideEl.style.transform =
+        index === currentSlideRef.current
+          ? `scale(${(1 + y * 0.03).toFixed(4)}) translate(${(x * -10).toFixed(1)}px, ${(y * -10 + sy * 0.22).toFixed(1)}px)`
+          : "scale(1.05)";
+    });
+    if (deckRef.current) {
+      deckRef.current.style.transform = `rotateY(${(x * 20).toFixed(2)}deg) rotateX(${(-y * 16 + Math.min(sy * 0.03, 10)).toFixed(2)}deg) translateZ(${Math.max(-sy * 0.08, -30).toFixed(1)}px)`;
+    }
+    if (badgeTopRef.current) {
+      badgeTopRef.current.style.transform = `translateZ(60px) translate(${(x * 15).toFixed(1)}px, ${(y * 15).toFixed(1)}px)`;
+    }
+    if (badgeBottomRef.current) {
+      badgeBottomRef.current.style.transform = `translateZ(50px) translate(${(x * -12).toFixed(1)}px, ${(y * -12).toFixed(1)}px)`;
+    }
+  }, []);
+
+  const scheduleParallax = useCallback(() => {
+    if (frameRef.current === null) {
+      frameRef.current = requestAnimationFrame(applyParallax);
+    }
+  }, [applyParallax]);
+
+  // Keep the active slide's parallax in place when the slide changes.
+  useEffect(() => {
+    currentSlideRef.current = currentSlide;
+    scheduleParallax();
+  }, [currentSlide, scheduleParallax]);
+
+  useEffect(() => {
+    // Respect users who ask for less motion.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    window.addEventListener("scroll", scheduleParallax, { passive: true });
+    scheduleParallax();
+    return () => {
+      window.removeEventListener("scroll", scheduleParallax);
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+    };
+  }, [scheduleParallax]);
+
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    if (!heroRef.current) return;
+    if (!heroRef.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const rect = heroRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setMousePos({ x, y });
+    pointerRef.current = {
+      x: (e.clientX - rect.left) / rect.width - 0.5,
+      y: (e.clientY - rect.top) / rect.height - 0.5,
+    };
+    scheduleParallax();
   };
 
   const handleMouseLeave = () => {
-    setMousePos({ x: 0, y: 0 });
+    pointerRef.current = { x: 0, y: 0 };
+    scheduleParallax();
     setIsPaused(false);
   };
 
@@ -173,7 +233,6 @@ export function HeroSection() {
   };
 
   const slide = slides[currentSlide];
-  const { scrollY } = useScrollProgress();
 
   return (
     <section
@@ -187,15 +246,15 @@ export function HeroSection() {
       {slides.map((s, index) => (
         <div
           key={s.id}
+          ref={(el) => {
+            slideRefs.current[index] = el;
+          }}
           className={`absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-out ${
             index === currentSlide
               ? "opacity-95 scale-100"
               : "opacity-0 scale-105 pointer-events-none"
           }`}
-          style={{
-            backgroundImage: `url('${s.bgImage}')`,
-            transform: `scale(${index === currentSlide ? 1 + mousePos.y * 0.03 : 1.05}) translate(${mousePos.x * -10}px, ${mousePos.y * -10 + scrollY * 0.22}px)`,
-          }}
+          style={{ backgroundImage: `url('${s.bgImage}')` }}
         />
       ))}
 
@@ -290,22 +349,17 @@ export function HeroSection() {
           {/* Right Column: Creative 3D Layered Deck with Real-Time Mouse Parallax & Scroll Depth */}
           <div className="lg:col-span-6 xl:col-span-5 flex justify-center lg:justify-end">
             <div
+              ref={deckRef}
               className="relative w-full max-w-[380px] sm:max-w-[420px] transition-transform duration-300 ease-out"
-              style={{
-                perspective: "1200px",
-                transformStyle: "preserve-3d",
-                transform: `rotateY(${mousePos.x * 20}deg) rotateX(${-mousePos.y * 16 + Math.min(scrollY * 0.03, 10)}deg) translateZ(${Math.max(-scrollY * 0.08, -30)}px)`,
-              }}
+              style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
             >
               {/* Rotating Luminous Ocean Aura Glow behind cards */}
               <div className="animate-spin-slow absolute -inset-8 rounded-full bg-gradient-to-tr from-cyan-500/20 via-sky-400/10 to-orange-500/15 blur-3xl pointer-events-none" />
 
               {/* Floating Dynamic Badge 1 (Top-Right): Fast 2h Delivery with Parallax Depth */}
               <div
+                ref={badgeTopRef}
                 className="animate-float absolute -top-6 -right-3 z-30 flex items-center gap-2.5 rounded-2xl border border-white/30 bg-slate-900/90 px-4 py-2.5 shadow-2xl backdrop-blur-md text-white transition-transform hover:scale-105"
-                style={{
-                  transform: `translateZ(60px) translate(${mousePos.x * 15}px, ${mousePos.y * 15}px)`,
-                }}
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-500/25 text-orange-400 shadow-xs">
                   <Truck className="h-4 w-4" />
@@ -321,10 +375,8 @@ export function HeroSection() {
 
               {/* Floating Dynamic Badge 2 (Bottom-Left): Verified Rating with Parallax Depth */}
               <div
+                ref={badgeBottomRef}
                 className="animate-float-reverse absolute -bottom-5 -left-3 z-30 flex items-center gap-2.5 rounded-2xl border border-white/30 bg-slate-900/90 px-4 py-2.5 shadow-2xl backdrop-blur-md text-white transition-transform hover:scale-105"
-                style={{
-                  transform: `translateZ(50px) translate(${mousePos.x * -12}px, ${mousePos.y * -12}px)`,
-                }}
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/25 text-amber-400 shadow-xs">
                   <Star className="h-4 w-4 fill-amber-400" />
