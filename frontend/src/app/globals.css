@@ -157,9 +157,11 @@
 }
 
 /* AI Laser Scanning Effect */
+/* Moves a full-size overlay with transform instead of `top`, so the scan
+   runs on the compositor without re-running layout every frame. */
 @keyframes laserScan {
   0% {
-    top: 0%;
+    transform: translateY(0%);
     opacity: 0;
   }
   15% {
@@ -169,7 +171,7 @@
     opacity: 1;
   }
   100% {
-    top: 100%;
+    transform: translateY(100%);
     opacity: 0;
   }
 }

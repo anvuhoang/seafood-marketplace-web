@@ -143,7 +143,10 @@ export function VisualSearchSection() {
                       />
 
                       {/* Animated AI scanning laser bar */}
-                      <div className="pointer-events-none absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_8px_#38bdf8] animate-laser-scan" />
+                      {/* The overlay slides down with transform only, so it never triggers layout. */}
+                      <div className="pointer-events-none absolute inset-0 animate-laser-scan">
+                        <div className="h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_8px_#38bdf8]" />
+                      </div>
                     </div>
 
                     <div style={{ transform: "translateZ(14px)" }} className="flex-1">
