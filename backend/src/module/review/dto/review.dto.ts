@@ -77,7 +77,8 @@ export class CreateReviewDto {
   imageUrls?: string[];
 }
 
-export interface ReviewUploadSignatureDto {
+/** Fields for one signed direct upload to Cloudinary (multipart POST to uploadUrl). */
+export class ReviewUploadSignatureDto {
   uploadUrl: string;
   apiKey: string;
   timestamp: number;
@@ -87,14 +88,14 @@ export interface ReviewUploadSignatureDto {
   maxFileSizeBytes: number;
 }
 
-export interface ReviewProductDto {
+export class ReviewProductDto {
   id: string;
   name: string;
   slug: string;
   imageUrl: string | null;
 }
 
-export interface PendingReviewItemDto {
+export class PendingReviewItemDto {
   orderItemId: string;
   orderNumber: string;
   vendorName: string;
@@ -107,10 +108,11 @@ export interface PendingReviewItemDto {
   lineTotal: number;
 }
 
-export interface SubmittedReviewDto {
+export class SubmittedReviewDto {
   id: string;
   rating: number;
   content: string | null;
+  @ApiProperty({ enum: REVIEW_HIGHLIGHTS, isArray: true })
   highlights: string[];
   isAnonymous: boolean;
   isHidden: boolean;
@@ -121,13 +123,15 @@ export interface SubmittedReviewDto {
   product: ReviewProductDto;
 }
 
-export interface ReviewCenterDto {
-  stats: {
-    pendingCount: number;
-    submittedCount: number;
-    /** Average of the ratings this customer has given; 0 when none. */
-    averageRating: number;
-  };
+export class ReviewStatsDto {
+  pendingCount: number;
+  submittedCount: number;
+  /** Average of the ratings this customer has given; 0 when none. */
+  averageRating: number;
+}
+
+export class ReviewCenterDto {
+  stats: ReviewStatsDto;
   /** Display name used when posting anonymously, e.g. "n***n". */
   anonymousName: string;
   imageUploadEnabled: boolean;

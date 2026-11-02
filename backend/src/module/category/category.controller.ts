@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CategoryService, DEFAULT_PAGE_SIZE } from './category.service.js';
-import type { CategoryListingDto, CategorySummaryDto } from './dto/category.dto.js';
+import { CategoryListingDto, CategorySummaryDto } from './dto/category.dto.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 
 @ApiTags('Categories')
@@ -19,7 +19,7 @@ export class CategoryController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'List active seafood categories with product counts' })
-  @ApiResponse({ status: 200, description: 'Active categories retrieved' })
+  @ApiResponse({ status: 200, description: 'Active categories retrieved', type: [CategorySummaryDto] })
   async listCategories(): Promise<CategorySummaryDto[]> {
     return this.categoryService.listCategories();
   }
@@ -30,7 +30,7 @@ export class CategoryController {
   @ApiParam({ name: 'slug', example: 'tom-song' })
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: DEFAULT_PAGE_SIZE })
-  @ApiResponse({ status: 200, description: 'Category products retrieved' })
+  @ApiResponse({ status: 200, description: 'Category products retrieved', type: CategoryListingDto })
   @ApiResponse({ status: 404, description: 'Category not found or inactive' })
   async getCategoryListing(
     @Param('slug') slug: string,

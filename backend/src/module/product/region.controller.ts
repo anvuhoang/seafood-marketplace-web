@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProductListingService } from './product-listing.service.js';
-import type { RegionSummaryDto } from './dto/product-listing.dto.js';
+import { RegionSummaryDto } from './dto/product-listing.dto.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 
 @ApiTags('Regions')
@@ -12,7 +12,7 @@ export class RegionController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'List fishing regions where vendors currently sell products' })
-  @ApiResponse({ status: 200, description: 'Regions retrieved' })
+  @ApiResponse({ status: 200, description: 'Regions retrieved', type: [RegionSummaryDto] })
   async listRegions(): Promise<RegionSummaryDto[]> {
     return this.productListingService.listRegions();
   }

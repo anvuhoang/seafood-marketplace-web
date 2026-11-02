@@ -25,7 +25,14 @@ CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=123456789012345
 CLOUDINARY_API_SECRET=keep-this-private
 ```
-API docs (Swagger) are served at `http://localhost:<PORT>/api/docs`.
+API docs (Swagger) are served at `http://localhost:<PORT>/api/docs`, and the raw
+OpenAPI document at `/api/docs-json`. They are on by default and off when
+`NODE_ENV=production`; set `API_DOCS_ENABLED=true` or `false` to override.
+
+Response schemas come from the DTO classes through the Nest Swagger CLI plugin
+(see `nest-cli.json`): declare response DTOs as classes, not interfaces, give
+controller methods an explicit return type, and use `/** @example ... */` on a
+field to show an example value.
 
 ## Database migrations
 

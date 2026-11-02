@@ -22,7 +22,7 @@ import {
   UpdateAddressDto,
   UpdateProfileDto,
 } from './dto/account.dto.js';
-import type { AddressDto, ProfileDto } from './dto/account.dto.js';
+import type { AddressDto, DeletedAddressDto, PasswordChangedDto, ProfileDto } from './dto/account.dto.js';
 
 /** The signed-in user's own profile, password and address book. */
 @ApiTags('Account')
@@ -50,7 +50,7 @@ export class AccountController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Change my password' })
   @ApiResponse({ status: 400, description: 'Current password is wrong or the new one is invalid' })
-  changePassword(@CurrentUser('sub') userId: string, @Body() dto: ChangePasswordDto) {
+  changePassword(@CurrentUser('sub') userId: string, @Body() dto: ChangePasswordDto): Promise<PasswordChangedDto> {
     return this.accountService.changePassword(userId, dto);
   }
 
@@ -89,7 +89,7 @@ export class AccountController {
 
   @Delete('addresses/:id')
   @ApiOperation({ summary: 'Delete one of my addresses' })
-  deleteAddress(@CurrentUser('sub') userId: string, @Param('id', ParseUUIDPipe) id: string) {
+  deleteAddress(@CurrentUser('sub') userId: string, @Param('id', ParseUUIDPipe) id: string): Promise<DeletedAddressDto> {
     return this.accountService.deleteAddress(userId, id);
   }
 }

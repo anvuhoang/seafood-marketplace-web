@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { PaginationDto } from '../../../common/dto/pagination.dto.js';
 
 export const PRODUCT_SORT_KEYS = ['featured', 'newest', 'price-asc', 'price-desc'] as const;
 export type ProductSortKey = (typeof PRODUCT_SORT_KEYS)[number];
@@ -78,29 +79,54 @@ export class ProductListingQueryDto {
   limit?: number;
 }
 
-export interface ProductListingItemDto {
-  id: string;
+export class ListingVendorDto {
+  /** @example "Vựa Thủy Sản Phú Quốc Xanh" */
   name: string;
+  /** @example "vua-thuy-san-phu-quoc-xanh" */
+  slug: string;
+  /** @example "Phú Quốc" */
+  district: string;
+  /** @example "Kiên Giang" */
+  province: string;
+}
+
+export class CategoryRefDto {
+  /** @example "Tôm Sống & Tự Nhiên" */
+  name: string;
+  /** @example "tom-song" */
+  slug: string;
+}
+
+export class ProductListingItemDto {
+  /** @example "0b6f6d3e-6a3f-4d6e-9b1a-2f7c9d1e4a55" */
+  id: string;
+  /** @example "Tôm Sú Biển Tươi Sống Loại 1 (Size 15 - 20 con/kg)" */
+  name: string;
+  /** @example "tom-su-bien-tuoi-song-loai-1" */
   slug: string;
   description: string | null;
+  /** @example "Tôm Sú Biển Tự Nhiên" */
   speciesName: string | null;
   imageUrl: string | null;
   isFeatured: boolean;
   inStock: boolean;
-  /** Stock of the displayed offer. */
+  /**
+   * Stock of the displayed offer.
+   * @example 14
+   */
   stock: number;
+  /**
+   * Price in VND per unit.
+   * @example 420000
+   */
   price: number;
+  /** @example "kg" */
   unit: string;
-  vendor: {
-    name: string;
-    slug: string;
-    district: string;
-    province: string;
-  };
-  categories: Array<{ name: string; slug: string }>;
+  vendor: ListingVendorDto;
+  categories: CategoryRefDto[];
 }
 
-export interface RegionSummaryDto {
+export class RegionSummaryDto {
   /** Same key as the `region` listing filter, e.g. "phu-quoc". */
   key: string;
   district: string;
@@ -111,26 +137,23 @@ export interface RegionSummaryDto {
   topCategories: string[];
 }
 
-export interface FacetOptionDto {
+export class FacetOptionDto {
   value: string;
   label: string;
   count: number;
 }
 
-export interface ProductListingDto {
+export class ListingFacetsDto {
+  categories: FacetOptionDto[];
+  regions: FacetOptionDto[];
+  vendors: FacetOptionDto[];
+}
+
+export class ProductListingDto {
   items: ProductListingItemDto[];
-  pagination: {
-    page: number;
-    limit: number;
-    totalItems: number;
-    totalPages: number;
-  };
+  pagination: PaginationDto;
   /** Sellable products across the whole marketplace, before filters. */
   totalProducts: number;
   /** Option counts for each filter, applying every other active filter. */
-  facets: {
-    categories: FacetOptionDto[];
-    regions: FacetOptionDto[];
-    vendors: FacetOptionDto[];
-  };
+  facets: ListingFacetsDto;
 }

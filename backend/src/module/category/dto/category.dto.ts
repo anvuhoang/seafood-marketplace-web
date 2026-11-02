@@ -1,4 +1,6 @@
-export interface CategorySummaryDto {
+import { PaginationDto } from '../../../common/dto/pagination.dto.js';
+
+export class CategorySummaryDto {
   id: string;
   name: string;
   slug: string;
@@ -9,7 +11,12 @@ export interface CategorySummaryDto {
   examples: string[];
 }
 
-export interface CategoryProductDto {
+export class VendorRefDto {
+  name: string;
+  slug: string;
+}
+
+export class CategoryProductDto {
   id: string;
   name: string;
   slug: string;
@@ -19,19 +26,11 @@ export interface CategoryProductDto {
   isFeatured: boolean;
   speciesName: string | null;
   imageUrl: string | null;
-  vendor: {
-    name: string;
-    slug: string;
-  };
+  vendor: VendorRefDto;
 }
 
-export interface CategoryListingDto {
+export class CategoryListingDto {
   category: CategorySummaryDto;
   products: CategoryProductDto[];
-  pagination: {
-    page: number;
-    limit: number;
-    totalItems: number;
-    totalPages: number;
-  };
+  pagination: PaginationDto;
 }

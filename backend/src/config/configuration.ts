@@ -9,6 +9,11 @@ export default () => ({
 
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
+  // Swagger UI at /api/docs: on outside production unless API_DOCS_ENABLED says otherwise.
+  apiDocsEnabled: process.env.API_DOCS_ENABLED
+    ? process.env.API_DOCS_ENABLED === 'true'
+    : (process.env.NODE_ENV ?? 'development') !== 'production',
+
   // Review photos are uploaded straight from the browser with a signature
   // from this API; uploads are disabled while these are missing.
   cloudinary: {

@@ -7,9 +7,9 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ProductService } from './product.service.js';
 import { ProductListingService } from './product-listing.service.js';
-import type { ProductDetailDto } from './dto/product-detail.dto.js';
+import { ProductDetailDto } from './dto/product-detail.dto.js';
 import { ProductListingQueryDto } from './dto/product-listing.dto.js';
-import type { ProductListingDto } from './dto/product-listing.dto.js';
+import { ProductListingDto } from './dto/product-listing.dto.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 
 @ApiTags('Products')
@@ -25,7 +25,7 @@ export class ProductController {
   @ApiOperation({
     summary: 'List products for sale with filters, facets, sorting and pagination',
   })
-  @ApiResponse({ status: 200, description: 'Product listing retrieved' })
+  @ApiResponse({ status: 200, description: 'Product listing retrieved', type: ProductListingDto })
   @ApiResponse({ status: 400, description: 'Invalid query parameters' })
   async listProducts(@Query() query: ProductListingQueryDto): Promise<ProductListingDto> {
     return this.productListingService.listProducts(query);
@@ -46,6 +46,7 @@ export class ProductController {
   @ApiResponse({
     status: 200,
     description: 'Product details successfully retrieved',
+    type: ProductDetailDto,
   })
   @ApiResponse({
     status: 404,

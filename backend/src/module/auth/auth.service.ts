@@ -8,23 +8,10 @@ import bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import type { AuthResponseDto, AuthUserDto } from './dto/auth-response.dto.js';
 
-export interface SafeUser {
-  id: string;
-  email: string;
-  fullName: string;
-  phone: string | null;
-  avatarUrl: string | null;
-  role: string;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface AuthResult {
-  user: SafeUser;
-  accessToken: string;
-}
+export type SafeUser = AuthUserDto;
+export type AuthResult = AuthResponseDto;
 
 @Injectable()
 export class AuthService {

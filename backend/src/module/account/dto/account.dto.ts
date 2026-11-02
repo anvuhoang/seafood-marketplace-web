@@ -131,22 +131,34 @@ export class CreateAddressDto {
 
 export class UpdateAddressDto extends CreateAddressDto {}
 
-export interface ProfileDto {
+export class ProfileDto {
   id: string;
+  /** Short public id derived from the account id, e.g. "HSX-F9B610". */
   customerCode: string;
   email: string;
   fullName: string;
   phone: string | null;
   avatarUrl: string | null;
   role: string;
+  @ApiProperty({ enum: GENDERS, nullable: true })
   gender: (typeof GENDERS)[number] | null;
+  /** YYYY-MM-DD */
   birthDate: string | null;
   interests: string[];
   passwordChangedAt: string | null;
   createdAt: string;
 }
 
-export interface AddressDto {
+export class PasswordChangedDto {
+  /** When the password was changed (ISO 8601). */
+  changedAt: string;
+}
+
+export class DeletedAddressDto {
+  id: string;
+}
+
+export class AddressDto {
   id: string;
   recipientName: string;
   recipientPhone: string;
@@ -154,6 +166,7 @@ export interface AddressDto {
   district: string;
   ward: string | null;
   streetAddress: string;
+  @ApiProperty({ enum: ADDRESS_LABELS })
   label: (typeof ADDRESS_LABELS)[number];
   note: string | null;
   isDefault: boolean;
