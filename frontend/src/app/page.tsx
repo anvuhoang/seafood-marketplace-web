@@ -5,6 +5,8 @@ import { FeaturedSeafood } from "@/features/home/components/FeaturedSeafood";
 import { HomeBenefits } from "@/features/home/components/HomeBenefits";
 import { TrustedVendors } from "@/features/home/components/TrustedVendors";
 import { VisualSearchSection } from "@/features/home/components/VisualSearchSection";
+import { FarmToTableStory } from "@/features/home/components/FarmToTableStory";
+import { FishingGroundsMarquee } from "@/features/home/components/FishingGroundsMarquee";
 import { CustomerFooter } from "@/components/shared/CustomerFooter";
 import { ScrollToTopButton } from "@/components/ui/ScrollProgressBar";
 
@@ -14,8 +16,10 @@ export default function HomePage() {
       <CustomerHeader />
       <main className="flex-1">
         <HeroSection />
+        <FishingGroundsMarquee />
         <PopularCategories />
         <FeaturedSeafood />
+        <FarmToTableStory />
         <TrustedVendors />
         <VisualSearchSection />
         <HomeBenefits />
