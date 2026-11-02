@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
+import { BackgroundVideo } from "@/components/ui/BackgroundVideo";
 
 interface HeroSlide {
   tab: string;
@@ -93,19 +94,22 @@ export function HeroSection() {
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
-      {/* A faint grid adds depth without competing with the photo. */}
+      {/* Night fish market footage behind the copy, kept dark so text stays readable. */}
+      <BackgroundVideo
+        src="/videos/hero-fish-market.mp4"
+        poster="/videos/hero-fish-market-poster.jpg"
+        className="absolute inset-0 h-full w-full opacity-80"
+      />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
-          backgroundSize: "56px 56px",
-          maskImage: "linear-gradient(to right, black, transparent 70%)",
-        }}
+        className="pointer-events-none absolute inset-0 bg-linear-to-r from-[#0B2540]/95 via-[#0B2540]/65 to-[#0B2540]/25"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-[#0B2540] to-transparent"
       />
 
-      <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:px-8 lg:py-20">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:px-8 lg:py-24">
         {/* Keyed by slide so each line rises in again, one after another. */}
         <div key={current}>
           <p className="animate-rise text-sm font-medium text-sky-300">
@@ -157,7 +161,7 @@ export function HeroSection() {
         </div>
 
         <div>
-          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-800">
+          <div className="relative aspect-4/3 overflow-hidden rounded-2xl bg-slate-800 shadow-2xl shadow-black/40 ring-1 ring-white/10">
             {SLIDES.map((s, index) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img
