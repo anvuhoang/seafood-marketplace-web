@@ -14,6 +14,17 @@ npm run start:dev
 ```
 
 `.env` needs at least `DATABASE_URL`, `PORT`, `FRONTEND_URL` and `JWT_SECRET`.
+
+Review photos are uploaded straight from the browser to Cloudinary with a
+signature from this API. Add the keys from the Cloudinary dashboard
+(Settings → API Keys) to enable it; without them reviews still work, only
+photo upload is turned off:
+
+```env
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=123456789012345
+CLOUDINARY_API_SECRET=keep-this-private
+```
 API docs (Swagger) are served at `http://localhost:<PORT>/api/docs`.
 
 ## Database migrations

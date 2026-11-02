@@ -8,4 +8,12 @@ export default () => ({
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
 
   nodeEnv: process.env.NODE_ENV ?? 'development',
+
+  // Review photos are uploaded straight from the browser with a signature
+  // from this API; uploads are disabled while these are missing.
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME ?? '',
+    apiKey: process.env.CLOUDINARY_API_KEY ?? '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET ?? '',
+  },
 });
