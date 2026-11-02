@@ -66,6 +66,7 @@ export interface ProductDetailDto {
       authorName: string;
       rating: number;
       content: string | null;
+      imageUrls: string[];
       createdAt: string;
     }>;
   };

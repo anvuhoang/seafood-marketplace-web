@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { ProductDetailDto } from './dto/product-detail.dto.js';
+import { anonymizeName } from '../review/review.service.js';
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -184,7 +185,10 @@ export class ProductService {
       this.prisma.review.groupBy({ by: ['rating'], where, _count: { _all: true } }),
       this.prisma.review.findMany({
         where,
-        include: { user: { select: { fullName: true } } },
+        include: {
+          user: { select: { fullName: true } },
+          images: { orderBy: { sortOrder: 'asc' }, select: { imageUrl: true } },
+        },
         orderBy: { createdAt: 'desc' },
         take: RECENT_REVIEW_LIMIT,
       }),
@@ -205,9 +209,10 @@ export class ProductService {
       ratingBreakdown,
       reviews: recent.map((review) => ({
         id: review.id,
-        authorName: review.user.fullName,
+        authorName: review.isAnonymous ? anonymizeName(review.user.fullName) : review.user.fullName,
         rating: review.rating,
         content: review.content,
+        imageUrls: review.images.map((image) => image.imageUrl),
         createdAt: review.createdAt.toISOString(),
       })),
     };

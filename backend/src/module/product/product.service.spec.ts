@@ -175,7 +175,18 @@ describe('ProductService', () => {
         rating: 5,
         content: 'Tôm còn sống khoẻ',
         createdAt: new Date('2026-10-01T00:00:00Z'),
+        isAnonymous: false,
         user: { fullName: 'Nguyễn A' },
+        images: [{ imageUrl: 'https://res.cloudinary.com/x/a.jpg' }],
+      },
+      {
+        id: 'r2',
+        rating: 4,
+        content: 'Giao nhanh',
+        createdAt: new Date('2026-09-30T00:00:00Z'),
+        isAnonymous: true,
+        user: { fullName: 'Trần Minh Quân' },
+        images: [],
       },
     ]);
 
@@ -186,7 +197,23 @@ describe('ProductService', () => {
       reviewCount: 4,
       ratingBreakdown: { 5: 3, 4: 1, 3: 0, 2: 0, 1: 0 },
       reviews: [
-        { id: 'r1', authorName: 'Nguyễn A', rating: 5, content: 'Tôm còn sống khoẻ', createdAt: '2026-10-01T00:00:00.000Z' },
+        {
+          id: 'r1',
+          authorName: 'Nguyễn A',
+          rating: 5,
+          content: 'Tôm còn sống khoẻ',
+          imageUrls: ['https://res.cloudinary.com/x/a.jpg'],
+          createdAt: '2026-10-01T00:00:00.000Z',
+        },
+        // Anonymous reviews never expose the reviewer's name.
+        {
+          id: 'r2',
+          authorName: 't***n',
+          rating: 4,
+          content: 'Giao nhanh',
+          imageUrls: [],
+          createdAt: '2026-09-30T00:00:00.000Z',
+        },
       ],
     });
     expect(prisma.review.groupBy).toHaveBeenCalledWith(
