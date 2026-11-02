@@ -1,31 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { getProductListing } from "@/features/catalog/api/catalog.api";
 import { CatalogProductCard } from "@/features/catalog/components/CatalogProductCard";
-import {
-  CatalogQuery,
-  PRICE_PRESETS,
-  SORT_OPTIONS,
-  SortKey,
-} from "@/features/catalog/utils/catalog-query";
+import { CatalogQuery } from "@/features/catalog/utils/catalog-query";
 import { FacetOption, ProductListingItem } from "@/features/catalog/types/catalog.types";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 
-const QUICK_FILTER_CHIPS = ["Cá hồi", "Cua Cà Mau", "Tôm càng xanh", "Mực Côn Đảo", "Hàu sữa"];
-
-const selectClassName =
-  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:border-[#0F3860]";
-const labelClassName = "mb-1 block text-[11px] font-bold text-slate-500 uppercase tracking-wider";
+/** The home page shows a short pick; full filtering lives on /products. */
+const HOME_PRODUCT_LIMIT = 8;
 
 export function FeaturedSeafood() {
   const [category, setCategory] = useState("");
-  const [region, setRegion] = useState("");
-  const [priceIndex, setPriceIndex] = useState(-1);
-  const [sort, setSort] = useState<SortKey>("featured");
-  const [keyword, setKeyword] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   // The result is tagged with the filters it was fetched for, so "loading" is
@@ -36,24 +25,20 @@ export function FeaturedSeafood() {
     failed: boolean;
   } | null>(null);
   const [categoryOptions, setCategoryOptions] = useState<FacetOption[]>([]);
-  const [regionOptions, setRegionOptions] = useState<FacetOption[]>([]);
-  // Dropdown options come from the first, unfiltered response so they stay put while filtering.
+  // Tabs come from the first, unfiltered response so they stay put while switching.
   const facetsLoaded = useRef(false);
 
-  const filterKey = [category, region, priceIndex, sort, keyword, attempt].join("|");
+  const filterKey = [category, attempt].join("|");
 
   useEffect(() => {
     let mounted = true;
-    const price = priceIndex >= 0 ? PRICE_PRESETS[priceIndex] : undefined;
     const query: CatalogQuery = {
-      q: keyword ?? "",
+      q: "",
       categories: category ? [category] : [],
-      regions: region ? [region] : [],
+      regions: [],
       vendors: [],
-      minPrice: price?.min,
-      maxPrice: price?.max,
       inStock: false,
-      sort,
+      sort: "featured",
       page: 1,
       view: "grid",
     };
@@ -61,11 +46,10 @@ export function FeaturedSeafood() {
     getProductListing(query)
       .then((listing) => {
         if (!mounted) return;
-        setResult({ key: filterKey, items: listing.items, failed: false });
+        setResult({ key: filterKey, items: listing.items.slice(0, HOME_PRODUCT_LIMIT), failed: false });
         if (!facetsLoaded.current) {
           facetsLoaded.current = true;
           setCategoryOptions(listing.facets.categories);
-          setRegionOptions(listing.facets.regions);
         }
       })
       .catch((error) => {
@@ -76,181 +60,94 @@ export function FeaturedSeafood() {
     return () => {
       mounted = false;
     };
-  }, [filterKey, category, region, priceIndex, sort, keyword]);
+  }, [filterKey, category]);
 
   const items = result?.items ?? [];
   const isLoading = result?.key !== filterKey;
   const hasError = !isLoading && result?.failed === true;
-
-  const resetAllFilters = () => {
-    setCategory("");
-    setRegion("");
-    setPriceIndex(-1);
-    setSort("featured");
-    setKeyword(null);
-  };
+  const tabs = [{ value: "", label: "Tất cả" }, ...categoryOptions];
+  const seeAllHref = category ? `/categories/${category}` : "/products";
 
   return (
-    <section id="featured-seafood" className="bg-slate-50/60 py-12 sm:py-16">
+    <section id="featured-seafood" className="bg-slate-50 py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <ScrollReveal animation="fade-up-3d">
-          <SectionHeading
-            eyebrow="TUYỂN CHỌN TƯƠI NGON"
-            title="Hải sản nổi bật"
-            description="Sản phẩm đánh bắt mới về trong ngày từ các vựa đối tác uy tín"
-            note="*Giá có thể thay đổi nhẹ tùy theo ngày đánh bắt và kích cỡ"
-            actionHref="/products"
-            actionLabel="Xem tất cả hải sản"
-          />
-        </ScrollReveal>
+        <SectionHeading
+          title="Hải sản nổi bật hôm nay"
+          description="Hàng mới về trong ngày từ các vựa đối tác. Giá có thể thay đổi nhẹ theo kích cỡ."
+          actionHref="/products"
+          actionLabel="Xem tất cả hải sản"
+        />
 
-        <ScrollReveal animation="fade-up-3d" delay={80}>
-          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
-              <div>
-                <label className={labelClassName}>Loại hải sản</label>
-                <select
-                  value={category}
-                  onChange={(e) => {
-                    setCategory(e.target.value);
-                    setKeyword(null);
-                  }}
-                  className={selectClassName}
-                >
-                  <option value="">Tất cả danh mục</option>
-                  {categoryOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className={labelClassName}>Nguồn gốc</label>
-                <select
-                  value={region}
-                  onChange={(e) => {
-                    setRegion(e.target.value);
-                    setKeyword(null);
-                  }}
-                  className={selectClassName}
-                >
-                  <option value="">Tất cả nguồn gốc</option>
-                  {regionOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className={labelClassName}>Mức giá</label>
-                <select
-                  value={priceIndex}
-                  onChange={(e) => setPriceIndex(Number(e.target.value))}
-                  className={selectClassName}
-                >
-                  <option value={-1}>Tất cả mức giá</option>
-                  {PRICE_PRESETS.map((preset, index) => (
-                    <option key={preset.label} value={index}>
-                      {preset.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className={labelClassName}>Sắp xếp</label>
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value as SortKey)}
-                  className={selectClassName}
-                >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.key} value={option.key}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={resetAllFilters}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  <span>Xóa lọc</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-              <span className="text-[11px] font-bold text-slate-400 uppercase">Gợi ý nhanh:</span>
-              {QUICK_FILTER_CHIPS.map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  onClick={() => setKeyword(keyword === chip ? null : chip)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${
-                    keyword === chip
-                      ? "bg-[#0F3860] text-white shadow-md shadow-blue-950/20"
-                      : "border border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white hover:shadow-xs"
-                  }`}
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
-          </div>
-        </ScrollReveal>
+        <div
+          role="tablist"
+          aria-label="Lọc theo danh mục"
+          className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0"
+        >
+          {tabs.map((tab) => {
+            const active = category === tab.value;
+            return (
+              <button
+                key={tab.value || "all"}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setCategory(tab.value)}
+                className={`shrink-0 rounded-full border px-4 py-1.5 text-sm transition-colors ${
+                  active
+                    ? "border-[#0F3860] bg-[#0F3860] font-medium text-white"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
 
         {hasError ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-            <p className="text-base font-semibold text-slate-700">
-              Không tải được danh sách hải sản. Vui lòng thử lại.
-            </p>
+          <div className="rounded-xl border border-slate-200 bg-white p-10 text-center">
+            <p className="text-slate-700">Không tải được danh sách hải sản.</p>
             <button
               type="button"
               onClick={() => setAttempt((n) => n + 1)}
-              className="mt-3 rounded-xl bg-[#0F3860] px-4 py-2 text-xs font-bold text-white"
+              className="mt-3 text-sm font-semibold text-[#0F3860] hover:underline"
             >
-              Tải lại
+              Thử lại
             </button>
           </div>
         ) : isLoading && items.length === 0 ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 8 }, (_, index) => (
-              <div key={index} className="h-72 animate-pulse rounded-xl bg-slate-200/60" />
+          <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+            {Array.from({ length: HOME_PRODUCT_LIMIT }, (_, index) => (
+              <div key={index} className="h-80 animate-pulse rounded-xl bg-slate-200/60" />
             ))}
           </div>
         ) : items.length > 0 ? (
           <div
-            className={`grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 transition-opacity ${
+            className={`grid grid-cols-2 gap-4 transition-opacity sm:gap-5 lg:grid-cols-4 ${
               isLoading ? "opacity-60" : ""
             }`}
           >
-            {items.map((product) => (
-              <CatalogProductCard key={product.id} product={product} view="grid" />
+            {items.map((product, index) => (
+              <ScrollReveal key={product.id} delay={(index % 4) * 70} className="h-full">
+                <CatalogProductCard product={product} view="grid" />
+              </ScrollReveal>
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-            <p className="text-base font-semibold text-slate-700">
-              Không tìm thấy sản phẩm hải sản phù hợp với tiêu chí lọc
-            </p>
-            <button
-              type="button"
-              onClick={resetAllFilters}
-              className="mt-3 rounded-xl bg-[#0F3860] px-4 py-2 text-xs font-bold text-white"
-            >
-              Đặt lại bộ lọc
-            </button>
-          </div>
+          <p className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
+            Danh mục này tạm hết hàng.
+          </p>
         )}
+
+        <div className="mt-8 text-center">
+          <Link
+            href={seeAllHref}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:border-[#0F3860] hover:text-[#0F3860]"
+          >
+            {category ? "Xem cả danh mục" : "Xem tất cả hải sản"}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
     </section>
   );
