@@ -22,7 +22,7 @@ export function RelatedVendorProducts({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-base font-bold text-slate-900 tracking-tight">
-            Sản Phẩm Khác Từ {vendorName}
+            Sản phẩm khác từ {vendorName}
           </h2>
           <p className="text-xs text-slate-400">Đặt cùng một vựa để giao chung một chuyến</p>
         </div>

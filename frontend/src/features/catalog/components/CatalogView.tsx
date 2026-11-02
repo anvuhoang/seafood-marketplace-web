@@ -1,18 +1,13 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import {
-  BadgeCheck,
   ChevronLeft,
   ChevronRight,
   Home,
   LayoutGrid,
   List,
   PackageOpen,
-  RefreshCcw,
-  ShieldCheck,
   SlidersHorizontal,
-  Snowflake,
-  Wind,
   X,
 } from "lucide-react";
 import { ProductListing } from "../types/catalog.types";
@@ -24,6 +19,7 @@ import {
   toggle,
 } from "../utils/catalog-query";
 import { CatalogProductCard } from "./CatalogProductCard";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { CatalogSortSelect } from "./CatalogSortSelect";
 
 interface CatalogViewProps {
@@ -37,7 +33,7 @@ interface CatalogViewProps {
 const formatVnd = (value: number) => `${value.toLocaleString("vi-VN")}đ`;
 
 export function CatalogView({ listing, query, title, description, breadcrumb }: CatalogViewProps) {
-  const { items, pagination, totalProducts } = listing;
+  const { items, pagination } = listing;
   const href = (overrides: Partial<CatalogQuery>) => buildCatalogHref(query, overrides);
   const first = items.length > 0 ? (pagination.page - 1) * pagination.limit + 1 : 0;
   const last = first > 0 ? first + items.length - 1 : 0;
@@ -60,24 +56,9 @@ export function CatalogView({ listing, query, title, description, breadcrumb }: 
           ))}
         </nav>
 
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-black text-[#0F3860] sm:text-3xl">{title}</h1>
-              <span className="flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold text-[#0F3860]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#E63946]" />
-                Hiển thị {items.length} trên {totalProducts} sản phẩm toàn sàn
-              </span>
-            </div>
-            <p className="mt-2 text-sm text-slate-600">{description}</p>
-          </div>
-          <div className="flex items-center gap-2.5 self-start rounded-xl border border-slate-200 bg-white px-4 py-2.5 lg:self-auto">
-            <BadgeCheck className="h-5 w-5 text-[#E63946]" />
-            <div className="text-xs">
-              <p className="text-slate-500">Cam kết chất lượng</p>
-              <p className="font-bold text-[#0F3860]">Bao ăn 1 đổi 1 trong 60 phút</p>
-            </div>
-          </div>
+        <div className="max-w-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">{title}</h1>
+          <p className="mt-2 text-base text-slate-500">{description}</p>
         </div>
       </section>
 
@@ -85,26 +66,17 @@ export function CatalogView({ listing, query, title, description, breadcrumb }: 
         {/* Filters: collapsible on mobile, always open on desktop */}
         <div className="lg:hidden">
           <details className="rounded-xl border border-slate-200 bg-white">
-            <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-black text-[#0F3860]">
-              <SlidersHorizontal className="h-4 w-4" /> Bộ lọc tìm kiếm
+            <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-900">
+              <SlidersHorizontal className="h-4 w-4" /> Bộ lọc
             </summary>
             <div className="border-t border-slate-100 p-4">
               <CatalogFilters listing={listing} query={query} href={href} />
             </div>
           </details>
         </div>
-        <aside className="hidden space-y-4 lg:block">
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <aside className="hidden lg:block">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 lg:sticky lg:top-40">
             <CatalogFilters listing={listing} query={query} href={href} />
-          </div>
-          <div className="rounded-xl bg-[#0F3860] p-5 text-white">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold tracking-wide text-sky-200">
-              <Snowflake className="h-3.5 w-3.5" /> CHUỖI LẠNH KHÉP KÍN
-            </p>
-            <p className="mt-1 text-base font-black">Giao Tận Nơi Bơi Tận Cửa</p>
-            <p className="mt-2 text-xs leading-relaxed text-slate-200">
-              Đóng thùng xốp nén oxy nguyên chất duy trì sự sống tối đa 8 tiếng cho tôm, cua, ghẹ bơi hồ tự nhiên.
-            </p>
           </div>
         </aside>
 
@@ -113,7 +85,7 @@ export function CatalogView({ listing, query, title, description, breadcrumb }: 
           <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-sm text-slate-600">
-                <span className="text-base font-black text-slate-900">{pagination.totalItems}</span> sản phẩm
+                <span className="font-semibold text-slate-900">{pagination.totalItems}</span> sản phẩm
               </span>
               <ActiveFilterChips listing={listing} query={query} href={href} />
             </div>
@@ -129,7 +101,7 @@ export function CatalogView({ listing, query, title, description, breadcrumb }: 
           {items.length === 0 ? (
             <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
               <PackageOpen className="h-10 w-10 text-slate-300" />
-              <h2 className="mt-3 text-base font-black text-slate-900">Không có sản phẩm phù hợp</h2>
+              <h2 className="mt-3 text-base font-semibold text-slate-900">Không có sản phẩm phù hợp</h2>
               <p className="mt-1 max-w-md text-sm text-slate-500">
                 Thử bỏ bớt bộ lọc hoặc chọn danh mục khác để xem thêm hải sản đang bán.
               </p>
@@ -148,8 +120,10 @@ export function CatalogView({ listing, query, title, description, breadcrumb }: 
                   : "grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4"
               }
             >
-              {items.map((item) => (
-                <CatalogProductCard key={item.id} product={item} view={query.view} />
+              {items.map((item, index) => (
+                <ScrollReveal key={item.id} delay={(index % 4) * 60} className="h-full">
+                  <CatalogProductCard product={item} view={query.view} />
+                </ScrollReveal>
               ))}
             </div>
           )}
@@ -165,12 +139,6 @@ export function CatalogView({ listing, query, title, description, breadcrumb }: 
               )}
             </div>
           )}
-
-          <div className="grid grid-cols-1 gap-4 rounded-xl bg-sky-50/70 p-4 sm:grid-cols-3">
-            <InfoItem icon={ShieldCheck} title="Nguồn Gốc Minh Bạch" text="Mỗi đơn hàng đều ghi rõ vựa khai thác và nhật ký bơi hồ." />
-            <InfoItem icon={Wind} title="Đóng Oxy Chuyên Dụng" text="Tôm ghẹ vẫn bơi khoẻ khi khách khui thùng kiểm tra tại nhà." />
-            <InfoItem icon={RefreshCcw} title="Bồi Hoàn Nhanh 60P" text="Gặp hải sản óp hoặc ngộp bù mới 100% không phát sinh phí." />
-          </div>
         </section>
       </div>
     </div>
@@ -194,7 +162,7 @@ function CatalogFilters({ listing, query, href }: { listing: ProductListing; que
   return (
     <div className="space-y-5">
       <div className="hidden items-center justify-between lg:flex">
-        <h2 className="flex items-center gap-2 text-base font-black text-[#0F3860]">
+        <h2 className="flex items-center gap-2 text-base font-bold text-[#0F3860]">
           <SlidersHorizontal className="h-4 w-4" /> Bộ lọc tìm kiếm
         </h2>
         {hasFilters && (
@@ -322,7 +290,7 @@ function CatalogFilters({ listing, query, href }: { listing: ProductListing; que
 function FilterGroup({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
   return (
     <div>
-      <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-[#0F3860]">{title}</h3>
+      <h3 className="mb-2 text-sm font-semibold text-slate-900">{title}</h3>
       <div className="space-y-1">{children}</div>
       {note && <p className="mt-2 text-[11px] italic text-slate-400">{note}</p>}
     </div>
@@ -472,16 +440,3 @@ function Pagination({ page, totalPages, href }: { page: number; totalPages: numb
   );
 }
 
-function InfoItem({ icon: Icon, title, text }: { icon: typeof ShieldCheck; title: string; text: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[#0F3860]">
-        <Icon className="h-4 w-4" />
-      </span>
-      <div>
-        <p className="text-sm font-black text-[#0F3860]">{title}</p>
-        <p className="text-xs text-slate-500">{text}</p>
-      </div>
-    </div>
-  );
-}

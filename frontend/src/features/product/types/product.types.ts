@@ -40,6 +40,7 @@ export interface ReviewItem {
   authorName: string;
   rating: number;
   content: string | null;
+  imageUrls: string[];
   createdAt: string;
 }
 

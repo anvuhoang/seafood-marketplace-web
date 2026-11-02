@@ -29,7 +29,7 @@ export function CategoryStateMessage({
       >
         <Icon className="h-6 w-6" />
       </span>
-      <h2 className="mt-4 text-base font-black text-slate-900">{title}</h2>
+      <h2 className="mt-4 text-base font-bold text-slate-900">{title}</h2>
       <p className="mt-1 max-w-md text-sm text-slate-500">{description}</p>
       {action && (
         <Link

@@ -116,7 +116,7 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
               ) : (
                 <PackageSearch className="h-10 w-10 text-slate-300" />
               )}
-              <h1 className="mt-3 text-lg font-black text-slate-900">
+              <h1 className="mt-3 text-lg font-bold text-slate-900">
                 {state.status === "error" ? "Không thể tải sản phẩm" : "Không tìm thấy sản phẩm"}
               </h1>
               <p className="mt-1 text-sm text-slate-500">
@@ -197,7 +197,7 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
           <div className="lg:col-span-8 space-y-8">
             {product.description && (
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-                <h2 className="text-base font-bold text-slate-900">Mô Tả Sản Phẩm</h2>
+                <h2 className="text-base font-bold text-slate-900">Mô tả sản phẩm</h2>
                 <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
                   {product.description}
                 </p>

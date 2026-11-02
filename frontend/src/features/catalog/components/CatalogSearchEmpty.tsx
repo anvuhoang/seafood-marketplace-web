@@ -55,8 +55,8 @@ export function CatalogSearchEmpty({ query, listing, suggestions, regions }: Cat
       {/* Keyword and active conditions */}
       <section className="flex flex-col gap-3 rounded-xl border border-sky-100 bg-sky-50/60 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-[11px] font-bold tracking-wide text-slate-500">TỪ KHÓA & ĐIỀU KIỆN TRA CỨU</p>
-          <p className="mt-0.5 flex flex-wrap items-center gap-2 text-lg font-black text-[#0F3860]">
+          <p className="text-xs font-semibold text-slate-500">Từ khóa tìm kiếm</p>
+          <p className="mt-0.5 flex flex-wrap items-center gap-2 text-lg font-bold tracking-tight text-slate-900">
             &quot;{query.q}&quot;
             <span className="rounded bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-[#E63946]">0 sản phẩm</span>
           </p>
@@ -73,7 +73,7 @@ export function CatalogSearchEmpty({ query, listing, suggestions, regions }: Cat
             <SearchX className="h-7 w-7" />
           </span>
           <div>
-            <h1 className="text-2xl font-black text-[#0F3860] sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Không tìm thấy hải sản phù hợp với tìm kiếm của bạn
             </h1>
             <p className="mt-2 text-sm text-slate-600">
@@ -139,7 +139,7 @@ export function CatalogSearchEmpty({ query, listing, suggestions, regions }: Cat
         {regions.length > 0 && (
           <aside className="space-y-3">
             <div className="rounded-xl bg-sky-50/70 p-4">
-              <p className="text-[11px] font-black tracking-wide text-[#0F3860]">VỰA ĐANG CÓ HÀNG THEO VÙNG</p>
+              <p className="text-xs font-semibold text-[#0F3860]">Vựa đang có hàng theo vùng</p>
               <ul className="mt-3 space-y-2 text-xs">
                 {regions.slice(0, 4).map((region) => (
                   <li key={region.key}>
@@ -170,10 +170,10 @@ export function CatalogSearchEmpty({ query, listing, suggestions, regions }: Cat
         <section className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
-              <p className="flex items-center gap-1.5 text-[11px] font-bold tracking-wide text-[#E63946]">
-                <Store className="h-3.5 w-3.5" /> KHÁM PHÁ THAY THẾ SẴN HÀNG
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-[#E63946]">
+                <Store className="h-3.5 w-3.5" /> Gợi ý thay thế
               </p>
-              <h2 className="text-xl font-black text-[#0F3860]">Có thể bạn quan tâm</h2>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900">Có thể bạn quan tâm</h2>
             </div>
             <Link href="/products" className="flex items-center gap-1 text-xs font-bold text-[#0F3860] hover:text-[#E63946]">
               Xem tất cả {listing.totalProducts} sản phẩm <ArrowRight className="h-3.5 w-3.5" />
@@ -190,7 +190,7 @@ export function CatalogSearchEmpty({ query, listing, suggestions, regions }: Cat
       {/* Category shortcuts */}
       {listing.facets.categories.length > 0 && (
         <section className="rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="text-sm font-black text-[#0F3860]">Tìm theo danh mục</h2>
+          <h2 className="text-sm font-bold tracking-tight text-slate-900">Tìm theo danh mục</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {listing.facets.categories.map((category) => (
               <Link

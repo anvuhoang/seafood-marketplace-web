@@ -18,7 +18,7 @@ export function ProductReviewsSection({ summary }: ProductReviewsSectionProps) {
   return (
     <div id="product-reviews" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-6">
       <div className="border-b border-slate-100 pb-4">
-        <h2 className="text-base font-bold text-slate-900 tracking-tight">Đánh Giá Từ Khách Mua Hàng</h2>
+        <h2 className="text-base font-bold text-slate-900 tracking-tight">Đánh giá từ người mua</h2>
         <p className="text-xs text-slate-400">Đánh giá được khách hàng gửi sau khi mua sản phẩm</p>
       </div>
 
@@ -33,7 +33,7 @@ export function ProductReviewsSection({ summary }: ProductReviewsSectionProps) {
           {/* Rating Breakdown Overview */}
           <div className="flex flex-col sm:flex-row items-center gap-8 rounded-xl bg-slate-50 p-5 border border-slate-100">
             <div className="text-center sm:text-left sm:pr-8 sm:border-r border-slate-200">
-              <div className="text-4xl font-black text-[#0F3860]">{summary.ratingAverage.toFixed(1)}</div>
+              <div className="text-4xl font-bold text-[#0F3860]">{summary.ratingAverage.toFixed(1)}</div>
               <div className="flex items-center justify-center sm:justify-start gap-1 my-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
@@ -59,7 +59,7 @@ export function ProductReviewsSection({ summary }: ProductReviewsSectionProps) {
                     <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
                       <div className="h-full bg-[#E63946] rounded-full" style={{ width: `${percent}%` }} />
                     </div>
-                    <span className="w-8 text-slate-400 font-mono text-[11px]">{count}</span>
+                    <span className="w-8 text-slate-400 text-[11px]">{count}</span>
                   </div>
                 );
               })}
@@ -90,6 +90,21 @@ export function ProductReviewsSection({ summary }: ProductReviewsSectionProps) {
                   ))}
                 </div>
                 {review.content && <p className="text-xs leading-relaxed text-slate-700">{review.content}</p>}
+                {review.imageUrls.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {review.imageUrls.map((url, index) => (
+                      <a key={url} href={url} target="_blank" rel="noreferrer" className="block">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`Ảnh thực tế ${index + 1} của ${review.authorName}`}
+                          loading="lazy"
+                          className="h-16 w-16 rounded-lg border border-slate-100 object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

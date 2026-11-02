@@ -44,7 +44,7 @@ export function SellerStoreCard({ vendor }: SellerStoreCardProps) {
           <>
             <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
             <div>
-              <div className="text-base font-black text-[#0F3860]">
+              <div className="text-base font-bold text-[#0F3860]">
                 {vendor.ratingAverage.toFixed(1)} / 5.0
               </div>
               <div className="text-[11px] text-slate-400">{vendor.ratingCount} đánh giá vựa</div>
@@ -61,7 +61,7 @@ export function SellerStoreCard({ vendor }: SellerStoreCardProps) {
         className="w-full md:w-auto flex items-center justify-center gap-1.5 rounded-xl border border-[#0F3860] px-4 py-2.5 text-xs font-bold text-[#0F3860] transition hover:bg-sky-50 active:scale-95"
       >
         <Store className="h-3.5 w-3.5" />
-        <span>Xem Gian Hàng</span>
+        <span>Xem gian hàng</span>
       </Link>
     </div>
   );

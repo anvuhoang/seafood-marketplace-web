@@ -13,7 +13,6 @@ import {
   Clock,
   Sparkles,
   ShoppingCart,
-  Zap,
   AlertCircle,
 } from "lucide-react";
 
@@ -123,7 +122,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
           </span>
         )}
         {product.sku && (
-          <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-mono font-medium text-slate-600">
+          <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
             Mã: {product.sku}
           </span>
         )}
@@ -141,14 +140,14 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
           </span>
         ) : (
           <span className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
             Tình trạng: Còn hàng
           </span>
         )}
       </div>
 
       {/* 2. Product Name */}
-      <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
+      <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-snug">
         {product.name}
       </h1>
 
@@ -173,11 +172,11 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
       </div>
 
       {/* 4. Price Box */}
-      <div className="rounded-2xl border border-rose-100 bg-rose-50/40 p-4 sm:p-5 space-y-3">
+      <div className="rounded-xl bg-slate-50 p-4 sm:p-5 space-y-3">
         <div className="flex flex-wrap items-baseline gap-3">
           {product.offerId || product.isDiscontinued ? (
             <>
-              <span className="text-3xl font-black text-[#E63946] tracking-tight">
+              <span className="text-3xl font-bold text-[#E63946] tracking-tight">
                 {formatPrice(product.price)}
               </span>
               <span className="text-sm font-medium text-slate-500">
@@ -186,7 +185,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
             </>
           ) : (
             // No approved vendor sells it, so there is no price to show.
-            <span className="text-xl font-black text-slate-500">Chưa có giá bán</span>
+            <span className="text-xl font-bold text-slate-500">Chưa có giá bán</span>
           )}
           {product.originalPrice && product.originalPrice > product.price && (
             <>
@@ -201,7 +200,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
         </div>
 
         {/* Guarantees */}
-        <div className="space-y-1.5 border-t border-rose-100/80 pt-3 text-xs text-slate-600">
+        <div className="space-y-1.5 border-t border-slate-200 pt-3 text-xs text-slate-600">
           <p className="flex items-start gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
             <span>Đóng thùng xốp oxy/đá gel chuyên dụng giữ tươi khi vận chuyển.</span>
@@ -215,7 +214,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
 
       {/* 5. Seafood Preparation Selection */}
       <div className="space-y-2.5">
-        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+        <label className="block text-xs font-bold text-slate-700">
           Lựa chọn sơ chế trước khi giao:
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -251,7 +250,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
       {/* 6. Quantity Selection & Stock Enforcements */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+          <label className="block text-xs font-bold text-slate-700">
             Khối lượng mua ({product.unit}):
           </label>
           {isAvailable ? (
@@ -310,10 +309,10 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
       {/* 7. Total Price Preview */}
       {isAvailable && (
         <div className="flex items-baseline justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-200/80">
-          <span className="text-xs font-bold text-slate-600 uppercase">
+          <span className="text-sm font-medium text-slate-600">
             Tổng tiền tạm tính:
           </span>
-          <span className="text-2xl font-black text-[#0F3860]">
+          <span className="text-2xl font-bold text-[#0F3860]">
             {formatPrice(calculatedTotal)}
           </span>
         </div>
@@ -343,37 +342,32 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
           type="button"
           disabled={!isAvailable || isSubmitting}
           onClick={handleAddToCart}
-          className="flex items-center justify-center gap-2 rounded-xl bg-[#E63946] py-3.5 px-4 text-sm font-bold text-white shadow-xs transition-all hover:bg-[#D62839] hover:shadow-lg hover:shadow-red-500/25 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center justify-center gap-2 rounded-xl bg-[#E63946] py-3.5 px-4 text-sm font-bold text-white shadow-xs transition-all hover:bg-[#D62839] active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ShoppingCart className="h-4 w-4" />
-          <span>Thêm vào Giỏ Hàng</span>
+          <span>Thêm vào giỏ hàng</span>
         </button>
 
         <button
           type="button"
           disabled={!isAvailable || isSubmitting}
           onClick={handleBuyNow}
-          className="flex items-center justify-center gap-2 rounded-xl bg-[#0F3860] py-3.5 px-4 text-sm font-bold text-white shadow-xs transition-all hover:bg-[#0A2744] hover:shadow-lg hover:shadow-blue-950/25 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center justify-center gap-2 rounded-xl bg-[#0F3860] py-3.5 px-4 text-sm font-bold text-white shadow-xs transition-all hover:bg-[#0A2744] active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Zap className="h-4 w-4 text-amber-400 fill-amber-400" />
-          <span>Mua Ngay - Giao 2 Giờ</span>
+          <span>Mua ngay</span>
         </button>
       </div>
 
-      {/* Decision support link */}
-      <div className="text-center">
-        <button
-          type="button"
-          onClick={() =>
-            alert(
-              "Chính sách bảo hành: Khi shipper giao đến, bạn được mở thùng xốp kiểm tra hải sản trước khi thanh toán. Nếu không hài lòng có thể từ chối nhận hàng không mất phí."
-            )
-          }
-          className="text-xs font-semibold text-[#0F3860] hover:underline"
-        >
-          ✦ Hỗ trợ Trả Lại & Quyết Định Nhanh Khi Giao Hàng Cho Bạn
-        </button>
-      </div>
+      {/* Delivery check policy, expanded inline instead of a browser alert. */}
+      <details className="group rounded-lg bg-slate-50 px-4 py-3 text-sm">
+        <summary className="cursor-pointer font-medium text-slate-700 marker:text-slate-400">
+          Được kiểm hàng trước khi thanh toán
+        </summary>
+        <p className="mt-2 leading-relaxed text-slate-600">
+          Khi nhận hàng, bạn được mở thùng kiểm tra hải sản trước khi thanh toán. Nếu không hài lòng, bạn có thể từ chối
+          nhận mà không mất phí.
+        </p>
+      </details>
 
       {/* 9. Three Trust Badges */}
       <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-4 text-center">
@@ -394,9 +388,9 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
         <div className="p-2">
           <ShieldCheck className="mx-auto h-5 w-5 text-amber-600 mb-1" />
           <h5 className="text-[11px] font-bold text-slate-900">
-            Chuẩn HACCP & ATTP
+            Đổi trả 1 đổi 1
           </h5>
-          <p className="text-[10px] text-slate-400">Đầy đủ giấy kiểm định</p>
+          <p className="text-[10px] text-slate-400">Khi không đúng mô tả</p>
         </div>
       </div>
     </div>

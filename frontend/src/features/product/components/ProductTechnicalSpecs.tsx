@@ -8,9 +8,9 @@ interface ProductTechnicalSpecsProps {
 export function ProductTechnicalSpecs({ specs }: ProductTechnicalSpecsProps) {
   // Only facts stored for this product are shown.
   const specItems = [
-    { label: "TÊN PHỔ THÔNG", value: specs.commonName, icon: Fish },
-    { label: "TÊN KHOA HỌC", value: specs.scientificName, icon: FileText, isItalic: true },
-    { label: "NGUỒN GỐC (VỰA)", value: specs.origin, icon: Compass },
+    { label: "Tên phổ thông", value: specs.commonName, icon: Fish },
+    { label: "Tên khoa học", value: specs.scientificName, icon: FileText, isItalic: true },
+    { label: "Nguồn gốc (vựa)", value: specs.origin, icon: Compass },
   ].filter((item) => item.value);
 
   return (
@@ -20,7 +20,7 @@ export function ProductTechnicalSpecs({ specs }: ProductTechnicalSpecsProps) {
           <FileText className="h-4 w-4" />
         </div>
         <h2 className="text-base font-bold text-slate-900 tracking-tight">
-          Thông Số Chuyên Ngành Thủy Sản
+          Thông số sản phẩm
         </h2>
       </div>
 
@@ -29,7 +29,7 @@ export function ProductTechnicalSpecs({ specs }: ProductTechnicalSpecsProps) {
           <div key={label} className="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3.5">
             <Icon className="h-4 w-4 shrink-0 text-slate-400" />
             <div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</div>
+              <div className="text-xs text-slate-500">{label}</div>
               <div className={`mt-1 text-xs font-bold text-slate-800 ${isItalic ? "italic" : ""}`}>{value}</div>
             </div>
           </div>

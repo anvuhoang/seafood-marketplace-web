@@ -1,52 +1,30 @@
-"use client";
+import { Clock, PackageCheck, Thermometer } from "lucide-react";
 
-import { ShieldCheck, Thermometer, Clock, Sparkles } from "lucide-react";
+const DETAILS = [
+  { icon: Thermometer, label: "Nhiệt độ nước bảo quản", value: "20–22°C" },
+  { icon: Clock, label: "Thời gian giữ sống", value: "4–6 giờ" },
+  { icon: PackageCheck, label: "Kiểm hàng", value: "Mở thùng trước khi nhận" },
+];
 
 export function ColdChainStandardCard() {
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-[#0F3860] to-[#081B2E] p-5 text-white shadow-md space-y-4">
-      {/* Title */}
-      <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-        <ShieldCheck className="h-5 w-5 text-cyan-400" />
-        <h3 className="text-xs font-bold text-white tracking-wide uppercase">
-          Quy Chuẩn Thùng Oxy Cứu Sống
-        </h3>
-      </div>
-
-      <p className="text-xs text-slate-300 leading-relaxed">
-        Mỗi đơn hàng hải sản sống được đóng thùng xốp đặc biệt kèm đá gel cay duy trì độ mặn và nhiệt độ tự nhiên. Tỉ lệ hải sản sống khi giao tận tay đạt 100% nhờ nén khí oxy tinh khiết.
+    <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <h3 className="text-sm font-semibold text-slate-900">Đóng gói & giữ lạnh</h3>
+      <p className="mt-2 text-sm leading-relaxed text-slate-600">
+        Hải sản sống được đóng thùng xốp có sục oxy và đá gel giữ nhiệt, giúp tôm, cua, ghẹ khỏe suốt quãng đường
+        giao.
       </p>
-
-      {/* Specifications list */}
-      <div className="space-y-2.5 pt-1 text-xs">
-        <div className="flex items-center justify-between border-b border-white/10 pb-2">
-          <span className="flex items-center gap-2 text-slate-300">
-            <Thermometer className="h-4 w-4 text-cyan-400" />
-            Nhiệt độ nước bảo quản:
-          </span>
-          <span className="font-bold text-white font-mono">20°C - 22°C</span>
-        </div>
-
-        <div className="flex items-center justify-between border-b border-white/10 pb-2">
-          <span className="flex items-center gap-2 text-slate-300">
-            <Clock className="h-4 w-4 text-cyan-400" />
-            Thời gian bơi sống an toàn:
-          </span>
-          <span className="font-bold text-white font-mono">
-            4 giờ - 6 giờ bơi sống
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <span className="flex items-center gap-2 text-slate-300">
-            <Sparkles className="h-4 w-4 text-emerald-400" />
-            Tỷ lệ sống khi nhận:
-          </span>
-          <span className="font-extrabold text-emerald-400 font-mono">
-            100% gõ vỏ bơi ngay
-          </span>
-        </div>
-      </div>
-    </div>
+      <dl className="mt-4 divide-y divide-slate-100 text-sm">
+        {DETAILS.map(({ icon: Icon, label, value }) => (
+          <div key={label} className="flex items-center justify-between gap-3 py-2.5">
+            <dt className="flex items-center gap-2 text-slate-500">
+              <Icon className="h-4 w-4 text-slate-400" />
+              {label}
+            </dt>
+            <dd className="font-medium text-slate-900">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }

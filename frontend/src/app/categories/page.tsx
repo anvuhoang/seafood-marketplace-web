@@ -57,14 +57,14 @@ export default function CategoriesPage() {
         </div>
 
         {/* Hero */}
-        <section className="bg-sky-50/70">
+        <section className="border-b border-slate-200 bg-slate-50">
           <div className="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6 lg:px-8">
-            <span className="inline-flex items-center gap-1.5 rounded bg-rose-50 px-2 py-1 text-[11px] font-bold tracking-wide text-[#E63946]">
-              <LayoutGrid className="h-3.5 w-3.5" /> HỆ THỐNG PHÂN LOẠI SẢN PHẨM
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-sky-700">
+              <LayoutGrid className="h-3.5 w-3.5" /> Danh mục
             </span>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <h1 className="text-3xl font-black text-[#0F3860] sm:text-4xl">Khám phá danh mục hải sản</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Khám phá danh mục hải sản</h1>
                 <p className="mt-2 text-sm text-slate-600">
                   Tìm loại hải sản yêu thích từ nhiều cửa hàng và vựa đầu mối ven biển uy tín trên HaiSan Express.
                 </p>
@@ -90,7 +90,7 @@ export default function CategoriesPage() {
         {/* Main categories */}
         <section id="chung-loai" className="mx-auto max-w-7xl scroll-mt-24 space-y-5 px-4 py-10 sm:px-6 lg:px-8">
           <SectionTitle
-            eyebrow="PHÂN LOẠI SINH HỌC & NGUỒN GỐC TỰ NHIÊN"
+            eyebrow="Theo chủng loại"
             title="Chủng loại hải sản chính"
             description="Các dòng hải sản nước mặn và nước lợ tươi sạch được cập bến trực tiếp từ đội tàu đánh bắt mỗi ngày."
             aside={
@@ -108,7 +108,7 @@ export default function CategoriesPage() {
         <section id="ngu-truong" className="scroll-mt-24 bg-sky-50/50">
           <div className="mx-auto max-w-7xl space-y-5 px-4 py-10 sm:px-6 lg:px-8">
             <SectionTitle
-              eyebrow="BẢN ĐỒ VÙNG ĐÁNH BẮT TRỌNG ĐIỂM"
+              eyebrow="Theo vùng đánh bắt"
               title="Khám phá theo ngư trường & vùng biển nổi tiếng"
               description="Mỗi vùng biển mang hương vị hải sản đặc trưng. Khám phá sản phẩm được vận chuyển trực tiếp từ cảng địa phương."
             />
@@ -138,10 +138,10 @@ function SectionTitle({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="flex items-center gap-1.5 text-[11px] font-bold tracking-wide text-slate-600">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#E63946]" /> {eyebrow}
+        <p className="flex items-center gap-1.5 text-sm font-medium text-sky-700">
+          {eyebrow}
         </p>
-        <h2 className="mt-1 text-2xl font-black text-[#0F3860]">{title}</h2>
+        <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{title}</h2>
         <p className="mt-1 text-sm text-slate-500">{description}</p>
       </div>
       {aside}
@@ -194,7 +194,7 @@ async function CategoryGrid() {
       {categories.map((category) => (
         <article
           key={category.id}
-          className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs transition hover:-translate-y-0.5 hover:shadow-lg"
+          className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs transition hover:shadow-md"
         >
           <Link href={`/categories/${category.slug}`} className="relative block h-44 overflow-hidden bg-slate-100">
             {category.imageUrl ? (
@@ -219,7 +219,7 @@ async function CategoryGrid() {
             </span>
           </Link>
           <div className="flex flex-1 flex-col p-4">
-            <h3 className="text-base font-black text-slate-900 group-hover:text-[#0F3860]">
+            <h3 className="text-base font-bold text-slate-900 group-hover:text-[#0F3860]">
               <Link href={`/categories/${category.slug}`}>{category.name}</Link>
             </h3>
             {category.description && (
@@ -266,12 +266,12 @@ async function RegionGrid() {
           <Link
             key={region.key}
             href={`/products?region=${encodeURIComponent(region.key)}`}
-            className="group flex flex-col items-center rounded-xl border border-slate-200 bg-white p-4 text-center transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-lg"
+            className="group flex flex-col items-center rounded-xl border border-slate-200 bg-white p-4 text-center transition hover:border-slate-300 hover:shadow-md"
           >
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-[#0F3860]">
               <Icon className="h-5 w-5" />
             </span>
-            <h3 className="mt-3 text-sm font-black text-[#0F3860]">{region.district}</h3>
+            <h3 className="mt-3 text-sm font-bold tracking-tight text-slate-900">{region.district}</h3>
             <p className="text-[11px] text-slate-400">{region.province}</p>
             <p className="mt-1.5 text-[11px] text-slate-500 line-clamp-2">
               {region.topCategories.join(" · ")}
