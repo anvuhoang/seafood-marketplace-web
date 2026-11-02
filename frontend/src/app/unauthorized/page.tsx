@@ -37,10 +37,10 @@ function UnauthorizedContent() {
         </div>
 
         <div className="space-y-2">
-          <span className="inline-block rounded-full bg-rose-100 px-3.5 py-1 text-xs font-black text-rose-700 tracking-wider font-mono">
+          <span className="inline-block rounded-full bg-rose-100 px-3.5 py-1 text-xs font-bold text-rose-700 tracking-wider font-mono">
             403 • KHÔNG CÓ QUYỀN TRUY CẬP
           </span>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Truy Cập Bị Giới Hạn
           </h1>
           <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">

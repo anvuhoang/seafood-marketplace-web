@@ -227,7 +227,7 @@ function LoginFormContent() {
         {/* 5. Divider */}
         <div className="relative my-4 flex items-center justify-center">
           <div className="w-full border-t border-slate-200" />
-          <span className="absolute bg-white px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="absolute bg-white px-3 text-[10px] font-bold text-slate-400">
             HOẶC ĐĂNG NHẬP VỚI
           </span>
         </div>
