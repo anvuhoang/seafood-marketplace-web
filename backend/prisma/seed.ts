@@ -762,6 +762,95 @@ async function main() {
     });
   }
 
+  // Delivered sample orders, so the review center has items waiting for a
+  // review. Order numbers are fixed, so re-running the seed skips them.
+  const sampleOrders: Array<{
+    orderNumber: string;
+    customer: number;
+    deliveredDaysAgo: number;
+    items: Array<{ product: string; quantity: number }>;
+  }> = [
+    { orderNumber: 'HSE-89214', customer: 0, deliveredDaysAgo: 2, items: [{ product: 'tom-su-bien-tuoi-song-loai-1', quantity: 1 }] },
+    {
+      orderNumber: 'HSE-89187',
+      customer: 0,
+      deliveredDaysAgo: 6,
+      items: [
+        { product: 'ghe-xanh-song-phu-quoc', quantity: 2 },
+        { product: 'muc-ong-cau-dem-phu-quoc', quantity: 1 },
+      ],
+    },
+    { orderNumber: 'HSE-89102', customer: 1, deliveredDaysAgo: 4, items: [{ product: 'cua-thit-nam-can', quantity: 1 }] },
+  ];
+
+  for (const sample of sampleOrders) {
+    const userId = customerIds[sample.customer];
+    const customer = sampleCustomers[sample.customer];
+    if (!userId || !customer) continue;
+    if (await prisma.order.findUnique({ where: { orderNumber: sample.orderNumber } })) continue;
+
+    // Cheapest active offer for each product, grouped into one vendor order per vendor.
+    const lines = [];
+    for (const item of sample.items) {
+      const offer = await prisma.vendorOffer.findFirst({
+        where: { status: 'ACTIVE', variant: { product: { slug: item.product } } },
+        include: { vendor: true, variant: { include: { product: true } } },
+        orderBy: { price: 'asc' },
+      });
+      if (offer) lines.push({ offer, quantity: item.quantity, lineTotal: Number(offer.price) * item.quantity });
+    }
+    if (lines.length === 0) continue;
+
+    const byVendor = new Map<string, typeof lines>();
+    for (const line of lines) {
+      byVendor.set(line.offer.vendorId, [...(byVendor.get(line.offer.vendorId) ?? []), line]);
+    }
+
+    const deliveredAt = new Date(Date.now() - sample.deliveredDaysAgo * 24 * 60 * 60 * 1000);
+    const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
+
+    await prisma.order.create({
+      data: {
+        orderNumber: sample.orderNumber,
+        userId,
+        status: 'COMPLETED',
+        subtotal,
+        grandTotal: subtotal,
+        recipientName: customer.fullName,
+        recipientPhone: customer.phone,
+        shippingAddress: '42 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
+        shippingProvince: 'TP. Hồ Chí Minh',
+        shippingDistrict: 'Quận 1',
+        shippingWard: 'Phường Bến Thành',
+        createdAt: new Date(deliveredAt.getTime() - 24 * 60 * 60 * 1000),
+        vendorOrders: {
+          create: [...byVendor.values()].map((vendorLines) => {
+            const vendorSubtotal = vendorLines.reduce((sum, line) => sum + line.lineTotal, 0);
+            return {
+              vendorId: vendorLines[0]!.offer.vendorId,
+              status: 'COMPLETED' as const,
+              subtotal: vendorSubtotal,
+              grandTotal: vendorSubtotal,
+              shipment: { create: { status: 'COMPLETED' as const, shippedAt: deliveredAt, deliveredAt } },
+              items: {
+                create: vendorLines.map((line) => ({
+                  offerId: line.offer.id,
+                  productNameSnapshot: line.offer.variant.product.name,
+                  variantNameSnapshot: line.offer.variant.name,
+                  vendorNameSnapshot: line.offer.vendor.name,
+                  unitSnapshot: line.offer.variant.unit,
+                  unitPrice: line.offer.price,
+                  quantity: line.quantity,
+                  lineTotal: line.lineTotal,
+                })),
+              },
+            };
+          }),
+        },
+      },
+    });
+  }
+
   console.log('Seeding finished successfully.');
   console.log(`- Created product: ${productTomSu.name} (slug: ${productTomSu.slug})`);
 }
