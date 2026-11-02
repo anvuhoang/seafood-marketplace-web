@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { KeyRound, LogOut, MapPin, ReceiptText, UserCog, UserRound } from "lucide-react";
+import { KeyRound, LogOut, MapPin, ReceiptText, SquarePen, UserCog, UserRound } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { CustomerHeader } from "@/components/shared/CustomerHeader";
 import { CustomerFooter } from "@/components/shared/CustomerFooter";
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/customer/profile", label: "Thông tin tài khoản", icon: UserCog },
   { href: "/customer/addresses", label: "Sổ địa chỉ nhận hàng", icon: MapPin },
   { href: "/customer/orders", label: "Lịch sử & Đơn hàng", icon: ReceiptText },
+  { href: "/customer/reviews", label: "Đánh giá sản phẩm", icon: SquarePen },
   { href: "/customer/password", label: "Đổi mật khẩu", icon: KeyRound },
 ];
 
@@ -45,13 +46,13 @@ export function AccountShell({ children }: { children: ReactNode }) {
         <CustomerHeader />
 
         <div className="mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[280px_1fr] lg:px-8">
-          <aside className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 lg:self-start">
-            <div className="flex items-center gap-3 rounded-xl bg-sky-50 p-3">
+          <aside className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 lg:self-start">
+            <div className="flex items-center gap-3 p-1">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#0F3860] text-white">
                 <UserRound className="h-6 w-6" />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-black text-slate-900">{user?.fullName}</p>
+                <p className="truncate text-sm font-semibold text-slate-900">{user?.fullName}</p>
                 <p className="text-[11px] text-slate-500">
                   {ROLE_TEXT[user?.role ?? ""] ?? "Thành viên"}
                   {user?.phone ? ` • ${maskPhone(user.phone)}` : ""}
@@ -59,7 +60,7 @@ export function AccountShell({ children }: { children: ReactNode }) {
               </div>
             </div>
 
-            <p className="mt-5 px-2 text-[11px] font-bold tracking-wide text-slate-400">TRUNG TÂM TÀI KHOẢN</p>
+            <p className="mt-5 px-3 text-xs font-medium text-slate-400">Tài khoản của tôi</p>
             <nav aria-label="Tài khoản" className="mt-2 space-y-1">
               {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
                 const active = pathname === href;
@@ -69,7 +70,7 @@ export function AccountShell({ children }: { children: ReactNode }) {
                     href={href}
                     aria-current={active ? "page" : undefined}
                     className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
-                      active ? "bg-sky-100 font-bold text-[#0F3860]" : "text-slate-600 hover:bg-slate-50"
+                      active ? "bg-slate-100 font-semibold text-[#0F3860]" : "text-slate-600 hover:bg-slate-50"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -97,6 +98,12 @@ export function AccountShell({ children }: { children: ReactNode }) {
   );
 }
 
+/** "SỔ ĐỊA CHỈ" -> "Sổ địa chỉ"; pages pass their eyebrow in capitals. */
+function toSentenceCase(text: string): string {
+  const lower = text.toLocaleLowerCase("vi-VN");
+  return lower.charAt(0).toLocaleUpperCase("vi-VN") + lower.slice(1);
+}
+
 /** Title block at the top of each account page. */
 export function AccountPageHeader({
   eyebrow,
@@ -110,11 +117,11 @@ export function AccountPageHeader({
   aside?: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-linear-to-r from-white to-sky-50 p-6 sm:flex-row sm:items-center sm:justify-between">
+    <section className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div className="max-w-2xl">
-        <span className="rounded bg-sky-100 px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#0F3860]">{eyebrow}</span>
-        <h1 className="mt-2 text-2xl font-black text-[#0F3860] sm:text-3xl">{title}</h1>
-        <p className="mt-1 text-sm text-slate-600">{description}</p>
+        <p className="text-sm font-medium text-sky-700">{toSentenceCase(eyebrow)}</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">{title}</h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">{description}</p>
       </div>
       {aside}
     </section>

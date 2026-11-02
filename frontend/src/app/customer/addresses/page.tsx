@@ -94,7 +94,7 @@ function AddressBook() {
     <>
       <AccountPageHeader
         eyebrow="HẬU CẦN & ĐIỀU PHỐI GIAO HẢI SẢN"
-        title="Địa Chỉ Nhận Hàng Của Tôi"
+        title="Địa chỉ nhận hàng"
         description="Quản lý địa chỉ giao hàng và chọn địa chỉ mặc định để đặt hàng nhanh chóng."
         aside={
           <button
@@ -114,8 +114,8 @@ function AddressBook() {
             <MapPin className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-[11px] font-bold tracking-wide text-slate-500">TỔNG ĐIỂM NHẬN</p>
-            <p className="text-xl font-black text-[#0F3860]">
+            <p className="text-xs font-medium text-slate-500">Tổng điểm nhận</p>
+            <p className="text-xl font-bold text-slate-900">
               {addresses === null ? "—" : `${String(addresses.length).padStart(2, "0")} địa chỉ`}
             </p>
           </div>
@@ -125,7 +125,7 @@ function AddressBook() {
             <Snowflake className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-[11px] font-bold tracking-wide text-slate-500">ĐÓNG GÓI GIỮ LẠNH</p>
+            <p className="text-xs font-medium text-slate-500">Đóng gói giữ lạnh</p>
             <p className="text-sm font-bold text-[#0F3860]">Thùng xốp oxy/đá gel chuyên dụng</p>
           </div>
         </div>
@@ -148,7 +148,7 @@ function AddressBook() {
       ) : addresses.length === 0 ? (
         <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
           <MapPin className="h-10 w-10 text-slate-300" />
-          <h2 className="mt-3 text-base font-black text-slate-900">Bạn chưa có địa chỉ nhận hàng</h2>
+          <h2 className="mt-3 text-base font-bold text-slate-900">Bạn chưa có địa chỉ nhận hàng</h2>
           <p className="mt-1 text-sm text-slate-500">Thêm địa chỉ để đặt hàng nhanh hơn. Địa chỉ đầu tiên sẽ là địa chỉ mặc định.</p>
           <button
             type="button"
@@ -169,7 +169,7 @@ function AddressBook() {
             >
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-base font-black text-slate-900">
+                  <h2 className="text-base font-bold text-slate-900">
                     {address.recipientName} <span className="text-slate-300">—</span> {address.recipientPhone}
                   </h2>
                   {address.isDefault && (
@@ -238,7 +238,7 @@ function AddressBook() {
           <ShieldCheck className="h-5 w-5" />
         </span>
         <div>
-          <h2 className="text-sm font-black text-[#0F3860]">Tiêu chuẩn đóng gói vận chuyển hải sản tươi sống</h2>
+          <h2 className="text-sm font-bold text-slate-900">Tiêu chuẩn đóng gói vận chuyển hải sản tươi sống</h2>
           <p className="mt-1 text-xs text-slate-600">
             Vui lòng kiểm tra tình trạng hải sản trước khi ký nhận. Đổi trả 1 đổi 1: hoàn tiền hoặc đổi mới nếu sản
             phẩm không đúng mô tả.

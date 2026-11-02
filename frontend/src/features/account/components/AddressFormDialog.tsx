@@ -124,7 +124,7 @@ export function AddressFormDialog({ address, isFirstAddress, onClose, onSubmit }
         className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
       >
         <div className="flex items-center justify-between">
-          <h2 id="address-dialog-title" className="text-lg font-black text-[#0F3860]">
+          <h2 id="address-dialog-title" className="text-lg font-bold text-slate-900">
             {address ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ mới"}
           </h2>
           <button type="button" onClick={onClose} aria-label="Đóng" className="rounded-lg p-1 text-slate-400 hover:bg-slate-100">

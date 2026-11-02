@@ -78,12 +78,12 @@ function ChangePasswordForm() {
     <>
       <AccountPageHeader
         eyebrow="BẢO MẬT TÀI KHOẢN"
-        title="Đổi Mật Khẩu"
+        title="Đổi mật khẩu"
         description="Dùng mật khẩu riêng cho HaiSan Express và không chia sẻ với người khác."
       />
 
       <form onSubmit={handleSubmit} noValidate className="max-w-xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
-        <h2 className="flex items-center gap-2 text-lg font-black text-[#0F3860]">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
           <KeyRound className="h-5 w-5" /> Cập nhật mật khẩu đăng nhập
         </h2>
         {field("current", "Mật khẩu hiện tại", "current-password")}

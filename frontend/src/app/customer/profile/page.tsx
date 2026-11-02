@@ -164,13 +164,13 @@ function ProfileContent() {
     <>
       <AccountPageHeader
         eyebrow="QUẢN TRỊ HỒ SƠ"
-        title="Hồ Sơ Của Tôi"
+        title="Hồ sơ của tôi"
         description="Quản lý thông tin hồ sơ để bảo mật tài khoản và nhận gợi ý hải sản phù hợp từ các vựa đối tác."
         aside={
           <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-xs">
             <div className="text-right">
-              <p className="text-[11px] font-bold tracking-wide text-slate-500">MÃ KHÁCH HÀNG</p>
-              <p className="text-lg font-black text-[#0F3860]">{profile.customerCode}</p>
+              <p className="text-xs font-medium text-slate-500">Mã khách hàng</p>
+              <p className="text-lg font-bold text-slate-900">{profile.customerCode}</p>
             </div>
             <IdCard className="h-6 w-6 text-[#0F3860]" />
           </div>
@@ -185,7 +185,7 @@ function ProfileContent() {
                 <SlidersHorizontal className="h-5 w-5" />
               </span>
               <div>
-                <h2 className="text-lg font-black text-[#0F3860]">Chi tiết thông tin</h2>
+                <h2 className="text-lg font-bold text-slate-900">Chi tiết thông tin</h2>
                 <p className="text-xs text-slate-500">Cập nhật hồ sơ định kỳ giúp bảo vệ quyền lợi giao dịch</p>
               </div>
             </div>
@@ -349,15 +349,15 @@ function ProfileContent() {
 
         <aside className="space-y-6">
           <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center">
-            <span className="flex h-24 w-24 items-center justify-center rounded-2xl bg-[#0F3860] text-3xl font-black text-white">
+            <span className="flex h-24 w-24 items-center justify-center rounded-2xl bg-[#0F3860] text-3xl font-bold text-white">
               {profile.fullName.trim().charAt(0).toUpperCase() || <UserRound className="h-10 w-10" />}
             </span>
-            <p className="mt-3 text-base font-black text-slate-900">{profile.fullName}</p>
+            <p className="mt-3 text-base font-bold text-slate-900">{profile.fullName}</p>
             <p className="text-xs text-slate-500">Thành viên từ {formatDate(profile.createdAt)}</p>
           </div>
 
           <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
-            <h2 className="flex items-center gap-2 text-base font-black text-[#0F3860]">
+            <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
               <ShieldCheck className="h-5 w-5" /> Bảo mật tài khoản
             </h2>
             <div className="flex items-center justify-between gap-3 rounded-xl bg-sky-50 p-3">
