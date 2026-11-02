@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { ViewTransition } from "react";
 import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
+import "./view-transitions.css";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { CartProvider } from "@/features/cart/context/CartContext";
 
@@ -28,7 +30,10 @@ export default function RootLayout({
     <html lang="vi" className={beVietnamPro.variable}>
       <body className="min-h-screen flex flex-col bg-white text-slate-800 antialiased">
         <AuthProvider>
-          <CartProvider>{children}</CartProvider>
+          <CartProvider>
+            {/* Navigations are transitions, so page content crossfades between routes. */}
+            <ViewTransition default="page">{children}</ViewTransition>
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

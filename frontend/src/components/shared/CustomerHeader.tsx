@@ -142,6 +142,8 @@ export function CustomerHeader() {
 
   return (
     <header
+      // Anchored during page transitions so only the content below it animates.
+      style={{ viewTransitionName: "site-header" }}
       className={`sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md transition-shadow duration-300 ${
         scrolled ? "shadow-[0_6px_24px_-12px_rgba(15,23,42,0.25)]" : "shadow-none"
       }`}
