@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import type { Vendor } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type {
+  FollowStateDto,
   VendorStorefrontCategoryDto,
   VendorStorefrontDto,
   VendorStorefrontProductDto,
@@ -29,6 +31,74 @@ export class VendorService {
       orderBy: [{ ratingAverage: 'desc' }, { ratingCount: 'desc' }],
     });
 
+    return this.summarize(vendors);
+  }
+
+  /** Vendors the signed-in customer follows, most recently followed first. */
+  async listFollowedVendors(userId: string): Promise<VendorSummaryDto[]> {
+    const follows = await this.prisma.vendorFollow.findMany({
+      where: { userId, vendor: { status: 'ACTIVE' } },
+      orderBy: { createdAt: 'desc' },
+      include: { vendor: true },
+    });
+
+    return this.summarize(follows.map((follow) => follow.vendor));
+  }
+
+  /** Whether the customer follows the vendor, and how many customers follow it. */
+  async getFollowState(slug: string, userId: string): Promise<FollowStateDto> {
+    const vendor = await this.findActiveVendorBySlug(slug);
+    return this.followState(vendor.id, userId);
+  }
+
+  /** Follow an active vendor. Following again is a no-op. */
+  async follow(slug: string, userId: string): Promise<FollowStateDto> {
+    const vendor = await this.findActiveVendorBySlug(slug);
+
+    await this.prisma.vendorFollow.upsert({
+      where: { userId_vendorId: { userId, vendorId: vendor.id } },
+      update: {},
+      create: { userId, vendorId: vendor.id },
+    });
+
+    return this.followState(vendor.id, userId);
+  }
+
+  /** Stop following. Unfollowing when not following is a no-op. */
+  async unfollow(slug: string, userId: string): Promise<FollowStateDto> {
+    const vendor = await this.prisma.vendor.findUnique({ where: { slug } });
+    if (!vendor) {
+      throw new NotFoundException('Gian hàng không tồn tại');
+    }
+
+    await this.prisma.vendorFollow.deleteMany({ where: { userId, vendorId: vendor.id } });
+    return this.followState(vendor.id, userId);
+  }
+
+  private async findActiveVendorBySlug(slug: string): Promise<Vendor> {
+    const vendor = await this.prisma.vendor.findUnique({ where: { slug } });
+    if (!vendor) {
+      throw new NotFoundException('Gian hàng không tồn tại');
+    }
+    if (vendor.status !== 'ACTIVE') {
+      throw new BadRequestException('Gian hàng này chưa mở bán nên chưa thể theo dõi.');
+    }
+    return vendor;
+  }
+
+  private async followState(vendorId: string, userId: string): Promise<FollowStateDto> {
+    const [follow, followerCount] = await Promise.all([
+      this.prisma.vendorFollow.findUnique({
+        where: { userId_vendorId: { userId, vendorId } },
+        select: { userId: true },
+      }),
+      this.prisma.vendorFollow.count({ where: { vendorId } }),
+    ]);
+    return { isFollowing: Boolean(follow), followerCount };
+  }
+
+  /** Card data for a list of vendors: location and the number of products each sells. */
+  private async summarize(vendors: Vendor[]): Promise<VendorSummaryDto[]> {
     if (vendors.length === 0) {
       return [];
     }
@@ -95,6 +165,7 @@ export class VendorService {
         ratingAverage: Number(vendor.ratingAverage),
         ratingCount: vendor.ratingCount,
         joinedAt: vendor.createdAt.toISOString(),
+        followerCount: await this.prisma.vendorFollow.count({ where: { vendorId: vendor.id } }),
       },
       status,
       isActive,

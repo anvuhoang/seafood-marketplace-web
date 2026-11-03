@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { VendorService } from './vendor.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 
@@ -68,6 +68,13 @@ describe('VendorService', () => {
       },
       vendorOffer: {
         findMany: vi.fn(),
+      },
+      vendorFollow: {
+        findUnique: vi.fn(),
+        findMany: vi.fn(),
+        count: vi.fn().mockResolvedValue(0),
+        upsert: vi.fn(),
+        deleteMany: vi.fn(),
       },
     };
     vendorService = new VendorService(prismaService as PrismaService);
@@ -190,5 +197,54 @@ describe('VendorService', () => {
     ]);
     expect(result.products.map((p) => p.id)).toEqual(['p1', 'p3']);
     expect(result.productCount).toBe(3);
+  });
+
+  describe('following', () => {
+    it('reports follow state and follower count', async () => {
+      prismaService.vendor.findUnique.mockResolvedValue(vendorRow('ACTIVE'));
+      prismaService.vendorFollow.findUnique.mockResolvedValue({ userId: 'u1' });
+      prismaService.vendorFollow.count.mockResolvedValue(7);
+
+      await expect(vendorService.getFollowState('vua-thuy-san-phu-quoc-xanh', 'u1')).resolves.toEqual({
+        isFollowing: true,
+        followerCount: 7,
+      });
+    });
+
+    it('follows an active vendor with an upsert, so repeating it is harmless', async () => {
+      prismaService.vendor.findUnique.mockResolvedValue(vendorRow('ACTIVE'));
+      prismaService.vendorFollow.findUnique.mockResolvedValue(null);
+
+      const result = await vendorService.follow('vua-thuy-san-phu-quoc-xanh', 'u1');
+
+      expect(prismaService.vendorFollow.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ create: { userId: 'u1', vendorId: 'vendor-1' } }),
+      );
+      expect(result.isFollowing).toBe(false);
+    });
+
+    it('refuses to follow a vendor that is not open yet', async () => {
+      prismaService.vendor.findUnique.mockResolvedValue(vendorRow('PENDING'));
+
+      await expect(vendorService.follow('vua-thuy-san-phu-quoc-xanh', 'u1')).rejects.toThrow(BadRequestException);
+      expect(prismaService.vendorFollow.upsert).not.toHaveBeenCalled();
+    });
+
+    it('unfollows without failing when the customer was not following', async () => {
+      prismaService.vendor.findUnique.mockResolvedValue(vendorRow('ACTIVE'));
+      prismaService.vendorFollow.deleteMany.mockResolvedValue({ count: 0 });
+
+      await expect(vendorService.unfollow('vua-thuy-san-phu-quoc-xanh', 'u1')).resolves.toMatchObject({ isFollowing: false });
+      expect(prismaService.vendorFollow.deleteMany).toHaveBeenCalledWith({ where: { userId: 'u1', vendorId: 'vendor-1' } });
+    });
+
+    it('lists followed vendors with the same card data as the directory', async () => {
+      prismaService.vendorFollow.findMany.mockResolvedValue([{ vendor: vendorRow('ACTIVE') }]);
+      prismaService.vendorOffer.findMany.mockResolvedValue([{ vendorId: 'vendor-1', variant: { productId: 'p1' } }]);
+
+      const result = await vendorService.listFollowedVendors('u1');
+
+      expect(result.map((v) => [v.slug, v.productCount])).toEqual([['vua-thuy-san-phu-quoc-xanh', 1]]);
+    });
   });
 });
