@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 
 interface TiltCardProps {
   children: React.ReactNode;
@@ -12,6 +12,14 @@ interface TiltCardProps {
   onClick?: () => void;
 }
 
+const HOVER_TRANSITION = "transform 0.12s ease-out";
+const REST_TRANSITION = "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1)";
+
+/**
+ * Card that tilts towards the pointer. Styles are written straight to the DOM
+ * once per animation frame, so hovering never re-renders React. The effect is
+ * skipped on touch screens and for users who prefer reduced motion.
+ */
 export function TiltCard({
   children,
   className = "",
@@ -22,47 +30,63 @@ export function TiltCard({
   onClick,
 }: TiltCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [transform, setTransform] = useState<string>("");
-  const [glareStyle, setGlareStyle] = useState<React.CSSProperties>({ opacity: 0 });
-  const [isHovered, setIsHovered] = useState(false);
+  const glareRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<number | null>(null);
+  const pointerRef = useRef({ x: 0, y: 0 });
+  const enabledRef = useRef(false);
 
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!cardRef.current) return;
-      const rect = cardRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
+  const restTransform = `perspective(${perspective}px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
 
-      // Calculate degrees
-      const rotateX = ((y - centerY) / centerY) * -maxTilt;
-      const rotateY = ((x - centerX) / centerX) * maxTilt;
+  useEffect(() => {
+    enabledRef.current =
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return () => {
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+    };
+  }, []);
 
-      setTransform(
-        `perspective(${perspective}px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(${scale}, ${scale}, ${scale})`
-      );
+  const applyTilt = useCallback(() => {
+    frameRef.current = null;
+    const card = cardRef.current;
+    if (!card) return;
 
-      if (glare) {
-        const glareX = (x / rect.width) * 100;
-        const glareY = (y / rect.height) * 100;
-        setGlareStyle({
-          opacity: 0.16,
-          background: `radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 65%)`,
-        });
-      }
-    },
-    [glare, maxTilt, perspective, scale]
-  );
+    const rect = card.getBoundingClientRect();
+    const x = pointerRef.current.x - rect.left;
+    const y = pointerRef.current.y - rect.top;
+    const rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -maxTilt;
+    const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * maxTilt;
+
+    card.style.transform = `perspective(${perspective}px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(${scale}, ${scale}, ${scale})`;
+
+    if (glare && glareRef.current) {
+      glareRef.current.style.opacity = "0.16";
+      glareRef.current.style.background = `radial-gradient(circle at ${((x / rect.width) * 100).toFixed(1)}% ${((y / rect.height) * 100).toFixed(1)}%, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 65%)`;
+    }
+  }, [glare, maxTilt, perspective, scale]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!enabledRef.current) return;
+    pointerRef.current = { x: e.clientX, y: e.clientY };
+    if (frameRef.current === null) {
+      frameRef.current = requestAnimationFrame(applyTilt);
+    }
+  };
 
   const handleMouseEnter = () => {
-    setIsHovered(true);
+    if (enabledRef.current && cardRef.current) cardRef.current.style.transition = HOVER_TRANSITION;
   };
 
   const handleMouseLeave = () => {
-    setIsHovered(false);
-    setTransform(`perspective(${perspective}px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`);
-    setGlareStyle({ opacity: 0 });
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    if (cardRef.current) {
+      cardRef.current.style.transition = REST_TRANSITION;
+      cardRef.current.style.transform = restTransform;
+    }
+    if (glareRef.current) glareRef.current.style.opacity = "0";
   };
 
   return (
@@ -72,23 +96,16 @@ export function TiltCard({
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      style={{
-        transform:
-          transform ||
-          `perspective(${perspective}px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`,
-        transition: isHovered
-          ? "transform 0.12s ease-out"
-          : "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
-        transformStyle: "preserve-3d",
-      }}
-      className={`relative will-change-transform ${className}`}
+      style={{ transform: restTransform, transition: REST_TRANSITION, transformStyle: "preserve-3d" }}
+      className={`relative ${className}`}
     >
       {children}
       {glare && (
         <div
+          ref={glareRef}
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-20 rounded-[inherit] transition-opacity duration-300"
-          style={glareStyle}
+          style={{ opacity: 0 }}
         />
       )}
     </div>

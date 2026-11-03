@@ -2,94 +2,80 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
+type RevealAnimation = "fade-up" | "fade-in" | "zoom";
+/** Older names are still accepted and map to the subtle equivalents. */
+type LegacyAnimation = "fade-up-3d" | "fade-left-3d" | "fade-right-3d" | "zoom-3d";
+
 interface ScrollRevealProps {
   children: React.ReactNode;
-  animation?: "fade-up-3d" | "fade-left-3d" | "fade-right-3d" | "zoom-3d";
+  animation?: RevealAnimation | LegacyAnimation;
   delay?: number; // ms
   duration?: number; // ms
   threshold?: number;
   className?: string;
-  once?: boolean;
+  as?: "div" | "li" | "section";
 }
 
+const HIDDEN_TRANSFORM: Record<RevealAnimation, string> = {
+  "fade-up": "translate3d(0, 16px, 0)",
+  "fade-in": "none",
+  zoom: "scale(0.97)",
+};
+
+function normalize(animation: RevealAnimation | LegacyAnimation): RevealAnimation {
+  if (animation === "zoom-3d") return "zoom";
+  if (animation.endsWith("-3d")) return "fade-up";
+  return animation as RevealAnimation;
+}
+
+/**
+ * Fades content in the first time it scrolls into view. Only opacity and
+ * transform animate, and people who ask for reduced motion see it at once.
+ */
 export function ScrollReveal({
   children,
-  animation = "fade-up-3d",
+  animation = "fade-up",
   delay = 0,
-  duration = 750,
-  threshold = 0.1,
+  duration = 700,
+  threshold = 0.15,
   className = "",
-  once = true,
+  as: Tag = "div",
 }: ScrollRevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasFinishedTransition, setHasFinishedTransition] = useState(false);
+  const ref = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
 
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          if (once) {
-            observer.unobserve(element);
-          }
-          // After entrance transition completes, clear outer transform lock for 3D tilt freedom
-          const timer = setTimeout(() => {
-            setHasFinishedTransition(true);
-          }, duration + delay + 50);
-          return () => clearTimeout(timer);
-        } else if (!once) {
-          setIsVisible(false);
-          setHasFinishedTransition(false);
+        if (entry?.isIntersecting || reduceMotion) {
+          setVisible(true);
+          observer.disconnect();
         }
       },
-      {
-        threshold,
-        rootMargin: "0px 0px -30px 0px",
-      }
+      { threshold, rootMargin: "0px 0px -40px 0px" },
     );
-
     observer.observe(element);
     return () => observer.disconnect();
-  }, [delay, duration, once, threshold]);
+  }, [threshold]);
 
-  const getHiddenTransform = () => {
-    switch (animation) {
-      case "fade-left-3d":
-        return "perspective(1200px) rotateY(-12deg) translateX(-35px) scale(0.96)";
-      case "fade-right-3d":
-        return "perspective(1200px) rotateY(12deg) translateX(35px) scale(0.96)";
-      case "zoom-3d":
-        return "perspective(1200px) scale(0.92) translateZ(-40px)";
-      case "fade-up-3d":
-      default:
-        return "perspective(1200px) rotateX(12deg) translateY(40px) scale(0.96)";
-    }
-  };
-
-  const currentTransform = isVisible
-    ? hasFinishedTransition
-      ? undefined
-      : "perspective(1200px) rotateX(0deg) rotateY(0deg) translate3d(0, 0, 0) scale(1)"
-    : getHiddenTransform();
+  const kind = normalize(animation);
 
   return (
-    <div
-      ref={ref}
+    <Tag
+      ref={ref as React.Ref<never>}
+      data-visible={visible}
       style={{
-        opacity: isVisible ? 1 : 0,
-        transform: currentTransform,
+        opacity: visible ? 1 : 0,
+        transform: visible ? "none" : HIDDEN_TRANSFORM[kind],
         transition: `opacity ${duration}ms cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, transform ${duration}ms cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
-        transformStyle: "preserve-3d",
-        willChange:
-          isVisible && hasFinishedTransition ? "auto" : "transform, opacity",
       }}
       className={className}
     >
       {children}
-    </div>
+    </Tag>
   );
 }

@@ -65,3 +65,16 @@ enum ReviewStatus {
   PUBLISHED
   HIDDEN
 }
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AddressLabel {
+  HOME
+  OFFICE
+  FAMILY
+  OTHER
+}

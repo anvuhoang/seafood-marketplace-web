@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { ShieldCheck, Phone } from "lucide-react";
+import { ArrowLeft, Check, Fish } from "lucide-react";
 
 interface AuthCardWrapperProps {
   title: string;
@@ -10,75 +10,86 @@ interface AuthCardWrapperProps {
   children: React.ReactNode;
 }
 
-export function AuthCardWrapper({
-  title,
-  subtitle,
-  children,
-}: AuthCardWrapperProps) {
+const BRAND_POINTS = ["Mua trực tiếp từ vựa, giá minh bạch", "Giao trong 2 giờ tại TP.HCM", "Kiểm hàng trước khi thanh toán"];
+
+function Logo({ inverted = false }: { inverted?: boolean }) {
   return (
-    <div className="relative min-h-screen w-full bg-gradient-to-b from-[#F0F7FF] via-[#F8FAFC] to-[#EDF5FD] flex flex-col justify-between items-center py-8 px-4 sm:px-6">
-      {/* Ambient background decoration */}
-      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-96 w-full max-w-4xl bg-gradient-to-b from-sky-200/30 to-transparent blur-3xl" />
+    <Link href="/" className="inline-flex items-center gap-2.5">
+      <span
+        className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+          inverted ? "bg-white text-[#0F3860]" : "bg-[#0F3860] text-white"
+        }`}
+      >
+        <Fish className="h-5 w-5" strokeWidth={2.25} />
+      </span>
+      <span className={`text-xl font-bold tracking-tight ${inverted ? "text-white" : "text-[#0F3860]"}`}>
+        HaiSan<span className={inverted ? "text-[#FF6B6B]" : "text-[#E63946]"}>Express</span>
+      </span>
+    </Link>
+  );
+}
 
-      {/* Top spacer or quick back link */}
-      <div className="w-full max-w-md flex justify-between items-center text-xs text-slate-500 mb-2">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 font-semibold text-[#0F3860] hover:text-[#E63946] transition-colors"
-        >
-          <span>← Quay lại trang chủ</span>
-        </Link>
-      </div>
+export function AuthCardWrapper({ title, subtitle, children }: AuthCardWrapperProps) {
+  return (
+    <div className="grid min-h-screen w-full bg-white lg:grid-cols-[1fr_1.1fr]">
+      <aside className="relative hidden overflow-hidden bg-[#0B2540] lg:block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://images.unsplash.com/photo-1553659971-f01207815844?auto=format&fit=crop&w=1200&q=75"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-40"
+        />
+        <div className="absolute inset-0 bg-linear-to-t from-[#0B2540] via-[#0B2540]/70 to-[#0B2540]/30" />
+        <div className="relative flex h-full flex-col justify-between p-12 text-white">
+          <Logo inverted />
+          <div>
+            <p className="max-w-md text-3xl leading-tight font-bold tracking-tight text-balance">
+              Hải sản tươi từ vựa, giao tận bếp nhà bạn.
+            </p>
+            <ul className="mt-6 space-y-2.5 text-sm text-slate-300">
+              {BRAND_POINTS.map((point) => (
+                <li key={point} className="flex items-center gap-2.5">
+                  <Check className="h-4 w-4 text-emerald-400" />
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </aside>
 
-      {/* Main Auth Card */}
-      <div className="relative z-10 w-full max-w-[460px] rounded-[32px] border border-sky-100/80 bg-white p-7 sm:p-10 shadow-2xl shadow-blue-950/5">
-        {/* Logo */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <span className="text-3xl font-black tracking-tight text-[#0F3860]">
-              HaiSan<span className="text-[#E63946]">Express</span>
-            </span>
+      <div className="flex flex-col px-5 py-6 sm:px-10">
+        <div className="flex items-center justify-between">
+          <div className="lg:hidden">
+            <Logo />
+          </div>
+          <Link
+            href="/"
+            className="ml-auto inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-[#0F3860]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Trang chủ
           </Link>
-
-          <h1 className="mt-3 text-lg sm:text-xl font-bold tracking-tight text-slate-900">
-            {title}
-          </h1>
-
-          <p className="mt-1.5 text-xs leading-relaxed text-slate-500 max-w-xs mx-auto">
-            {subtitle}
-          </p>
         </div>
 
-        {/* Form Body */}
-        <div className="mt-6">{children}</div>
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">{title}</h1>
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">{subtitle}</p>
+          <div className="mt-8">{children}</div>
+        </main>
 
-        {/* Security badge at bottom of card */}
-        <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-sky-50/70 border border-sky-100/70 px-4 py-2.5 text-xs font-semibold text-slate-600">
-          <ShieldCheck className="h-4 w-4 text-[#0F3860] shrink-0" />
-          <span>Cam kết an toàn dữ liệu khách hàng</span>
-        </div>
-      </div>
-
-      {/* Outside Footer Links */}
-      <footer className="mt-8 text-center text-xs text-slate-500">
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 font-medium">
-          <Link href="/help/terms" className="hover:text-slate-800 transition-colors">
+        <footer className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-400">
+          <Link href="/help/terms" className="hover:text-slate-700">
             Điều khoản dịch vụ
           </Link>
-          <span className="text-slate-300">•</span>
-          <Link href="/help/privacy" className="hover:text-slate-800 transition-colors">
+          <Link href="/help/privacy" className="hover:text-slate-700">
             Chính sách bảo mật
           </Link>
-          <span className="text-slate-300">•</span>
-          <a
-            href="tel:19006886"
-            className="inline-flex items-center gap-1 hover:text-[#0F3860] transition-colors"
-          >
-            <Phone className="h-3.5 w-3.5 text-slate-400" />
-            <span>1900 6886</span>
+          <a href="tel:19006868" className="hover:text-slate-700">
+            Hỗ trợ 1900 6868
           </a>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }
