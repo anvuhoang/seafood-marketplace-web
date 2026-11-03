@@ -1,10 +1,10 @@
-import { ProductDetail } from "../types/product.types";
 
 /**
  * Mock data for the flagship product shown in the UI mockup:
  * Tôm Sú Biển Tươi Sống Loại 1 (Size 15 - 20 con/kg)
  */
-export const flagshipProductMock: ProductDetail = {
+// Legacy sample data, only used by the mock vendor page until the storefront lands.
+export const flagshipProductMock = {
   id: "prod-1",
   name: "Tôm Sú Biển Tươi Sống Loại 1 (Size 15 - 20 con/kg)",
   slug: "tom-su-bien-tuoi-song-loai-1",
@@ -211,20 +211,4 @@ export const flagshipProductMock: ProductDetail = {
       soldNote: "Còn sẵn",
     },
   ],
-};
-
-/**
- * Discontinued or Out-Of-Stock mock product for testing edge cases
- */
-export const discontinuedProductMock: ProductDetail = {
-  ...flagshipProductMock,
-  id: "prod-discontinued",
-  name: "Tôm Hùm Đỏ Côn Đảo (Tạm Hết Hàng & Ngừng Nhập)",
-  slug: "discontinued-sample",
-  status: "INACTIVE",
-  stock: 0,
-  inStock: false,
-  isDiscontinued: true,
-  price: 1850000,
-  originalPrice: 2100000,
 };

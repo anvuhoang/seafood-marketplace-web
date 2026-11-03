@@ -11,6 +11,9 @@ const PROTECTED_ROUTES: {
 }[] = [
     { prefix: "/customer/orders", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
     { prefix: "/customer/profile", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
+    { prefix: "/customer/addresses", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
+    { prefix: "/customer/password", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
+    { prefix: "/customer/reviews", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
     { prefix: "/customer/checkout", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
     { prefix: "/vendor/dashboard", roles: ["VENDOR", "ADMIN"] },
     { prefix: "/vendor/products", roles: ["VENDOR", "ADMIN"] },
@@ -19,12 +22,7 @@ const PROTECTED_ROUTES: {
     { prefix: "/admin", roles: ["ADMIN"] },
   ];
 
-const AUTH_PAGES = [
-  "/login",
-  "/register",
-  "/customer/login",
-  "/customer/register",
-];
+const AUTH_PAGES = ["/customer/login", "/customer/register"];
 
 function matchesRoute(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
@@ -93,11 +91,6 @@ export function proxy(request: NextRequest) {
 export default proxy;
 
 export const config = {
-  matcher: [
-    "/customer/:path*",
-    "/vendor/:path*",
-    "/admin/:path*",
-    "/login",
-    "/register",
-  ],
+  // /login and /register redirect to these in next.config.ts.
+  matcher: ["/customer/:path*", "/vendor/:path*", "/admin/:path*"],
 };

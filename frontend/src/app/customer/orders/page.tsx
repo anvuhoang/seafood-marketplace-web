@@ -48,7 +48,7 @@ export default function CustomerOrdersPage() {
                 <ClipboardList className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-xl font-black text-slate-900">
+                <h1 className="text-xl font-bold text-slate-900">
                   Đơn Mua Của Tôi
                 </h1>
                 <p className="text-xs text-slate-400">
@@ -110,7 +110,7 @@ export default function CustomerOrdersPage() {
                   </div>
 
                   <div className="text-right">
-                    <div className="text-base font-black text-[#E63946]">
+                    <div className="text-base font-bold text-[#E63946]">
                       {formatPrice(ord.total)}
                     </div>
                     <div className="text-[11px] text-slate-400">

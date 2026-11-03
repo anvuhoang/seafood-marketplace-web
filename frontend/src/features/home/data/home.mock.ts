@@ -1,11 +1,3 @@
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  count: string;
-  image: string;
-}
-
 export interface Product {
   id: string;
   name: string;
@@ -42,57 +34,6 @@ export interface Benefit {
   description: string;
   iconName: "Store" | "ShieldCheck" | "Headset" | "Sparkles";
 }
-
-export const homeCategories: Category[] = [
-  {
-    id: "cat-1",
-    name: "Cá biển tươi",
-    slug: "ca-bien-tuoi",
-    count: "120+ sản phẩm",
-    image:
-      "https://images.unsplash.com/photo-1534482421-64566f976cfa?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "cat-2",
-    name: "Tôm sống",
-    slug: "tom-song",
-    count: "85+ sản phẩm",
-    image:
-      "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "cat-3",
-    name: "Cua & Ghẹ",
-    slug: "cua-ghe",
-    count: "45+ sản phẩm",
-    image:
-      "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "cat-4",
-    name: "Mực & Bạch Tuộc",
-    slug: "muc-bach-tuoc",
-    count: "60+ sản phẩm",
-    image:
-      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "cat-5",
-    name: "Nghêu, Sò, Hàu",
-    slug: "ngheu-so-hau",
-    count: "50+ sản phẩm",
-    image:
-      "https://images.unsplash.com/photo-1628294895950-9805252327bc?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "cat-6",
-    name: "Hải sản đặc sản",
-    slug: "hai-san-dac-san",
-    count: "30+ sản phẩm",
-    image:
-      "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=400&q=80",
-  },
-];
 
 export const featuredProducts: Product[] = [
   {

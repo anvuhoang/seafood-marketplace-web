@@ -1,8 +1,9 @@
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
+import { PrismaExceptionFilter } from './common/filters/index.js';
+import { setupApiDocs } from './swagger.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -29,19 +30,11 @@ async function bootstrap() {
     }),
   );
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('HaiSan Express API')
-    .setDescription('API documentation for HaiSan Express')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  app.useGlobalFilters(new PrismaExceptionFilter(app.get(HttpAdapterHost).httpAdapter));
 
-  const document = SwaggerModule.createDocument(
-    app,
-    swaggerConfig,
-  );
-
-  SwaggerModule.setup('api/docs', app, document);
+  if (config.get<boolean>('apiDocsEnabled')) {
+    setupApiDocs(app);
+  }
 
   await app.listen(port);
 }

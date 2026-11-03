@@ -48,7 +48,11 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return data as T;
 }
 
-async function authenticatedRequest<T>(
+/**
+ * Request an API endpoint with the bearer token. A 401 response logs the
+ * user out through the registered handler.
+ */
+export async function authenticatedRequest<T>(
   url: string,
   token: string,
   init: RequestInit = {},

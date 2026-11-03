@@ -1,241 +1,153 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { RotateCcw } from "lucide-react";
-import { featuredProducts } from "../data/home.mock";
-import { ProductCard } from "./ProductCard";
+import { ArrowRight } from "lucide-react";
+import { getProductListing } from "@/features/catalog/api/catalog.api";
+import { CatalogProductCard } from "@/features/catalog/components/CatalogProductCard";
+import { CatalogQuery } from "@/features/catalog/utils/catalog-query";
+import { FacetOption, ProductListingItem } from "@/features/catalog/types/catalog.types";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 
+/** The home page shows a short pick; full filtering lives on /products. */
+const HOME_PRODUCT_LIMIT = 8;
+
 export function FeaturedSeafood() {
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedOrigin, setSelectedOrigin] = useState("all");
-  const [selectedPriceRange, setSelectedPriceRange] = useState("all");
-  const [sortBy, setSortBy] = useState("default");
-  const [quickFilter, setQuickFilter] = useState<string | null>(null);
+  const [category, setCategory] = useState("");
+  const [attempt, setAttempt] = useState(0);
 
-  const quickFilterChips = [
-    { label: "Cá hồi tươi", category: "ca-bien-tuoi" },
-    { label: "Cua Cà Mau", origin: "Cà Mau" },
-    { label: "Tôm càng xanh", category: "tom-song" },
-    { label: "Mực Côn Đảo", origin: "Côn Đảo" },
-    { label: "Hàu Sữa", category: "ngheu-so-hau" },
-  ];
+  // The result is tagged with the filters it was fetched for, so "loading" is
+  // simply "the latest result belongs to older filters".
+  const [result, setResult] = useState<{
+    key: string;
+    items: ProductListingItem[];
+    failed: boolean;
+  } | null>(null);
+  const [categoryOptions, setCategoryOptions] = useState<FacetOption[]>([]);
+  // Tabs come from the first, unfiltered response so they stay put while switching.
+  const facetsLoaded = useRef(false);
 
-  const filteredList = useMemo(() => {
-    let result = [...featuredProducts];
+  const filterKey = [category, attempt].join("|");
 
-    // Quick filter check
-    if (quickFilter) {
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(quickFilter.toLowerCase()) ||
-          p.origin.toLowerCase().includes(quickFilter.toLowerCase())
-      );
-    }
+  useEffect(() => {
+    let mounted = true;
+    const query: CatalogQuery = {
+      q: "",
+      categories: category ? [category] : [],
+      regions: [],
+      vendors: [],
+      inStock: false,
+      sort: "featured",
+      page: 1,
+      view: "grid",
+    };
 
-    // Category filter
-    if (selectedCategory !== "all") {
-      result = result.filter((p) => p.category === selectedCategory);
-    }
+    getProductListing(query)
+      .then((listing) => {
+        if (!mounted) return;
+        setResult({ key: filterKey, items: listing.items.slice(0, HOME_PRODUCT_LIMIT), failed: false });
+        if (!facetsLoaded.current) {
+          facetsLoaded.current = true;
+          setCategoryOptions(listing.facets.categories);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load featured products:", error);
+        if (mounted) setResult({ key: filterKey, items: [], failed: true });
+      });
 
-    // Origin filter
-    if (selectedOrigin !== "all") {
-      result = result.filter((p) => p.origin === selectedOrigin);
-    }
+    return () => {
+      mounted = false;
+    };
+  }, [filterKey, category]);
 
-    // Price filter
-    if (selectedPriceRange === "under-300") {
-      result = result.filter((p) => p.price < 300000);
-    } else if (selectedPriceRange === "300-500") {
-      result = result.filter((p) => p.price >= 300000 && p.price <= 500000);
-    } else if (selectedPriceRange === "above-500") {
-      result = result.filter((p) => p.price > 500000);
-    }
-
-    // Sorting
-    if (sortBy === "price-asc") {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortBy === "price-desc") {
-      result.sort((a, b) => b.price - a.price);
-    }
-
-    return result;
-  }, [selectedCategory, selectedOrigin, selectedPriceRange, sortBy, quickFilter]);
-
-  const resetAllFilters = () => {
-    setSelectedCategory("all");
-    setSelectedOrigin("all");
-    setSelectedPriceRange("all");
-    setSortBy("default");
-    setQuickFilter(null);
-  };
+  const items = result?.items ?? [];
+  const isLoading = result?.key !== filterKey;
+  const hasError = !isLoading && result?.failed === true;
+  const tabs = [{ value: "", label: "Tất cả" }, ...categoryOptions];
+  const seeAllHref = category ? `/categories/${category}` : "/products";
 
   return (
-    <section id="featured-seafood" className="bg-slate-50/60 py-12 sm:py-16">
+    <section id="featured-seafood" className="bg-slate-50 py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <ScrollReveal animation="fade-up-3d">
-          <SectionHeading
-            eyebrow="TUYỂN CHỌN TƯƠI NGON"
-            title="Hải sản nổi bật"
-            description="Sản phẩm đánh bắt mới về trong ngày từ các vựa đối tác uy tín"
-            note="*Giá có thể thay đổi nhẹ tùy theo ngày đánh bắt và kích cỡ"
-            actionHref="#featured-seafood"
-            actionLabel="Xem tất cả hải sản"
-          />
-        </ScrollReveal>
+        <SectionHeading
+          title="Hải sản nổi bật hôm nay"
+          description="Hàng mới về trong ngày từ các vựa đối tác. Giá có thể thay đổi nhẹ theo kích cỡ."
+          actionHref="/products"
+          actionLabel="Xem tất cả hải sản"
+        />
 
-        {/* Filter and Control Bar matching the design */}
-        <ScrollReveal animation="fade-up-3d" delay={80}>
-          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
-            {/* Category Filter */}
-            <div>
-              <label className="mb-1 block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Loại hải sản
-              </label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value);
-                  setQuickFilter(null);
-                }}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:border-[#0F3860]"
-              >
-                <option value="all">Tất cả danh mục</option>
-                <option value="ca-bien-tuoi">Cá biển tươi</option>
-                <option value="tom-song">Tôm sống</option>
-                <option value="cua-ghe">Cua & Ghẹ</option>
-                <option value="muc-bach-tuoc">Mực & Bạch Tuộc</option>
-                <option value="ngheu-so-hau">Nghêu, Sò, Hàu</option>
-              </select>
-            </div>
-
-            {/* Origin Filter */}
-            <div>
-              <label className="mb-1 block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Nguồn gốc
-              </label>
-              <select
-                value={selectedOrigin}
-                onChange={(e) => {
-                  setSelectedOrigin(e.target.value);
-                  setQuickFilter(null);
-                }}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:border-[#0F3860]"
-              >
-                <option value="all">Tất cả nguồn gốc</option>
-                <option value="Phú Quốc">Phú Quốc</option>
-                <option value="Phan Thiết">Phan Thiết</option>
-                <option value="Côn Đảo">Côn Đảo</option>
-                <option value="Cà Mau">Cà Mau</option>
-                <option value="Nha Trang">Nha Trang</option>
-                <option value="Vũng Tàu">Vũng Tàu</option>
-                <option value="Quảng Ninh">Quảng Ninh</option>
-                <option value="Quảng Ngãi">Quảng Ngãi</option>
-                <option value="Nhập khẩu Na Uy">Nhập khẩu Na Uy</option>
-              </select>
-            </div>
-
-            {/* Price Filter */}
-            <div>
-              <label className="mb-1 block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Mức giá
-              </label>
-              <select
-                value={selectedPriceRange}
-                onChange={(e) => setSelectedPriceRange(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:border-[#0F3860]"
-              >
-                <option value="all">Tất cả mức giá</option>
-                <option value="under-300">Dưới 300.000 đ</option>
-                <option value="300-500">300.000 đ - 500.000 đ</option>
-                <option value="above-500">Trên 500.000 đ</option>
-              </select>
-            </div>
-
-            {/* Sort Filter */}
-            <div>
-              <label className="mb-1 block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Sắp xếp
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:border-[#0F3860]"
-              >
-                <option value="default">Mới nhất / Nổi bật</option>
-                <option value="price-asc">Giá thấp đến cao</option>
-                <option value="price-desc">Giá cao đến thấp</option>
-              </select>
-            </div>
-
-            {/* Reset Button */}
-            <div className="flex items-end">
+        <div
+          role="tablist"
+          aria-label="Lọc theo danh mục"
+          className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0"
+        >
+          {tabs.map((tab) => {
+            const active = category === tab.value;
+            return (
               <button
+                key={tab.value || "all"}
                 type="button"
-                onClick={resetAllFilters}
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Xóa lọc</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Filter Tag Chips */}
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-            <span className="text-[11px] font-bold text-slate-400 uppercase">
-              Gợi ý nhanh:
-            </span>
-            {quickFilterChips.map((chip, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() =>
-                  setQuickFilter(quickFilter === chip.label ? null : chip.label)
-                }
-                className={`rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${
-                  quickFilter === chip.label
-                    ? "bg-[#0F3860] text-white shadow-md shadow-blue-950/20"
-                    : "border border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white hover:shadow-xs"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setCategory(tab.value)}
+                className={`shrink-0 rounded-full border px-4 py-1.5 text-sm transition-colors ${
+                  active
+                    ? "border-[#0F3860] bg-[#0F3860] font-medium text-white"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
                 }`}
               >
-                {chip.label}
+                {tab.label}
               </button>
+            );
+          })}
+        </div>
+
+        {hasError ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-10 text-center">
+            <p className="text-slate-700">Không tải được danh sách hải sản.</p>
+            <button
+              type="button"
+              onClick={() => setAttempt((n) => n + 1)}
+              className="mt-3 text-sm font-semibold text-[#0F3860] hover:underline"
+            >
+              Thử lại
+            </button>
+          </div>
+        ) : isLoading && items.length === 0 ? (
+          <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+            {Array.from({ length: HOME_PRODUCT_LIMIT }, (_, index) => (
+              <div key={index} className="h-80 animate-pulse rounded-xl bg-slate-200/60" />
             ))}
           </div>
-        </div>
-        </ScrollReveal>
-
-        {/* Product Grid (4 columns) */}
-        {filteredList.length > 0 ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {filteredList.slice(0, 12).map((product, idx) => (
-              <ScrollReveal
-                key={product.id}
-                animation="fade-up-3d"
-                delay={(idx % 4) * 80}
-                className="h-full"
-              >
-                <ProductCard product={product} />
+        ) : items.length > 0 ? (
+          <div
+            className={`grid grid-cols-2 gap-4 transition-opacity sm:gap-5 lg:grid-cols-4 ${
+              isLoading ? "opacity-60" : ""
+            }`}
+          >
+            {items.map((product, index) => (
+              <ScrollReveal key={product.id} delay={(index % 4) * 70} className="h-full">
+                <CatalogProductCard product={product} view="grid" />
               </ScrollReveal>
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-            <p className="text-base font-semibold text-slate-700">
-              Không tìm thấy sản phẩm hải sản phù hợp với tiêu chí lọc
-            </p>
-            <button
-              onClick={resetAllFilters}
-              className="mt-3 rounded-xl bg-[#0F3860] px-4 py-2 text-xs font-bold text-white"
-            >
-              Đặt lại bộ lọc
-            </button>
-          </div>
+          <p className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
+            Danh mục này tạm hết hàng.
+          </p>
         )}
+
+        <div className="mt-8 text-center">
+          <Link
+            href={seeAllHref}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:border-[#0F3860] hover:text-[#0F3860]"
+          >
+            {category ? "Xem cả danh mục" : "Xem tất cả hải sản"}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
     </section>
   );
