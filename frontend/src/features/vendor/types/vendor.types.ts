@@ -39,6 +39,12 @@ export interface VendorStorefrontProfile {
   ratingAverage: number;
   ratingCount: number;
   joinedAt: string;
+  followerCount: number;
+}
+
+export interface VendorFollowState {
+  isFollowing: boolean;
+  followerCount: number;
 }
 
 export interface VendorSummary {

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { KeyRound, LogOut, MapPin, ReceiptText, SquarePen, UserCog, UserRound } from "lucide-react";
+import { Heart, KeyRound, LogOut, MapPin, ReceiptText, SquarePen, UserCog, UserRound } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { CustomerHeader } from "@/components/shared/CustomerHeader";
 import { CustomerFooter } from "@/components/shared/CustomerFooter";
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/customer/addresses", label: "Sổ địa chỉ nhận hàng", icon: MapPin },
   { href: "/customer/orders", label: "Lịch sử & Đơn hàng", icon: ReceiptText },
   { href: "/customer/reviews", label: "Đánh giá sản phẩm", icon: SquarePen },
+  { href: "/customer/followed-vendors", label: "Vựa đang theo dõi", icon: Heart },
   { href: "/customer/password", label: "Đổi mật khẩu", icon: KeyRound },
 ];
 

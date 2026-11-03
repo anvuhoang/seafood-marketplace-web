@@ -1,4 +1,5 @@
-import { VendorStorefront, VendorSummary } from "../types/vendor.types";
+import { authenticatedRequest } from "@/features/auth/api/auth.api";
+import { VendorFollowState, VendorStorefront, VendorSummary } from "../types/vendor.types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -42,4 +43,22 @@ export async function getVendorStorefront(
   }
 
   return res.json();
+}
+
+/** Whether the signed-in customer follows a vendor, and how many customers do. */
+export function getFollowState(token: string, slug: string): Promise<VendorFollowState> {
+  return authenticatedRequest<VendorFollowState>(`${API_BASE_URL}/vendors/${encodeURIComponent(slug)}/follow`, token);
+}
+
+export function followVendor(token: string, slug: string): Promise<VendorFollowState> {
+  return authenticatedRequest<VendorFollowState>(`${API_BASE_URL}/vendors/${encodeURIComponent(slug)}/follow`, token, { method: "PUT" });
+}
+
+export function unfollowVendor(token: string, slug: string): Promise<VendorFollowState> {
+  return authenticatedRequest<VendorFollowState>(`${API_BASE_URL}/vendors/${encodeURIComponent(slug)}/follow`, token, { method: "DELETE" });
+}
+
+/** Vendors the signed-in customer follows. */
+export function getFollowedVendors(token: string): Promise<VendorSummary[]> {
+  return authenticatedRequest<VendorSummary[]>(`${API_BASE_URL}/vendors/followed`, token);
 }
