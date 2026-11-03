@@ -21,11 +21,11 @@ export default function CustomerCartPage() {
               <ShoppingCart className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-xl font-black text-slate-900">
-                Giỏ Hàng Hải Sản Của Bạn ({itemCount} món)
+              <h1 className="text-xl font-bold text-slate-900">
+                Giỏ hàng ({itemCount} món)
               </h1>
               <p className="text-xs text-slate-400">
-                Đóng gói tiêu chuẩn thùng xốp oxy muối giữ sống tận tay
+                Hải sản được đóng thùng oxy giữ sống tới tay bạn
               </p>
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function CustomerCartPage() {
                   </div>
 
                   <div className="text-right space-y-1">
-                    <div className="text-sm font-black text-[#E63946]">
+                    <div className="text-sm font-bold text-[#E63946]">
                       {formatPrice(item.price * item.quantity)}
                     </div>
                     <div className="text-[11px] text-slate-400">
@@ -135,7 +135,7 @@ export default function CustomerCartPage() {
                   <span className="text-sm font-bold text-slate-900">
                     Tổng thanh toán:
                   </span>
-                  <span className="text-lg font-black text-[#E63946]">
+                  <span className="text-lg font-bold text-[#E63946]">
                     {formatPrice(totalPrice + 30000)}
                   </span>
                 </div>

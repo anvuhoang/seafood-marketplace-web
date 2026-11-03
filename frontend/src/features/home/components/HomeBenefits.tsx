@@ -1,92 +1,57 @@
-import { Store, ShieldCheck, Headset, Sparkles } from "lucide-react";
-import { homeBenefits } from "../data/home.mock";
-import { SectionHeading } from "@/components/ui/SectionHeading";
-import { TiltCard } from "@/components/ui/TiltCard";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 
+const STEPS = [
+  {
+    title: "Chọn hải sản và vựa",
+    description: "So sánh giá, kích cỡ và đánh giá thật của người mua trước giữa các vựa.",
+  },
+  {
+    title: "Chọn cách sơ chế",
+    description: "Giữ sống trong túi oxy, ướp đá hoặc hút chân không theo nhu cầu nấu.",
+  },
+  {
+    title: "Nhận hàng trong ngày",
+    description: "Vựa đóng thùng ngay khi có đơn, giao trong 2 giờ tại nội thành.",
+  },
+];
+
+/** How buying works, plus the invitation for vendors to open a shop. */
 export function HomeBenefits() {
-  const getIcon = (name: string) => {
-    switch (name) {
-      case "Store":
-        return <Store className="h-6 w-6 text-[#0F3860] transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />;
-      case "ShieldCheck":
-        return <ShieldCheck className="h-6 w-6 text-emerald-600 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />;
-      case "Headset":
-        return <Headset className="h-6 w-6 text-sky-600 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />;
-      case "Sparkles":
-      default:
-        return <Sparkles className="h-6 w-6 text-amber-500 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />;
-    }
-  };
-
-  const getBg = (name: string) => {
-    switch (name) {
-      case "Store":
-        return "bg-slate-100 group-hover:bg-slate-200";
-      case "ShieldCheck":
-        return "bg-emerald-50 group-hover:bg-emerald-100";
-      case "Headset":
-        return "bg-sky-50 group-hover:bg-sky-100";
-      case "Sparkles":
-      default:
-        return "bg-amber-50 group-hover:bg-amber-100";
-    }
-  };
-
   return (
-    <section className="bg-white py-14 sm:py-20">
+    <section className="bg-slate-50 py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <ScrollReveal animation="fade-up-3d">
-          <SectionHeading
-            eyebrow="DỊCH VỤ TẬN TÂM"
-            title="Vì sao chọn mua tại HaiSan Express"
-            description="Giải pháp mua hải sản an toàn, tươi ngon tiện lợi nhất cho gia đình & nhà hàng của bạn"
-            align="center"
-          />
+        <ScrollReveal>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">Mua hàng trong 3 bước</h2>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {homeBenefits.map((item, idx) => (
-            <ScrollReveal
-              key={item.id}
-              animation="fade-up-3d"
-              delay={idx * 90}
-              className="h-full"
-            >
-              <TiltCard
-                maxTilt={8}
-                scale={1.02}
-                className="h-full rounded-2xl"
-              >
-              <div className="group h-full rounded-2xl border border-slate-100 bg-white p-6 shadow-xs transition-all duration-300 hover:border-slate-200 hover:shadow-2xl hover:shadow-slate-300/40 preserve-3d">
-                <div
-                  style={{ transform: "translateZ(26px)" }}
-                  className={`mb-5 flex h-14 w-14 items-center justify-center rounded-2xl shadow-xs transition-colors duration-300 ${getBg(
-                    item.iconName
-                  )}`}
-                >
-                  {getIcon(item.iconName)}
-                </div>
-
-                <h3
-                  style={{ transform: "translateZ(16px)" }}
-                  className="text-base font-bold text-slate-900 transition-colors group-hover:text-[#0F3860]"
-                >
-                  {item.title}
-                </h3>
-                <p
-                  style={{ transform: "translateZ(10px)" }}
-                  className="mt-2 text-xs leading-relaxed text-slate-500"
-                >
-                  {item.description}
-                </p>
-              </div>
-            </TiltCard>
+        <ol className="mt-8 grid gap-8 md:grid-cols-3">
+          {STEPS.map((step, index) => (
+            <ScrollReveal as="li" key={step.title} delay={index * 120} className="reveal-line relative pt-5">
+              <span className="text-sm font-semibold text-sky-700 tabular-nums">0{index + 1}</span>
+              <h3 className="mt-2 text-lg font-semibold text-slate-900">{step.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{step.description}</p>
             </ScrollReveal>
           ))}
-        </div>
+        </ol>
+
+        <ScrollReveal animation="zoom" className="mt-14 flex flex-col gap-6 rounded-2xl bg-[#0F3860] px-6 py-8 text-white sm:px-10 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-xl">
+            <h3 className="text-xl font-semibold">Bạn là chủ vựa hải sản?</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">
+              Mở gian hàng miễn phí, nhận đơn từ người mua khắp thành phố và tự quản lý giá, tồn kho.
+            </p>
+          </div>
+          <Link
+            href="/vendor/register"
+            className="group inline-flex shrink-0 items-center gap-2 self-start rounded-lg bg-white px-5 py-3 text-sm font-semibold text-[#0F3860] transition-colors hover:bg-sky-100 md:self-center"
+          >
+            Đăng ký mở gian hàng
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Link>
+        </ScrollReveal>
       </div>
     </section>
   );
 }
-

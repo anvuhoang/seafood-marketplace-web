@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { ProductDetail } from "../types/product.types";
@@ -9,6 +7,8 @@ interface ProductBreadcrumbProps {
 }
 
 export function ProductBreadcrumb({ product }: ProductBreadcrumbProps) {
+  const category = product.categories[0];
+
   return (
     <nav
       aria-label="Breadcrumb"
@@ -20,20 +20,15 @@ export function ProductBreadcrumb({ product }: ProductBreadcrumbProps) {
         </Link>
         <ChevronRight className="h-3.5 w-3.5 text-slate-300 shrink-0" />
 
-        <Link
-          href="/#featured-seafood"
-          className="hover:text-[#0F3860] transition-colors"
-        >
-          {product.categories[1]?.name || "Tôm Sống & Tái Chế"}
-        </Link>
-        <ChevronRight className="h-3.5 w-3.5 text-slate-300 shrink-0" />
-
-        <Link
-          href="/#featured-seafood"
-          className="hover:text-[#0F3860] transition-colors"
-        >
-          {product.categories[2]?.name || "Tôm sú biển"}
-        </Link>
+        {category ? (
+          <Link href={`/categories/${category.slug}`} className="hover:text-[#0F3860] transition-colors">
+            {category.name}
+          </Link>
+        ) : (
+          <Link href="/products" className="hover:text-[#0F3860] transition-colors">
+            Tất cả hải sản
+          </Link>
+        )}
         <ChevronRight className="h-3.5 w-3.5 text-slate-300 shrink-0" />
 
         <span className="font-semibold text-slate-800 truncate max-w-md">

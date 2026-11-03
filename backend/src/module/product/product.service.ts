@@ -1,229 +1,120 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { ProductDetailDto } from './dto/product-detail.dto.js';
+import { anonymizeName } from '../review/review.service.js';
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** How many recent reviews the detail page shows. */
+const RECENT_REVIEW_LIMIT = 5;
+
+/**
+ * Preparation choices offered at checkout. They are the same for every
+ * product until vendors can configure their own.
+ */
+const PREPARATION_OPTIONS: ProductDetailDto['preparationOptions'] = [
+  { id: 'prep-live', label: 'Bơi sống (bao oxy)', description: 'Miễn phí đóng oxy', isDefault: true },
+  { id: 'prep-ice', label: 'Ướp đá giữ lạnh', description: 'Lấy đá bảo quản', isDefault: false },
+  { id: 'prep-vacuum', label: 'Hút chân không', description: 'Cấp đông -18°C', isDefault: false },
+];
+
+interface OfferRow {
+  id: string;
+  price: unknown;
+  stock: unknown;
+  status: string;
+  vendor: {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    logoUrl: string | null;
+    coverUrl: string | null;
+    streetAddress: string;
+    district: string;
+    province: string;
+    status: string;
+    ratingAverage: unknown;
+    ratingCount: number;
+  };
+}
 
 @Injectable()
 export class ProductService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Mock fallback data representing the seafood product shown in the UI design.
-   */
-  private readonly defaultProductDetail: ProductDetailDto = {
-    id: 'prod-1',
-    name: 'Tôm Sú Biển Tươi Sống Loại 1 (Size 15 - 20 con/kg)',
-    slug: 'tom-su-bien-tuoi-song-loai-1',
-    description:
-      'Tôm sú biển tự nhiên đánh bắt trực tiếp từ vùng biển Hàm Ninh - Phú Quốc. Thịt săn chắc, ngọt đậm, thơm ngon tự nhiên, giàu đạm và canxi. Đóng gói thùng xốp đá cay giữ sống 4-6 giờ vận chuyển.',
-    status: 'ACTIVE',
-    isFeatured: true,
-    sku: 'SBD-TZ04-QSC',
-    unit: 'kg',
-    price: 420000,
-    originalPrice: 480000,
-    discountPercent: 12,
-    stock: 14,
-    inStock: true,
-    isDiscontinued: false,
-    species: {
-      id: 'spec-1',
-      commonName: 'Tôm Sú Biển Tự Nhiên',
-      scientificName: 'Penaeus monodon',
-      slug: 'tom-su-bien',
-      description: 'Loài tôm biển có kích thước lớn, vỏ dày hoa văn sọc vằn đặc trưng.',
-    },
-    categories: [
-      { id: 'cat-2', name: 'Tôm Sống & Tự Nhiên', slug: 'tom-song' },
-      { id: 'cat-sub-1', name: 'Tôm sú biển', slug: 'tom-su-bien' },
-    ],
-    images: [
-      {
-        id: 'img-1',
-        imageUrl:
-          'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=1000&q=80',
-        altText: 'Tôm sú biển tươi sống loại 1',
-        sortOrder: 0,
-        isPrimary: true,
-      },
-      {
-        id: 'img-2',
-        imageUrl:
-          'https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=1000&q=80',
-        altText: 'Bồn chứa tôm sống bơi hồ vựa',
-        sortOrder: 1,
-        isPrimary: false,
-      },
-      {
-        id: 'img-3',
-        imageUrl:
-          'https://images.unsplash.com/photo-1534482421-64566f976cfa?auto=format&fit=crop&w=1000&q=80',
-        altText: 'Sơ chế tôm tươi chuẩn bị đóng thùng',
-        sortOrder: 2,
-        isPrimary: false,
-      },
-      {
-        id: 'img-4',
-        imageUrl:
-          'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?auto=format&fit=crop&w=1000&q=80',
-        altText: 'Món tôm nướng mọi than hoa thơm phức',
-        sortOrder: 3,
-        isPrimary: false,
-      },
-    ],
-    vendor: {
-      id: 'ven-phu-quoc-xanh',
-      name: 'Vựa Thủy Sản Phú Quốc Xanh',
-      slug: 'vua-thuy-san-phu-quoc-xanh',
-      description:
-        'Vựa hải sản lâu đời tại đảo ngọc Phú Quốc, chuyên khai thác và cung ứng hải sản bơi sống cao cấp đi toàn quốc.',
-      logoUrl:
-        'https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=200&q=80',
-      coverUrl:
-        'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-      address:
-        'Địa chỉ kho: 12 Bến Cảng, TP. Phú Quốc (kho trung chuyển phân phối tại TP.HCM: Tân Bình)',
-      province: 'Kiên Giang',
-      district: 'Phú Quốc',
-      ratingAverage: 4.9,
-      ratingCount: 342,
-      verified: true,
-      responseTimeMinutes: 20,
-      positiveRatingPercent: 99.2,
-    },
-    specifications: {
-      commonName: 'Tôm Sú Biển Tự Nhiên',
-      scientificName: 'Penaeus monodon',
-      habitat: 'Tôm tự nhiên, Tôm biển cào đêm & lưới',
-      origin: 'Vùng biển Hàm Ninh, TP. Phú Quốc',
-      catchMethod: 'Đánh bắt lờ bè lớn biển ban đêm ven rạn đá',
-      storageCondition: 'Độ mặn 28 - 32‰, Nhiệt độ 22°C - 24°C',
-      packagingStandard: 'Thùng xốp đục 30ml đá cay duy trì 4 - 6 giờ bơi sống',
-      wasteRatio: 'Khoảng 10% - 15% trọng lượng vỏ tôm',
-      culinaryAdvice:
-        'Tôm sú tự nhiên có thớ thịt chắc ngọt giòn sần sật. Ngon nhất khi nướng muối ớt, hấp bia, hấp nước dừa hoặc ăn sashimi khi còn bơi sống.',
-    },
-    reviewsSummary: {
-      ratingAverage: 4.8,
-      reviewCount: 148,
-      ratingBreakdown: {
-        5: 118,
-        4: 20,
-        3: 6,
-        2: 2,
-        1: 2,
-      },
-    },
-    preparationOptions: [
-      {
-        id: 'prep-live',
-        label: 'Bơi sống (bao oxy)',
-        description: 'Miễn phí đóng oxy',
-        isDefault: true,
-      },
-      {
-        id: 'prep-ice',
-        label: 'Ngợp ướp đá nhiệt',
-        description: 'Lấy đá bảo quản',
-        isDefault: false,
-      },
-      {
-        id: 'prep-vacuum',
-        label: 'Hút chân không',
-        description: 'Cấp đông -18°C',
-        isDefault: false,
-      },
-    ],
-  };
-
-  /**
-   * Retrieve product detail by slug or ID.
+   * Product detail by UUID or slug. Draft products and unknown identifiers
+   * are not found; inactive products are returned as discontinued.
    */
   async findByIdOrSlug(identifier: string): Promise<ProductDetailDto> {
-    try {
-      // Check if identifier is a UUID or slug in the database
-      const isUuid =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          identifier,
-        );
-
-      const product = await this.prisma.product.findFirst({
-        where: isUuid
-          ? { id: identifier }
-          : { OR: [{ slug: identifier }, { id: identifier }] },
-        include: {
-          species: true,
-          categories: {
-            include: {
-              category: true,
-            },
-          },
-          images: {
-            orderBy: { sortOrder: 'asc' },
-          },
-          variants: {
-            where: { isActive: true },
-            include: {
-              offers: {
-                where: { status: 'ACTIVE' },
-                include: {
-                  vendor: true,
+    const product = await this.prisma.product.findFirst({
+      where: {
+        // Only query the UUID column with UUID values; a slug on `id` makes Prisma throw.
+        ...(UUID_PATTERN.test(identifier) ? { id: identifier } : { slug: identifier }),
+        status: { not: 'DRAFT' },
+      },
+      include: {
+        species: true,
+        categories: { include: { category: true } },
+        images: { orderBy: { sortOrder: 'asc' } },
+        variants: {
+          include: {
+            offers: {
+              include: {
+                vendor: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    description: true,
+                    logoUrl: true,
+                    coverUrl: true,
+                    streetAddress: true,
+                    district: true,
+                    province: true,
+                    status: true,
+                    ratingAverage: true,
+                    ratingCount: true,
+                  },
                 },
               },
             },
           },
         },
-      });
+      },
+    });
 
-      if (product) {
-        return this.mapPrismaProductToDto(product);
-      }
-    } catch {
-      // Gracefully fall back to built-in product dataset when DB is not yet populated
+    if (!product) {
+      throw new NotFoundException('Sản phẩm không tồn tại hoặc chưa được mở bán.');
     }
 
-    // Match against default mock or mock variants
-    if (
-      identifier === 'prod-1' ||
-      identifier === 'tom-su-bien-tuoi-song-loai-1' ||
-      identifier.includes('tom-su')
-    ) {
-      return this.defaultProductDetail;
-    }
-
-    // Handle out of stock / discontinued edge case sample
-    if (identifier === 'discontinued-sample' || identifier === 'prod-discontinued') {
-      return {
-        ...this.defaultProductDetail,
-        id: 'prod-discontinued',
-        name: 'Tôm Càng Xanh Loại Đặc Biệt (Ngừng kinh doanh)',
-        slug: 'discontinued-sample',
-        status: 'INACTIVE',
-        stock: 0,
-        inStock: false,
-        isDiscontinued: true,
-      };
-    }
-
-    // Fall back to default mock if no match
-    return {
-      ...this.defaultProductDetail,
-      id: identifier,
-      slug: identifier,
-    };
-  }
-
-  /**
-   * Helper to map Prisma entity to ProductDetailDto
-   */
-  private mapPrismaProductToDto(product: any): ProductDetailDto {
-    const firstVariant = product.variants?.[0];
-    const firstOffer = firstVariant?.offers?.[0];
-    const vendor = firstOffer?.vendor;
-
-    const price = firstOffer ? Number(firstOffer.price) : 0;
-    const stock = firstOffer ? Number(firstOffer.stock) : 0;
     const isDiscontinued = product.status !== 'ACTIVE';
-    const inStock = stock > 0 && !isDiscontinued;
+    const offers = product.variants.flatMap((variant) =>
+      variant.offers.map((offer) => ({ offer: offer as OfferRow, variant })),
+    );
+    const sellable = offers.filter(
+      ({ offer, variant }) =>
+        !isDiscontinued &&
+        variant.isActive &&
+        offer.status === 'ACTIVE' &&
+        offer.vendor.status === 'ACTIVE',
+    );
+    const inStock = sellable.filter(({ offer }) => Number(offer.stock) > 0);
+
+    // Same rule as the listing: cheapest in-stock sellable offer, then any
+    // sellable offer, then any offer (for discontinued products).
+    const pool = inStock.length > 0 ? inStock : sellable.length > 0 ? sellable : offers;
+    const chosen = pool.reduce<(typeof offers)[number] | undefined>(
+      (best, entry) =>
+        !best || Number(entry.offer.price) < Number(best.offer.price) ? entry : best,
+      undefined,
+    );
+
+    // Pending, rejected or suspended vendors are never presented as the seller.
+    const vendor = chosen?.offer.vendor.status === 'ACTIVE' ? chosen.offer.vendor : undefined;
+    const stock = inStock.length > 0 && chosen ? Number(chosen.offer.stock) : 0;
 
     return {
       id: product.id,
@@ -232,14 +123,16 @@ export class ProductService {
       description: product.description,
       status: product.status,
       isFeatured: product.isFeatured,
-      sku: firstVariant?.sku ?? 'SP-' + product.id.slice(0, 6).toUpperCase(),
-      unit: firstVariant?.unit ?? 'kg',
-      price: price || 420000,
-      originalPrice: price ? Math.round(price * 1.15) : 480000,
-      discountPercent: 12,
+      sku: chosen?.variant.sku ?? null,
+      unit: chosen?.variant.unit ?? 'kg',
+      sizeLabel: chosen?.variant.sizeLabel ?? null,
+      price: chosen ? Number(chosen.offer.price) : 0,
+      originalPrice: null,
+      discountPercent: null,
       stock,
-      inStock,
+      inStock: stock > 0,
       isDiscontinued,
+      offerId: sellable.length > 0 && chosen ? chosen.offer.id : null,
       species: product.species
         ? {
             id: product.species.id,
@@ -249,20 +142,16 @@ export class ProductService {
             description: product.species.description,
           }
         : null,
-      categories:
-        product.categories?.map((pc: any) => ({
-          id: pc.category.id,
-          name: pc.category.name,
-          slug: pc.category.slug,
-        })) ?? [],
-      images:
-        product.images?.map((img: any) => ({
-          id: img.id,
-          imageUrl: img.imageUrl,
-          altText: img.altText,
-          sortOrder: img.sortOrder,
-          isPrimary: img.isPrimary,
-        })) ?? [],
+      categories: product.categories
+        .filter((pc) => pc.category.isActive)
+        .map((pc) => ({ id: pc.category.id, name: pc.category.name, slug: pc.category.slug })),
+      images: product.images.map((image) => ({
+        id: image.id,
+        imageUrl: image.imageUrl,
+        altText: image.altText,
+        sortOrder: image.sortOrder,
+        isPrimary: image.isPrimary,
+      })),
       vendor: vendor
         ? {
             id: vendor.id,
@@ -274,16 +163,58 @@ export class ProductService {
             address: `${vendor.streetAddress}, ${vendor.district}, ${vendor.province}`,
             province: vendor.province,
             district: vendor.district,
-            ratingAverage: Number(vendor.ratingAverage) || 4.9,
-            ratingCount: vendor.ratingCount || 100,
-            verified: true,
-            responseTimeMinutes: 20,
-            positiveRatingPercent: 99.2,
+            ratingAverage: Number(vendor.ratingAverage),
+            ratingCount: vendor.ratingCount,
+            verified: vendor.status === 'ACTIVE',
           }
-        : this.defaultProductDetail.vendor,
-      specifications: this.defaultProductDetail.specifications,
-      reviewsSummary: this.defaultProductDetail.reviewsSummary,
-      preparationOptions: this.defaultProductDetail.preparationOptions,
+        : null,
+      specifications: {
+        commonName: product.species?.commonName ?? null,
+        scientificName: product.species?.scientificName ?? null,
+        origin: vendor ? `${vendor.district}, ${vendor.province}` : null,
+      },
+      reviewsSummary: await this.summarizeReviews(product.id),
+      preparationOptions: PREPARATION_OPTIONS,
+    };
+  }
+
+  private async summarizeReviews(productId: string): Promise<ProductDetailDto['reviewsSummary']> {
+    const where = { productId, status: 'PUBLISHED' as const };
+
+    const [grouped, recent] = await Promise.all([
+      this.prisma.review.groupBy({ by: ['rating'], where, _count: { _all: true } }),
+      this.prisma.review.findMany({
+        where,
+        include: {
+          user: { select: { fullName: true } },
+          images: { orderBy: { sortOrder: 'asc' }, select: { imageUrl: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: RECENT_REVIEW_LIMIT,
+      }),
+    ]);
+
+    const ratingBreakdown: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    let reviewCount = 0;
+    let ratingTotal = 0;
+    for (const row of grouped) {
+      ratingBreakdown[row.rating] = row._count._all;
+      reviewCount += row._count._all;
+      ratingTotal += row.rating * row._count._all;
+    }
+
+    return {
+      ratingAverage: reviewCount > 0 ? Math.round((ratingTotal / reviewCount) * 10) / 10 : 0,
+      reviewCount,
+      ratingBreakdown,
+      reviews: recent.map((review) => ({
+        id: review.id,
+        authorName: review.isAnonymous ? anonymizeName(review.user.fullName) : review.user.fullName,
+        rating: review.rating,
+        content: review.content,
+        imageUrls: review.images.map((image) => image.imageUrl),
+        createdAt: review.createdAt.toISOString(),
+      })),
     };
   }
 }

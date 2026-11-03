@@ -16,53 +16,56 @@ import {
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { AuthResponseDto, AuthUserDto } from './dto/auth-response.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 
-@ApiTags('auth')
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
   @Public()
   @Post('register')
-  @ApiOperation({ summary: 'Đăng ký tài khoản người dùng mới' })
-  @ApiResponse({ status: 201, description: 'Đăng ký tài khoản thành công' })
-  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ApiResponse({ status: 409, description: 'Email hoặc số điện thoại đã tồn tại' })
-  async register(@Body() dto: RegisterDto) {
+  @ApiOperation({ summary: 'Register a customer account and sign in' })
+  @ApiResponse({ status: 201, description: 'Account created; returns the user and an access token', type: AuthResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  @ApiResponse({ status: 409, description: 'Email or phone number already registered' })
+  async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
     return this.authService.register(dto);
   }
 
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Đăng nhập người dùng' })
+  @ApiOperation({ summary: 'Sign in with email or phone number' })
   @ApiResponse({
     status: 200,
-    description: 'Đăng nhập thành công, trả về access token',
+    description: 'Signed in; returns the user and an access token',
+    type: AuthResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
   @ApiResponse({
     status: 401,
-    description: 'Sai thông tin đăng nhập hoặc tài khoản bị khóa',
+    description: 'Wrong credentials or the account is locked',
   })
-  async login(@Body() dto: LoginDto) {
+  async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(dto);
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Lấy thông tin người dùng hiện tại' })
+  @ApiOperation({ summary: 'Get the signed-in user' })
   @ApiResponse({
     status: 200,
-    description: 'Lấy thông tin người dùng thành công',
+    description: 'The signed-in user',
+    type: AuthUserDto,
   })
-  @ApiResponse({ status: 401, description: 'Chưa xác thực hoặc token hết hạn' })
-  async getMe(@CurrentUser('sub') userId: string) {
+  @ApiResponse({ status: 401, description: 'Missing, invalid or expired token' })
+  async getMe(@CurrentUser('sub') userId: string): Promise<AuthUserDto> {
     return this.authService.getProfile(userId);
   }
 }

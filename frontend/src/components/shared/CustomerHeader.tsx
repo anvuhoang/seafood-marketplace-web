@@ -1,17 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Suspense, useState, useRef, useEffect } from "react";
 import {
   Search,
   Camera,
+  Fish,
   Heart,
   ShoppingCart,
   User,
   Phone,
   Store,
-  Sparkles,
   Menu,
   X,
   LogOut,
@@ -26,6 +26,76 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
 import { formatPrice } from "@/lib/utils";
 
+const NAV_LINKS = [
+  { name: "Trang chủ", href: "/" },
+  { name: "Tất cả hải sản", href: "/products" },
+  { name: "Cá tươi & đông lạnh", href: "/categories/ca-bien-tuoi" },
+  { name: "Tôm sống", href: "/categories/tom-song" },
+  { name: "Cua & ghẹ", href: "/categories/cua-ghe" },
+  { name: "Mực & bạch tuộc", href: "/categories/muc-bach-tuoc" },
+  { name: "Nghêu, sò, ốc", href: "/categories/ngheu-so-oc" },
+  { name: "Đặc sản", href: "/categories/hai-san-dac-san" },
+  { name: "Vựa hải sản", href: "/#trusted-vendors" },
+  { name: "Tìm bằng ảnh", href: "/#visual-search" },
+];
+
+function isActiveLink(pathname: string | null, href: string): boolean {
+  if (!pathname || href.includes("#")) return false;
+  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+}
+
+interface NavLinksProps {
+  variant: "bar" | "drawer";
+  onNavigate?: () => void;
+}
+
+function renderNavLinks(pathname: string | null, { variant, onNavigate }: NavLinksProps) {
+  return NAV_LINKS.map((link) => {
+      const active = isActiveLink(pathname, link.href);
+      return variant === "bar" ? (
+        <Link
+          key={link.href}
+          href={link.href}
+          aria-current={active ? "page" : undefined}
+          className={`relative shrink-0 whitespace-nowrap px-3 py-3 text-[13px] font-medium transition-colors ${
+            active
+              ? "text-[#0F3860] after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-[#0F3860]"
+              : "text-slate-600 hover:text-[#0F3860]"
+          }`}
+        >
+          {link.name}
+        </Link>
+      ) : (
+        <li key={link.href}>
+          <Link
+            href={link.href}
+            onClick={onNavigate}
+            aria-current={active ? "page" : undefined}
+            className={`block rounded-lg px-3 py-2 ${active ? "bg-slate-100 text-[#0F3860]" : "hover:bg-slate-50"}`}
+          >
+            {link.name}
+          </Link>
+        </li>
+      );
+  });
+}
+
+function ActiveNavLinks(props: NavLinksProps) {
+  return <>{renderNavLinks(usePathname(), props)}</>;
+}
+
+/**
+ * Category links. Reading the URL must sit inside Suspense on prerendered
+ * routes, so the fallback renders the same links with nothing marked active.
+ */
+function NavLinks(props: NavLinksProps) {
+  return (
+    <Suspense fallback={renderNavLinks(null, props)}>
+      <ActiveNavLinks {...props} />
+    </Suspense>
+  );
+}
+
 export function CustomerHeader() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
@@ -34,6 +104,15 @@ export function CustomerHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  // Flat at the top of the page, lifted with a soft shadow once content scrolls under it.
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -48,7 +127,7 @@ export function CustomerHeader() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/customer/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -60,30 +139,22 @@ export function CustomerHeader() {
     router.refresh();
   };
 
-  const navCategories = [
-    { name: "Trang chủ", href: "/", active: true },
-    { name: "Cá Tươi & Đông Lạnh", href: "#featured-seafood" },
-    { name: "Tôm Sống & Tự Nhiên", href: "#featured-seafood" },
-    { name: "Cua & Ghẹ Cà Mau", href: "#featured-seafood" },
-    { name: "Mực & Bạch Tuộc", href: "#featured-seafood" },
-    { name: "Nghêu, Sò, Ốc", href: "#featured-seafood" },
-    { name: "Hải Sản Đặc Sản", href: "#featured-seafood" },
-    { name: "Vựa Hải Sản", href: "#trusted-vendors" },
-    { name: "Tìm Bằng AI", href: "#visual-search", highlight: true },
-  ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md shadow-xs transition-shadow duration-300">
+    <header
+      // Anchored during page transitions so only the content below it animates.
+      style={{ viewTransitionName: "site-header" }}
+      className={`sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md transition-shadow duration-300 ${
+        scrolled ? "shadow-[0_6px_24px_-12px_rgba(15,23,42,0.25)]" : "shadow-none"
+      }`}
+    >
       {/* 1. Top Utility Bar */}
       <div className="bg-[#0A192F] text-xs text-slate-300">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-medium text-white">
-              Cam kết hải sản tươi sống mỗi ngày
-            </span>
-            <span className="hidden text-slate-400 md:inline">— Giao hỏa tốc 2h tại TP.HCM</span>
-          </div>
+          <p className="truncate">
+            <span className="text-white">Hải sản tươi sống từ vựa</span>
+            <span className="hidden text-slate-400 md:inline"> · Giao trong 2 giờ tại TP.HCM</span>
+          </p>
 
           <div className="flex items-center gap-5 text-slate-300">
             <a
@@ -143,24 +214,22 @@ export function CustomerHeader() {
       <div className="border-b border-slate-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:gap-8 lg:px-8">
           {/* Logo with 3D hover scale */}
-          <Link href="/" className="group flex shrink-0 items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0F3860] text-xl text-white shadow-sm transition-transform duration-300 group-hover:scale-105 group-hover:rotate-[-6deg]">
-              🐟
-            </div>
-            <div>
-              <span className="text-2xl font-black tracking-tight text-[#0F3860]">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0F3860] text-white sm:h-10 sm:w-10">
+              <Fish className="h-5 w-5" strokeWidth={2.25} />
+            </span>
+            <span className="leading-none">
+              <span className="block text-xl font-bold tracking-tight text-[#0F3860] sm:text-[22px]">
                 HaiSan<span className="text-[#E63946]">Express</span>
               </span>
-              <span className="hidden -mt-1 block text-[10px] font-medium tracking-wide text-slate-400 uppercase sm:block">
-                Chợ hải sản trực tuyến
-              </span>
-            </div>
+              <span className="mt-1 hidden text-[11px] text-slate-500 sm:block">Chợ hải sản trực tuyến</span>
+            </span>
           </Link>
 
           {/* Search bar with Camera Visual Search button */}
           <form
             onSubmit={handleSearch}
-            className="hidden flex-1 max-w-2xl items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 transition-all duration-300 focus-within:border-[#0F3860] focus-within:bg-white focus-within:shadow-lg focus-within:shadow-blue-950/10 md:flex"
+            className="hidden flex-1 max-w-2xl items-center rounded-xl border border-slate-200 bg-slate-50 p-1 transition-colors focus-within:border-[#0F3860] focus-within:bg-white md:flex"
           >
             <div className="flex flex-1 items-center px-3">
               <Search className="h-4 w-4 text-slate-400 shrink-0" />
@@ -172,24 +241,24 @@ export function CustomerHeader() {
                 className="w-full bg-transparent px-2.5 py-1.5 text-sm text-slate-800 placeholder-slate-400 outline-none"
               />
               <Link
-                href="#visual-search"
-                title="Tìm kiếm hải sản bằng hình ảnh (AI)"
-                className="flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 transition-all duration-200 hover:bg-sky-100 hover:scale-102 active:scale-95"
+                href="/#visual-search"
+                title="Tìm hải sản bằng hình ảnh"
+                aria-label="Tìm hải sản bằng hình ảnh"
+                className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#0F3860]"
               >
-                <Camera className="h-3.5 w-3.5 text-sky-600" />
-                <span className="hidden lg:inline">Tìm bằng ảnh</span>
+                <Camera className="h-4 w-4" />
               </Link>
             </div>
             <button
               type="submit"
-              className="rounded-lg bg-[#0F3860] px-5 py-2 text-sm font-bold text-white shadow-xs transition-all duration-200 hover:bg-[#0A2744] hover:shadow-md hover:shadow-blue-950/20 active:scale-95"
+              className="rounded-lg bg-[#0F3860] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#0A2744]"
             >
               Tìm kiếm
             </button>
           </form>
 
           {/* Actions: Account, Wishlist, Cart */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-4">
             {isAuthenticated && user ? (
               <div ref={userMenuRef} className="relative">
                 {(() => {
@@ -361,7 +430,7 @@ export function CustomerHeader() {
 
             <Link
               href="/customer/wishlist"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:text-[#E63946] hover:scale-105 active:scale-95"
+              className="hidden h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:text-[#E63946] hover:scale-105 active:scale-95 sm:flex"
               title="Danh sách yêu thích"
             >
               <Heart className="h-5 w-5" />
@@ -374,12 +443,14 @@ export function CustomerHeader() {
               <div className="relative">
                 <ShoppingCart className="h-4 w-4" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#E63946] text-[10px] font-black text-white shadow-xs">
+                  <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#E63946] text-[10px] font-bold text-white shadow-xs">
                     {itemCount}
                   </span>
                 )}
               </div>
-              <span className="text-xs font-bold sm:inline">
+              {/* Icon only on phones; the label would push the menu button off screen. */}
+              <span className="sr-only sm:hidden">Giỏ hàng</span>
+              <span className="hidden text-xs font-bold sm:inline">
                 {itemCount > 0 ? formatPrice(totalPrice) : "Giỏ hàng"}
               </span>
             </Link>
@@ -409,8 +480,9 @@ export function CustomerHeader() {
               className="w-full bg-transparent px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 outline-none"
             />
             <Link
-              href="#visual-search"
-              className="p-1.5 text-slate-500 hover:text-sky-600"
+              href="/#visual-search"
+              aria-label="Tìm hải sản bằng hình ảnh"
+              className="p-1.5 text-slate-500 hover:text-[#0F3860]"
             >
               <Camera className="h-4 w-4" />
             </Link>
@@ -426,33 +498,10 @@ export function CustomerHeader() {
 
       {/* 3. Sub-Navigation (Category Pills) */}
       <nav className="hidden border-b border-slate-200/80 bg-white md:block">
-        <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
-          {navCategories.map((cat, idx) => (
-            <Link
-              key={idx}
-              href={cat.href}
-              className={`relative shrink-0 whitespace-nowrap px-3.5 py-3 text-xs font-bold transition-colors ${cat.active
-                ? "text-[#0F3860] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-[#0F3860]"
-                : cat.highlight
-                  ? "flex items-center gap-1 text-sky-600 hover:text-sky-700"
-                  : "text-slate-600 hover:text-[#0F3860]"
-                }`}
-            >
-              {cat.highlight && <Sparkles className="h-3 w-3 text-amber-500" />}
-              {cat.name}
-            </Link>
-          ))}
+        <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-4 scrollbar-none sm:px-6 lg:px-8">
+          <NavLinks variant="bar" />
         </div>
       </nav>
-
-      {/* 4. Announcement strip */}
-      <div className="bg-sky-50 border-b border-sky-100/80 px-4 py-1.5 text-center text-xs font-medium text-sky-900">
-        <span className="mr-1.5">📢</span>
-        <strong>Ưu đãi chào hè:</strong> Giảm tới 20% cho đơn hàng hải sản tươi sống từ 500k — Nhập mã:{" "}
-        <span className="font-mono font-bold text-[#E63946] bg-white px-1.5 py-0.5 rounded border border-red-200">
-          SEAFRESH
-        </span>
-      </div>
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
@@ -532,20 +581,7 @@ export function CustomerHeader() {
           )}
 
           <ul className="space-y-2 text-sm font-semibold text-slate-700">
-            {navCategories.map((cat, idx) => (
-              <li key={idx}>
-                <Link
-                  href={cat.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`block rounded-lg px-3 py-2 ${cat.active
-                    ? "bg-slate-100 text-[#0F3860]"
-                    : "hover:bg-slate-50"
-                    }`}
-                >
-                  {cat.name}
-                </Link>
-              </li>
-            ))}
+            <NavLinks variant="drawer" onNavigate={() => setMobileMenuOpen(false)} />
           </ul>
         </div>
       )}

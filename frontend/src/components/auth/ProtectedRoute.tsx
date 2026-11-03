@@ -134,7 +134,7 @@ function ProtectedRouteContent({
             <span className="rounded-full bg-rose-100 px-3 py-1 text-[11px] font-bold text-rose-700 font-mono">
               403 FORBIDDEN
             </span>
-            <h2 className="text-lg font-black text-slate-900 pt-2">
+            <h2 className="text-lg font-bold text-slate-900 pt-2">
               {fallbackTitle}
             </h2>
             <p className="text-xs text-slate-500 leading-relaxed">
