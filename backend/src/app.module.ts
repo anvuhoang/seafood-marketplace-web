@@ -10,12 +10,14 @@ import { CategoryModule } from './module/category/category.module.js';
 import { AccountModule } from './module/account/account.module.js';
 import { ReviewModule } from './module/review/review.module.js';
 import configuration from './config/configuration.js';
+import { validateEnv } from './config/env.validation.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+      validate: validateEnv,
     }),
     PrismaModule,
     AuthModule,
