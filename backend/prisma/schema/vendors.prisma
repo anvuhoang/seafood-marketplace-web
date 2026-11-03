@@ -21,7 +21,22 @@ model Vendor {
   owner  User         @relation("VendorOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   offers VendorOffer[]
   orders VendorOrder[]
+  follows VendorFollow[]
 
   @@index([status])
   @@map("vendors")
+}
+
+/// A customer following a vendor's storefront.
+model VendorFollow {
+  userId    String   @map("user_id") @db.Uuid
+  vendorId  String   @map("vendor_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@id([userId, vendorId])
+  @@index([vendorId])
+  @@map("vendor_follows")
 }
