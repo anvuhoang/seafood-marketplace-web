@@ -20,6 +20,7 @@ model User {
   carts     Cart[]
   orders    Order[]
   reviews   Review[]
+  vendorFollows VendorFollow[]
 
   @@index([role, status])
   @@map("users")
