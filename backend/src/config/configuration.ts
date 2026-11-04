@@ -7,6 +7,8 @@ export default () => ({
   // Required; validated at startup by validateEnv (no insecure fallback).
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
+  // Admin sessions are shorter than customer ones.
+  adminJwtExpiresIn: process.env.ADMIN_JWT_EXPIRES_IN ?? '2h',
 
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
