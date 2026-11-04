@@ -3,11 +3,14 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import type { StringValue } from 'ms';
 import bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { LoginAttemptLimiter } from './login-attempt.limiter.js';
 import type { AuthResponseDto, AuthUserDto } from './dto/auth-response.dto.js';
 
 export type SafeUser = AuthUserDto;
@@ -18,6 +21,8 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly config: ConfigService,
+    private readonly loginLimiter: LoginAttemptLimiter,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResult> {
@@ -70,6 +75,61 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<AuthResult> {
+    const user = await this.verifyCredentials(dto);
+
+    // Generate JWT access token
+    const accessToken = await this.generateToken(user.id, user.email, user.role);
+
+    return {
+      user: this.sanitizeUser(user),
+      accessToken,
+    };
+  }
+
+  /**
+   * Sign-in for the admin site. Only ADMIN accounts get a token, every failure
+   * looks the same (so the page does not reveal which accounts exist or what
+   * role they have), repeated failures are locked out, and the token is short-lived.
+   *
+   * @param clientKey the caller, usually the IP address, so a lockout targets the guesser.
+   */
+  async adminLogin(dto: LoginDto, clientKey: string): Promise<AuthResult> {
+    const limiterKey = `${clientKey}|${dto.emailOrPhone.trim().toLowerCase()}`;
+    this.loginLimiter.assertAllowed(limiterKey);
+
+    const failure = new UnauthorizedException(
+      'Email/Số điện thoại hoặc mật khẩu không chính xác.',
+    );
+
+    let user;
+    try {
+      user = await this.verifyCredentials(dto);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        this.loginLimiter.recordFailure(limiterKey);
+        throw failure;
+      }
+      throw error;
+    }
+
+    if (user.role !== 'ADMIN' || user.status !== 'ACTIVE') {
+      this.loginLimiter.recordFailure(limiterKey);
+      throw failure;
+    }
+
+    this.loginLimiter.reset(limiterKey);
+    const accessToken = await this.generateToken(
+      user.id,
+      user.email,
+      user.role,
+      this.config.get<string>('adminJwtExpiresIn', '2h') as StringValue,
+    );
+
+    return { user: this.sanitizeUser(user), accessToken };
+  }
+
+  /** Finds the account and checks the password; throws 401 when either is wrong. */
+  private async verifyCredentials(dto: LoginDto) {
     const identifier = dto.emailOrPhone.trim();
     const isEmail = identifier.includes('@');
 
@@ -106,13 +166,7 @@ export class AuthService {
       );
     }
 
-    // Generate JWT access token
-    const accessToken = await this.generateToken(user.id, user.email, user.role);
-
-    return {
-      user: this.sanitizeUser(user),
-      accessToken,
-    };
+    return user;
   }
 
   async getProfile(userId: string): Promise<SafeUser> {
@@ -131,9 +185,10 @@ export class AuthService {
     userId: string,
     email: string,
     role: string,
+    expiresIn?: StringValue,
   ): Promise<string> {
     const payload = { sub: userId, email, role };
-    return this.jwtService.signAsync(payload);
+    return this.jwtService.signAsync(payload, expiresIn ? { expiresIn } : undefined);
   }
 
   private sanitizeUser(user: {

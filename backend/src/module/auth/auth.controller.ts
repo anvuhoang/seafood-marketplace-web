@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -13,6 +14,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -53,6 +55,27 @@ export class AuthController {
   })
   async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(dto);
+  }
+
+  @Public()
+  @Post('admin/login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Sign in to the admin site',
+    description:
+      'Only ADMIN accounts are accepted; any other account gets the same 401 as a wrong password. ' +
+      '5 wrong attempts in 15 minutes lock the caller out for 15 minutes. The token expires sooner than a customer token.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Signed in as an admin; returns the user and a short-lived access token',
+    type: AuthResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  @ApiResponse({ status: 401, description: 'Wrong credentials, or the account is not an admin' })
+  @ApiResponse({ status: 429, description: 'Too many failed attempts' })
+  async adminLogin(@Body() dto: LoginDto, @Req() req: Request): Promise<AuthResponseDto> {
+    return this.authService.adminLogin(dto, req.ip ?? 'unknown');
   }
 
   @Get('me')
