@@ -922,6 +922,110 @@ async function main() {
     });
   }
 
+  // Payments and older orders for the admin dashboard. Order numbers are fixed
+  // and payments are only added once, so re-running the seed changes nothing.
+  const DAY = 24 * 60 * 60 * 1000;
+  const vendorOrderStatusFor = {
+    PENDING: 'PENDING',
+    CONFIRMED: 'ACCEPTED',
+    PROCESSING: 'PREPARING',
+    SHIPPING: 'SHIPPING',
+    COMPLETED: 'COMPLETED',
+    CANCELLED: 'CANCELLED',
+  } as const;
+
+  // The orders the review center already uses were paid on delivery.
+  for (const orderNumber of ['HSE-89214', 'HSE-89187', 'HSE-89102']) {
+    const order = await prisma.order.findUnique({ where: { orderNumber }, include: { payment: true } });
+    if (!order || order.payment) continue;
+    await prisma.payment.create({
+      data: { orderId: order.id, method: 'COD', status: 'PAID', amount: order.grandTotal, paidAt: order.updatedAt },
+    });
+  }
+
+  const dashboardOrders: Array<{
+    orderNumber: string;
+    customer: number;
+    product: string;
+    quantity: number;
+    daysAgo: number;
+    status: keyof typeof vendorOrderStatusFor;
+    payment: { method: 'COD' | 'BANK_TRANSFER' | 'E_WALLET' | 'CARD'; status: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' };
+  }> = [
+    { orderNumber: 'HSE-90001', customer: 2, product: 'tom-su-bien-tuoi-song-loai-1', quantity: 2, daysAgo: 1, status: 'PENDING', payment: { method: 'COD', status: 'PENDING' } },
+    { orderNumber: 'HSE-90002', customer: 3, product: 'cua-gach-son-ca-mau-loai-1', quantity: 1, daysAgo: 2, status: 'CONFIRMED', payment: { method: 'BANK_TRANSFER', status: 'PAID' } },
+    { orderNumber: 'HSE-90003', customer: 2, product: 'ghe-xanh-phan-thiet-loai-nhat', quantity: 3, daysAgo: 3, status: 'SHIPPING', payment: { method: 'E_WALLET', status: 'PAID' } },
+    { orderNumber: 'HSE-90004', customer: 3, product: 'tom-hum-bong-nha-trang', quantity: 1, daysAgo: 9, status: 'COMPLETED', payment: { method: 'CARD', status: 'PAID' } },
+    { orderNumber: 'HSE-90005', customer: 2, product: 'ca-hoi-phi-le-nhap-khau', quantity: 2, daysAgo: 16, status: 'COMPLETED', payment: { method: 'BANK_TRANSFER', status: 'PAID' } },
+    { orderNumber: 'HSE-90006', customer: 3, product: 'oc-huong-bien-loai-1', quantity: 4, daysAgo: 24, status: 'CANCELLED', payment: { method: 'E_WALLET', status: 'FAILED' } },
+    { orderNumber: 'HSE-90007', customer: 2, product: 'muc-ong-trung-con-dao', quantity: 2, daysAgo: 38, status: 'COMPLETED', payment: { method: 'COD', status: 'PAID' } },
+    { orderNumber: 'HSE-90008', customer: 3, product: 'hau-sua-van-don', quantity: 3, daysAgo: 52, status: 'COMPLETED', payment: { method: 'CARD', status: 'REFUNDED' } },
+    { orderNumber: 'HSE-90009', customer: 2, product: 'tom-su-bien-tuoi-song-loai-1', quantity: 5, daysAgo: 71, status: 'COMPLETED', payment: { method: 'BANK_TRANSFER', status: 'PAID' } },
+    { orderNumber: 'HSE-90010', customer: 3, product: 'cua-gach-son-ca-mau-loai-1', quantity: 2, daysAgo: 97, status: 'COMPLETED', payment: { method: 'E_WALLET', status: 'PAID' } },
+    { orderNumber: 'HSE-90011', customer: 2, product: 'tom-hum-bong-nha-trang', quantity: 2, daysAgo: 128, status: 'COMPLETED', payment: { method: 'CARD', status: 'PAID' } },
+    { orderNumber: 'HSE-90012', customer: 3, product: 'ghe-xanh-phan-thiet-loai-nhat', quantity: 2, daysAgo: 155, status: 'CANCELLED', payment: { method: 'BANK_TRANSFER', status: 'REFUNDED' } },
+  ];
+
+  for (const sample of dashboardOrders) {
+    const userId = customerIds[sample.customer];
+    const customer = sampleCustomers[sample.customer];
+    if (!userId || !customer) continue;
+    if (await prisma.order.findUnique({ where: { orderNumber: sample.orderNumber } })) continue;
+
+    const offer = await prisma.vendorOffer.findFirst({
+      where: { status: 'ACTIVE', variant: { product: { slug: sample.product } } },
+      include: { vendor: true, variant: { include: { product: true } } },
+      orderBy: { price: 'asc' },
+    });
+    if (!offer) continue;
+
+    const total = Number(offer.price) * sample.quantity;
+    const placedAt = new Date(Date.now() - sample.daysAgo * DAY);
+    const paidAt = sample.payment.status === 'PAID' || sample.payment.status === 'REFUNDED' ? new Date(placedAt.getTime() + 60 * 60 * 1000) : null;
+
+    await prisma.order.create({
+      data: {
+        orderNumber: sample.orderNumber,
+        userId,
+        status: sample.status,
+        subtotal: total,
+        grandTotal: total,
+        recipientName: customer.fullName,
+        recipientPhone: customer.phone,
+        shippingAddress: '42 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
+        shippingProvince: 'TP. Hồ Chí Minh',
+        shippingDistrict: 'Quận 1',
+        shippingWard: 'Phường Bến Thành',
+        createdAt: placedAt,
+        payment: { create: { method: sample.payment.method, status: sample.payment.status, amount: total, paidAt, createdAt: placedAt } },
+        vendorOrders: {
+          create: [
+            {
+              vendorId: offer.vendorId,
+              status: vendorOrderStatusFor[sample.status],
+              subtotal: total,
+              grandTotal: total,
+              items: {
+                create: [
+                  {
+                    offerId: offer.id,
+                    productNameSnapshot: offer.variant.product.name,
+                    variantNameSnapshot: offer.variant.name,
+                    vendorNameSnapshot: offer.vendor.name,
+                    unitSnapshot: offer.variant.unit,
+                    unitPrice: offer.price,
+                    quantity: sample.quantity,
+                    lineTotal: total,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    });
+  }
+
   console.log('Seeding finished successfully.');
   console.log(`- Created product: ${productTomSu.name} (slug: ${productTomSu.slug})`);
 }
