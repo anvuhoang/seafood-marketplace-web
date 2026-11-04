@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Loader2, Search, Store } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Store } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getAdminVendors } from "../api/admin-vendor.api";
 import { STATUS_LABEL, formatDateTime } from "../constants/vendor-status";
@@ -64,7 +64,7 @@ export function AdminVendorsView() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-sky-700">Quản trị</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Duyệt và quản lý vựa</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">Duyệt và quản lý vựa</h1>
           <p className="mt-1 text-sm text-slate-500">
             Xem đăng ký mới, duyệt hoặc từ chối, khóa và mở khóa gian hàng.
           </p>
@@ -78,7 +78,7 @@ export function AdminVendorsView() {
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Tên vựa, chủ vựa, email"
             aria-label="Tìm vựa"
-            className="h-10 w-full rounded-lg border border-slate-300 bg-white pr-3 pl-9 text-sm outline-none transition-colors focus:border-[#0F3860] focus:ring-2 focus:ring-[#0F3860]/15"
+            className="h-10 w-full rounded-lg border border-slate-300 bg-white pr-3 pl-9 text-sm outline-none transition-colors focus:border-brand-ink focus:ring-2 focus:ring-brand-ink/15"
           />
         </form>
       </div>
@@ -96,7 +96,7 @@ export function AdminVendorsView() {
               onClick={() => changeTab(value)}
               className={`-mb-px flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${
                 active
-                  ? "border-[#0F3860] text-[#0F3860]"
+                  ? "border-brand-ink text-brand-ink"
                   : "border-transparent text-slate-500 hover:text-slate-800"
               }`}
             >
@@ -117,16 +117,26 @@ export function AdminVendorsView() {
 
       <div className="mt-5" aria-busy={loading}>
         {error ? (
-          <p role="alert" className="rounded-xl border border-dashed border-red-200 p-10 text-center text-sm text-[#C62835]">
+          <p role="alert" className="rounded-xl border border-dashed border-red-200 p-10 text-center text-sm text-danger">
             {error}
           </p>
         ) : !data ? (
-          <div className="flex justify-center py-16 text-slate-400">
-            <Loader2 className="h-6 w-6 animate-spin" />
+          <div className="space-y-px overflow-hidden rounded-xl border border-slate-200 bg-white" aria-hidden>
+            {Array.from({ length: 5 }, (_, index) => (
+              <div key={index} className="flex items-center gap-3 p-5">
+                <div className="shimmer h-10 w-10 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <div className="shimmer h-4 w-1/3 rounded" />
+                  <div className="shimmer h-3 w-1/4 rounded" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : data.items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 px-6 py-14 text-center">
-            <Store className="mx-auto h-8 w-8 text-slate-400" />
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+              <Store className="h-7 w-7" />
+            </span>
             <p className="mt-3 font-semibold text-slate-800">Không có vựa nào</p>
             <p className="mt-1 text-sm text-slate-500">
               {query ? "Thử từ khóa khác hoặc chọn tab Tất cả." : "Chưa có vựa ở trạng thái này."}
@@ -134,17 +144,25 @@ export function AdminVendorsView() {
           </div>
         ) : (
           <div className={`transition-opacity ${loading ? "opacity-60" : ""}`}>
-            <ul className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
               {data.items.map((vendor) => (
                 <li key={vendor.id}>
                   <button
                     type="button"
                     onClick={() => setOpenId(vendor.id)}
-                    className="grid w-full gap-x-6 gap-y-1 p-4 text-left transition-colors hover:bg-slate-50 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1.2fr)_9rem_8rem] sm:items-center sm:p-5"
+                    className="group grid w-full gap-x-6 gap-y-1 p-4 text-left transition-all duration-200 hover:bg-slate-50 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1.2fr)_9rem_8rem] sm:items-center sm:p-5"
                   >
-                    <span className="min-w-0">
-                      <span className="block truncate font-semibold text-slate-900">{vendor.name}</span>
-                      <span className="block truncate text-xs text-slate-500">{vendor.location}</span>
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-brand-ink"
+                        aria-hidden
+                      >
+                        {vendor.name.trim().charAt(0).toUpperCase()}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold text-slate-900">{vendor.name}</span>
+                        <span className="block truncate text-xs text-slate-500">{vendor.location}</span>
+                      </span>
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate text-sm text-slate-800">{vendor.owner.fullName}</span>

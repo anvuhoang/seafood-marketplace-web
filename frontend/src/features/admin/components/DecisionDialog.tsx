@@ -56,7 +56,7 @@ export function DecisionDialog({ action, vendorName, onCancel, onConfirm }: Deci
         {needsReason && (
           <div>
             <label htmlFor="decision-reason" className="text-sm font-semibold text-slate-800">
-              Lý do <span className="text-[#C62835]">*</span>
+              Lý do <span className="text-danger">*</span>
             </label>
             <textarea
               id="decision-reason"
@@ -65,7 +65,7 @@ export function DecisionDialog({ action, vendorName, onCancel, onConfirm }: Deci
               maxLength={REASON_MAX_LENGTH}
               rows={4}
               autoFocus
-              className="mt-1.5 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-[#0F3860] focus:ring-2 focus:ring-[#0F3860]/15"
+              className="mt-1.5 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-brand-ink focus:ring-2 focus:ring-brand-ink/15"
               placeholder="Ví dụ: Giấy phép ATTP đã hết hạn, vui lòng bổ sung bản mới."
             />
             <p className="mt-1 text-xs text-slate-500">
@@ -75,7 +75,7 @@ export function DecisionDialog({ action, vendorName, onCancel, onConfirm }: Deci
         )}
 
         {error && (
-          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-[#C62835]">
+          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-danger">
             {error}
           </p>
         )}
@@ -92,8 +92,8 @@ export function DecisionDialog({ action, vendorName, onCancel, onConfirm }: Deci
           <button
             type="submit"
             disabled={reasonTooShort || busy}
-            className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-              destructive ? "bg-[#C62835] hover:bg-[#A8202C]" : "bg-[#0F3860] hover:bg-[#0A2744]"
+            className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-[#fff] transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              destructive ? "bg-[#C62835] hover:bg-[#A8202C]" : "bg-brand hover:bg-brand-hover"
             }`}
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}

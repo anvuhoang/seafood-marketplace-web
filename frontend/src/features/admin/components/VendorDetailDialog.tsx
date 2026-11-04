@@ -60,7 +60,7 @@ export function VendorDetailDialog({ vendorId, onClose, onDecided }: VendorDetai
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : "error" in current ? (
-          <p role="alert" className="py-8 text-center text-sm text-[#C62835]">
+          <p role="alert" className="py-8 text-center text-sm text-danger">
             {current.error}
           </p>
         ) : (
@@ -72,7 +72,7 @@ export function VendorDetailDialog({ vendorId, onClose, onDecided }: VendorDetai
                   href={`/vendor/${current.detail.slug}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-[#0F3860] hover:underline"
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-brand-ink hover:underline"
                 >
                   Xem gian hàng
                   <ExternalLink className="h-3.5 w-3.5" />
@@ -130,8 +130,8 @@ export function VendorDetailDialog({ vendorId, onClose, onDecided }: VendorDetai
                     onClick={() => setPending(action)}
                     className={`h-10 rounded-lg px-4 text-sm font-semibold transition-colors ${
                       action === "APPROVE" || action === "REACTIVATE"
-                        ? "bg-[#0F3860] text-white hover:bg-[#0A2744]"
-                        : "border border-red-200 text-[#C62835] hover:bg-red-50"
+                        ? "bg-brand text-[#fff] hover:bg-brand-hover"
+                        : "border border-red-200 text-danger hover:bg-red-50"
                     }`}
                   >
                     {ACTION_LABEL[action]}

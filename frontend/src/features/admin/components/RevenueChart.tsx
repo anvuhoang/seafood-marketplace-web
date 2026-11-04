@@ -101,19 +101,25 @@ export function RevenueChart({ months }: { months: MonthlyRevenue[] }) {
                         onMouseLeave={() => setActive(null)}
                         onFocus={() => setActive(index)}
                         onBlur={() => setActive(null)}
-                        className="group absolute inset-y-0 inset-x-1 flex items-end justify-center outline-none"
+                        className="group absolute inset-y-0 inset-x-1 flex items-end justify-center outline-none transition-colors hover:bg-slate-50/80"
                       >
                         <span
-                          className={`block w-full rounded-t-[4px] transition-colors duration-150 ${
-                            isLast || isActive ? "bg-[#0F3860]" : "bg-[#B9C9DB]"
-                          } group-focus-visible:ring-2 group-focus-visible:ring-[#0F3860]/40 group-focus-visible:ring-offset-2`}
-                          style={{ height: Math.max(height, month.net > 0 ? 2 : 0), maxWidth: BAR_MAX_WIDTH }}
+                          className={`grow-y block w-full rounded-t-[4px] transition-colors duration-200 ${
+                            isLast || isActive
+                              ? "bg-brand"
+                              : "bg-brand-soft"
+                          } group-focus-visible:ring-2 group-focus-visible:ring-brand-ink/40 group-focus-visible:ring-offset-2`}
+                          style={{
+                            height: Math.max(height, month.net > 0 ? 2 : 0),
+                            maxWidth: BAR_MAX_WIDTH,
+                            animationDelay: `${index * 80}ms`,
+                          }}
                         />
                       </button>
 
                       {isLast && month.net > 0 && !isActive && (
                         <span
-                          className="pointer-events-none absolute text-[11px] font-semibold text-slate-900 tabular-nums"
+                          className="animate-fade-in pointer-events-none absolute text-[11px] font-semibold text-slate-900 tabular-nums"
                           style={{ bottom: height + 6 }}
                         >
                           {formatCompactVnd(month.net)}
@@ -123,7 +129,7 @@ export function RevenueChart({ months }: { months: MonthlyRevenue[] }) {
                       {isActive && (
                         <div
                           role="status"
-                          className={`pointer-events-none absolute z-10 w-52 rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-lg ${
+                          className={`animate-fade-in pointer-events-none absolute z-10 w-52 rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-md ${
                             index === 0 ? "left-0" : index === lastIndex ? "right-0" : "left-1/2 -translate-x-1/2"
                           }`}
                           style={{ bottom: Math.min(height, PLOT_HEIGHT - 96) + 10 }}

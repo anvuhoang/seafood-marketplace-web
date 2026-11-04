@@ -14,7 +14,7 @@ export function BreakdownBars({ rows, label }: { rows: BreakdownRow[]; label: st
 
   return (
     <ul className="space-y-3.5" aria-label={label}>
-      {rows.map((row) => {
+      {rows.map((row, index) => {
         const share = total > 0 ? (row.value / total) * 100 : 0;
         return (
           <li key={row.label}>
@@ -25,10 +25,10 @@ export function BreakdownBars({ rows, label }: { rows: BreakdownRow[]; label: st
                 <span className="ml-1.5 text-xs text-slate-500">{Math.round(share)}%</span>
               </span>
             </div>
-            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
               <div
-                className="h-full rounded-full bg-[#0F3860] transition-[width] duration-500"
-                style={{ width: `${share}%` }}
+                className="grow-x h-full rounded-full bg-brand"
+                style={{ width: `${share}%`, animationDelay: `${index * 60}ms` }}
               />
             </div>
           </li>

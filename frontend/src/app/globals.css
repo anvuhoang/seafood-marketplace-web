@@ -4,6 +4,70 @@
   --font-sans: var(--font-be-vietnam-pro), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Admin tokens. Light values match the storefront: #0F3860 for brand fills, #0B2540 for the big dark surfaces. */
+@theme {
+  --color-brand: #0f3860;
+  --color-brand-hover: #0a2744;
+  --color-brand-ink: #0f3860;
+  --color-brand-soft: #c5d3e3;
+  --color-shell: #0b2540;
+  --color-danger: #c62835;
+}
+
+/*
+ * Dark mode for the admin area only. It lives on a wrapper class instead of
+ * <html>, so the storefront is untouched. Utilities read colours from these
+ * variables, so redefining the neutral scale here flips every bg-white,
+ * text-slate-900 and border-slate-200 inside the wrapper at once.
+ */
+.admin-dark {
+  color-scheme: dark;
+  --color-white: #0f1d30;
+  --color-slate-50: #0a1626;
+  --color-slate-100: #16263b;
+  --color-slate-200: #22354d;
+  --color-slate-300: #2f4560;
+  --color-slate-400: #6c8099;
+  --color-slate-500: #8fa2b8;
+  --color-slate-600: #a9b8ca;
+  --color-slate-700: #c3cedb;
+  --color-slate-800: #dbe3ec;
+  --color-slate-900: #f1f5f9;
+
+  --color-brand: #2b78b5;
+  --color-brand-hover: #3b8bc9;
+  --color-brand-ink: #7cb8e8;
+  --color-brand-soft: #29415d;
+  --color-shell: #07111f;
+  --color-danger: #f07a85;
+
+  --color-amber-50: #2b2108;
+  --color-amber-100: #3a2c0a;
+  --color-amber-200: #5c4410;
+  --color-amber-800: #f6c860;
+  --color-amber-900: #fbd98a;
+  --color-emerald-50: #0b2a21;
+  --color-emerald-100: #0f3a2d;
+  --color-emerald-200: #14503d;
+  --color-emerald-800: #6ee7b7;
+  --color-emerald-900: #a7f3d0;
+  --color-red-50: #33161a;
+  --color-red-100: #44191f;
+  --color-red-200: #6a2530;
+  --color-red-800: #fca5a5;
+  --color-red-900: #fecaca;
+  --color-sky-50: #0c2438;
+  --color-sky-100: #10304b;
+  --color-sky-200: #174a73;
+  --color-sky-700: #7cc3f0;
+  --color-sky-800: #a5d8f6;
+}
+
+/* The sidebar and top bar are dark in both themes, so white stays white there. */
+.admin-dark .admin-chrome {
+  --color-white: #ffffff;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -84,6 +148,50 @@
   transform: scaleX(1);
 }
 
+/* Admin charts: bars grow out of their baseline, and loading placeholders shimmer. */
+@keyframes growY {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes growX {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.grow-y {
+  transform-origin: bottom;
+  animation: growY 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.grow-x {
+  transform-origin: left;
+  animation: growX 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
 /* Used by the tilt cards on the vendor sections. */
 .preserve-3d {
   transform-style: preserve-3d;
@@ -96,7 +204,10 @@
 
   .animate-slide-up,
   .animate-fade-in,
-  .animate-rise {
+  .animate-rise,
+  .grow-y,
+  .grow-x,
+  .shimmer {
     animation: none;
   }
 

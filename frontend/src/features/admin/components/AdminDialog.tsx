@@ -31,7 +31,7 @@ export function AdminDialog({ title, onClose, children, size = "md" }: AdminDial
         // A click on the backdrop lands on the dialog element itself.
         if (event.target === ref.current) onClose();
       }}
-      className={`m-auto max-h-[90vh] w-[calc(100%-2rem)] overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-xl backdrop:bg-slate-900/50 ${
+      className={`m-auto max-h-[90vh] w-[calc(100%-2rem)] overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-xl text-slate-800 backdrop:bg-black/50 ${
         size === "lg" ? "max-w-2xl" : "max-w-md"
       }`}
     >
