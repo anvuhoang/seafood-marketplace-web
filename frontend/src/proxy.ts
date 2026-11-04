@@ -41,8 +41,39 @@ function getDashboardPath(role: UserRole): string {
   return "/";
 }
 
+/**
+ * The admin site's address, e.g. https://admin.haisanexpress.vn. When it is not
+ * set, everything is served from one host and /admin lives beside the shop.
+ */
+function getAdminOrigin(): URL | null {
+  const value = process.env.NEXT_PUBLIC_ADMIN_URL;
+  if (!value) return null;
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+
+  // Two hosts, one app: the admin host serves only /admin, and the shop host
+  // hands /admin over to it. Sessions are stored per host, so signing in on
+  // one never signs you in on the other.
+  const adminOrigin = getAdminOrigin();
+  if (adminOrigin) {
+    const onAdminHost = request.headers.get("host") === adminOrigin.host;
+
+    if (onAdminHost && !matchesRoute(pathname, "/admin")) {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    }
+
+    // On the shop host /admin does not exist, so nobody learns where the admin site is.
+    if (!onAdminHost && matchesRoute(pathname, "/admin")) {
+      return NextResponse.rewrite(new URL("/__not-found", request.url));
+    }
+  }
 
   const token = request.cookies.get("haisan_token")?.value;
   const roleValue = request.cookies.get("haisan_role")?.value;
@@ -113,6 +144,6 @@ export function proxy(request: NextRequest) {
 export default proxy;
 
 export const config = {
-  // /login and /register redirect to these in next.config.ts.
-  matcher: ["/customer/:path*", "/vendor/:path*", "/admin/:path*"],
+  // Every page, so the admin host can keep shop pages out; files and Next.js internals are skipped.
+  matcher: ["/((?!_next/|favicon\\.ico|.*\\..*).*)"],
 };
