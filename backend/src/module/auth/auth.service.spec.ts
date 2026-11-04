@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
@@ -183,6 +183,25 @@ describe('AuthService', () => {
           emailOrPhone: 'nonexistent@haisanexpress.com',
           password: 'Password123',
         }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should refuse an admin account on the shop sign-in, even with the right password', async () => {
+      const realHash = await bcrypt.hash('CorrectPassword123', 10);
+      prisma.user.findFirst.mockResolvedValue({ ...mockDbUser, role: 'ADMIN', passwordHash: realHash });
+
+      await expect(
+        authService.login({ emailOrPhone: 'test@haisanexpress.com', password: 'CorrectPassword123' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(jwtService.signAsync).not.toHaveBeenCalled();
+    });
+
+    it('should keep answering a wrong admin password with the generic 401', async () => {
+      const realHash = await bcrypt.hash('CorrectPassword123', 10);
+      prisma.user.findFirst.mockResolvedValue({ ...mockDbUser, role: 'ADMIN', passwordHash: realHash });
+
+      await expect(
+        authService.login({ emailOrPhone: 'test@haisanexpress.com', password: 'WrongPassword123' }),
       ).rejects.toThrow(UnauthorizedException);
     });
 

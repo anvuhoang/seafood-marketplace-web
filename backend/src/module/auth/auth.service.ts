@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -76,6 +77,14 @@ export class AuthService {
 
   async login(dto: LoginDto): Promise<AuthResult> {
     const user = await this.verifyCredentials(dto);
+
+    // Admins sign in on the admin site only. This is reached after the password
+    // was right, so the hint does not help anyone guessing.
+    if (user.role === 'ADMIN') {
+      throw new ForbiddenException(
+        'Tài khoản quản trị không đăng nhập tại đây. Vui lòng dùng cổng quản trị.',
+      );
+    }
 
     // Generate JWT access token
     const accessToken = await this.generateToken(user.id, user.email, user.role);

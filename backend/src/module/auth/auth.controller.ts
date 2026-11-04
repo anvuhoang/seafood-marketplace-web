@@ -42,7 +42,10 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Sign in with email or phone number' })
+  @ApiOperation({
+    summary: 'Sign in with email or phone number',
+    description: 'For customers and vendors. Admin accounts are refused with 403 and must use POST /auth/admin/login.',
+  })
   @ApiResponse({
     status: 200,
     description: 'Signed in; returns the user and an access token',
@@ -53,6 +56,7 @@ export class AuthController {
     status: 401,
     description: 'Wrong credentials or the account is locked',
   })
+  @ApiResponse({ status: 403, description: 'The account is an admin; use the admin sign-in' })
   async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(dto);
   }
