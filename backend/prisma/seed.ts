@@ -851,6 +851,77 @@ async function main() {
     });
   }
 
+  // An admin account, so the admin area can be used right after seeding.
+  await prisma.user.upsert({
+    where: { email: 'admin@haisanexpress.vn' },
+    update: {},
+    create: {
+      email: 'admin@haisanexpress.vn',
+      fullName: 'Quản trị viên HaiSan Express',
+      phone: '0900000000',
+      passwordHash: await bcrypt.hash('Admin@123456', 10),
+      role: 'ADMIN',
+      status: 'ACTIVE',
+    },
+  });
+
+  // Stores waiting for review. Their owners stay customers until an admin
+  // approves the store, which is what promotes them to VENDOR.
+  const pendingVendors = [
+    {
+      owner: { email: 'hai.dang@example.com', fullName: 'Lê Văn Đăng', phone: '0902000001' },
+      store: {
+        name: 'Vựa Ghẹ Sống Côn Đảo Hải Đăng',
+        slug: 'vua-ghe-song-con-dao-hai-dang',
+        description: 'Ghẹ, cua và tôm hùm đánh bắt quanh Côn Đảo, giữ sống trong bồn giữ lạnh.',
+        phone: '0902000001',
+        email: 'haidang@example.com',
+        province: 'Bà Rịa - Vũng Tàu',
+        district: 'Côn Đảo',
+        streetAddress: '8 Tôn Đức Thắng, Côn Đảo',
+      },
+    },
+    {
+      owner: { email: 'thu.huong@example.com', fullName: 'Phạm Thu Hương', phone: '0902000002' },
+      store: {
+        name: 'Hải Sản Biển Đông Nha Trang',
+        slug: 'hai-san-bien-dong-nha-trang',
+        description: 'Tôm hùm, cá mú và sò điệp nuôi lồng bè ở vịnh Nha Trang.',
+        phone: '0902000002',
+        email: 'biendong@example.com',
+        province: 'Khánh Hòa',
+        district: 'Nha Trang',
+        streetAddress: '25 Trần Phú, Nha Trang',
+      },
+    },
+    {
+      owner: { email: 'minh.tuan@example.com', fullName: 'Võ Minh Tuấn', phone: '0902000003' },
+      store: {
+        name: 'Vựa Mực Phan Thiết',
+        slug: 'vua-muc-phan-thiet',
+        description: 'Mực ống, mực lá và cá thu phơi khô, đánh bắt tại Phan Thiết.',
+        phone: '0902000003',
+        email: 'mucphanthiet@example.com',
+        province: 'Bình Thuận',
+        district: 'Phan Thiết',
+        streetAddress: '3 Đường Ngư Ông, Phan Thiết',
+      },
+    },
+  ];
+
+  for (const pending of pendingVendors) {
+    const owner = await prisma.user.upsert({
+      where: { email: pending.owner.email },
+      update: {},
+      create: { ...pending.owner, passwordHash: customerPassword, role: 'CUSTOMER', status: 'ACTIVE' },
+    });
+    await prisma.vendor.upsert({
+      where: { slug: pending.store.slug },
+      update: {},
+      create: { ...pending.store, ownerId: owner.id, status: 'PENDING' },
+    });
+  }
+
   console.log('Seeding finished successfully.');
   console.log(`- Created product: ${productTomSu.name} (slug: ${productTomSu.slug})`);
 }
