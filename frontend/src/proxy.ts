@@ -25,6 +25,8 @@ const PROTECTED_ROUTES: {
 
 const AUTH_PAGES = ["/customer/login", "/customer/register"];
 
+const ADMIN_LOGIN = "/admin/login";
+
 function matchesRoute(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
@@ -50,13 +52,17 @@ export function proxy(request: NextRequest) {
   const hasTokenCookie = Boolean(token);
   const validRole = isUserRole(roleValue) ? roleValue : null;
 
-  const matchingRule = PROTECTED_ROUTES.find((rule) =>
-    matchesRoute(pathname, rule.prefix),
-  );
+  // The admin sign-in page itself must stay reachable while signed out.
+  const matchingRule = matchesRoute(pathname, ADMIN_LOGIN)
+    ? undefined
+    : PROTECTED_ROUTES.find((rule) => matchesRoute(pathname, rule.prefix));
 
   if (matchingRule) {
     if (!hasTokenCookie || !validRole) {
-      const loginUrl = new URL("/customer/login", request.url);
+      const loginPath = matchesRoute(pathname, "/admin")
+        ? ADMIN_LOGIN
+        : "/customer/login";
+      const loginUrl = new URL(loginPath, request.url);
       loginUrl.searchParams.set("redirect", `${pathname}${search}`);
 
       return NextResponse.redirect(loginUrl);
@@ -67,6 +73,21 @@ export function proxy(request: NextRequest) {
         new URL("/unauthorized", request.url),
       );
     }
+  }
+
+  // An admin who is already signed in has no use for the admin sign-in page.
+  // Other roles stay on it, so they can switch to an admin account.
+  if (pathname === ADMIN_LOGIN && hasTokenCookie && validRole === "ADMIN") {
+    const redirectPath = getSafeRedirectPath(
+      request.nextUrl.searchParams.get("redirect"),
+      request.nextUrl.origin,
+    );
+    return NextResponse.redirect(
+      new URL(
+        redirectPath?.startsWith("/admin") ? redirectPath : getDashboardPath("ADMIN"),
+        request.url,
+      ),
+    );
   }
 
   const isAuthPage = AUTH_PAGES.includes(pathname);
