@@ -21,6 +21,7 @@ model User {
   orders    Order[]
   reviews   Review[]
   vendorFollows VendorFollow[]
+  vendorDecisions VendorDecision[] @relation("VendorDecisionAdmin")
 
   @@index([role, status])
   @@map("users")
