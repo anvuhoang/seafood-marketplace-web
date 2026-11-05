@@ -83,7 +83,7 @@ export function AdminVendorsView() {
         </form>
       </div>
 
-      <div role="tablist" aria-label="Trạng thái vựa" className="mt-6 flex gap-1 overflow-x-auto border-b border-slate-200">
+      <div role="tablist" aria-label="Trạng thái vựa" className="mt-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-slate-200">
         {TABS.map((value) => {
           const active = tab === value;
           const total = count(value);
