@@ -1,5 +1,10 @@
 import { authenticatedRequest } from "@/features/auth/api/auth.api";
-import { VendorFollowState, VendorStorefront, VendorSummary } from "../types/vendor.types";
+import {
+  VendorDashboard,
+  VendorFollowState,
+  VendorStorefront,
+  VendorSummary,
+} from "../types/vendor.types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -61,4 +66,13 @@ export function unfollowVendor(token: string, slug: string): Promise<VendorFollo
 /** Vendors the signed-in customer follows. */
 export function getFollowedVendors(token: string): Promise<VendorSummary[]> {
   return authenticatedRequest<VendorSummary[]>(`${API_BASE_URL}/vendors/followed`, token);
+}
+
+/** Dashboard statistics and records for the Vendor linked to the access token. */
+export function getVendorDashboard(token: string): Promise<VendorDashboard> {
+  return authenticatedRequest<VendorDashboard>(
+    `${API_BASE_URL}/vendors/me/dashboard`,
+    token,
+    { cache: "no-store" },
+  );
 }
