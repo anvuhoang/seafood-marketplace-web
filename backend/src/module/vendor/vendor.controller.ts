@@ -1,14 +1,32 @@
-import { Controller, Delete, Get, Param, Put, Query } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { VendorService } from './vendor.service.js';
 import { FollowStateDto, VendorStorefrontDto, VendorSummaryDto } from './dto/vendor-storefront.dto.js';
+import { VendorDashboardDto } from './dto/vendor-dashboard.dto.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { Roles } from '../../common/decorators/roles.decorator.js';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../../common/guards/roles.guard.js';
 
 @ApiTags('Vendors')
 @Controller('vendors')
 export class VendorController {
   constructor(private readonly vendorService: VendorService) {}
+
+  @Get('me/dashboard')
+  @Roles('VENDOR')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get the authenticated Vendor's dashboard statistics" })
+  @ApiResponse({ status: 200, description: 'Vendor dashboard retrieved', type: VendorDashboardDto })
+  @ApiResponse({ status: 403, description: 'Only Vendor accounts can access this dashboard' })
+  @ApiResponse({ status: 404, description: 'No Vendor is linked to this account' })
+  async getDashboard(
+    @CurrentUser('sub') userId: string,
+  ): Promise<VendorDashboardDto> {
+    return this.vendorService.getDashboard(userId);
+  }
 
   @Public()
   @Get()

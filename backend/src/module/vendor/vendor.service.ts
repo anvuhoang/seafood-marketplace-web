@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { VendorOrderStatus } from '@prisma/client';
 import type { Vendor } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type {
@@ -9,6 +10,11 @@ import type {
   VendorStorefrontStatus,
   VendorSummaryDto,
 } from './dto/vendor-storefront.dto.js';
+import type {
+  VendorDashboardDto,
+  VendorDashboardOrderDto,
+  VendorDashboardStatusCountDto,
+} from './dto/vendor-dashboard.dto.js';
 
 const SELLABLE_OFFER_WHERE = {
   status: 'ACTIVE',
@@ -18,9 +24,142 @@ const SELLABLE_OFFER_WHERE = {
   },
 } as const;
 
+const ACTIONABLE_ORDER_STATUSES = [
+  VendorOrderStatus.PENDING,
+  VendorOrderStatus.ACCEPTED,
+] as const;
+
 @Injectable()
 export class VendorService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async getDashboard(userId: string): Promise<VendorDashboardDto> {
+    const vendor = await this.prisma.vendor.findUnique({
+      where: { ownerId: userId },
+      select: { id: true, name: true, slug: true },
+    });
+
+    if (!vendor) {
+      throw new NotFoundException('Tài khoản này chưa được liên kết với gian hàng.');
+    }
+
+    const vendorId = vendor.id;
+    const [
+      productCount,
+      orderCount,
+      ordersNeedingActionCount,
+      revenue,
+      groupedOrders,
+      actionableOrders,
+      lowStockOffers,
+    ] = await Promise.all([
+      this.prisma.vendorOffer.count({
+        where: { vendorId, status: 'ACTIVE' },
+      }),
+      this.prisma.vendorOrder.count({ where: { vendorId } }),
+      this.prisma.vendorOrder.count({
+        where: { vendorId, status: { in: [...ACTIONABLE_ORDER_STATUSES] } },
+      }),
+      this.prisma.vendorOrder.aggregate({
+        where: { vendorId, status: VendorOrderStatus.COMPLETED },
+        _sum: { subtotal: true },
+      }),
+      this.prisma.vendorOrder.groupBy({
+        by: ['status'],
+        where: { vendorId },
+        _count: { _all: true },
+      }),
+      this.prisma.vendorOrder.findMany({
+        where: { vendorId, status: { in: [...ACTIONABLE_ORDER_STATUSES] } },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          status: true,
+          subtotal: true,
+          createdAt: true,
+          order: {
+            select: {
+              orderNumber: true,
+              recipientName: true,
+              recipientPhone: true,
+              shippingAddress: true,
+            },
+          },
+          items: {
+            select: {
+              productNameSnapshot: true,
+              variantNameSnapshot: true,
+              unitSnapshot: true,
+              quantity: true,
+              lineTotal: true,
+            },
+          },
+        },
+      }),
+      this.prisma.vendorOffer.findMany({
+        where: { vendorId, status: 'ACTIVE', stock: { lte: 5 } },
+        orderBy: [{ stock: 'asc' }, { createdAt: 'desc' }],
+        select: {
+          id: true,
+          stock: true,
+          variant: {
+            select: {
+              name: true,
+              unit: true,
+              product: { select: { name: true } },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const countsByStatus = new Map<VendorOrderStatus, number>(
+      Object.values(VendorOrderStatus).map((status) => [status, 0]),
+    );
+    for (const row of groupedOrders) {
+      countsByStatus.set(row.status, row._count._all);
+    }
+
+    const ordersByStatus: VendorDashboardStatusCountDto[] = [...countsByStatus].map(
+      ([status, count]) => ({ status, count }),
+    );
+    const ordersNeedingAction: VendorDashboardOrderDto[] = actionableOrders.map((order) => ({
+      id: order.id,
+      orderNumber: order.order.orderNumber,
+      status: order.status,
+      createdAt: order.createdAt.toISOString(),
+      customerName: order.order.recipientName,
+      customerPhone: order.order.recipientPhone,
+      shippingAddress: order.order.shippingAddress,
+      subtotal: order.subtotal.toFixed(2),
+      items: order.items.map((item) => ({
+        productName: item.productNameSnapshot,
+        variantName: item.variantNameSnapshot,
+        quantity: item.quantity.toString(),
+        unit: item.unitSnapshot,
+        lineTotal: item.lineTotal.toFixed(2),
+      })),
+    }));
+
+    return {
+      vendor: { name: vendor.name, slug: vendor.slug },
+      summary: {
+        productCount,
+        orderCount,
+        ordersNeedingActionCount,
+        revenue: revenue._sum.subtotal?.toFixed(2) ?? '0.00',
+      },
+      ordersByStatus,
+      ordersNeedingAction,
+      lowStockOffers: lowStockOffers.map((offer) => ({
+        id: offer.id,
+        productName: offer.variant.product.name,
+        variantName: offer.variant.name,
+        stock: offer.stock.toString(),
+        unit: offer.variant.unit,
+      })),
+    };
+  }
 
   /**
    * Approved vendors for public discovery, highest rated first.

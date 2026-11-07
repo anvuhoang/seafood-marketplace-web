@@ -1,4 +1,62 @@
 export type VendorStorefrontStatus = "PENDING" | "ACTIVE" | "REJECTED" | "SUSPENDED";
+export type VendorOrderStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "PREPARING"
+  | "SHIPPING"
+  | "COMPLETED"
+  | "CANCELLED";
+
+export interface VendorDashboardSummary {
+  productCount: number;
+  orderCount: number;
+  ordersNeedingActionCount: number;
+  revenue: string;
+}
+
+export interface VendorDashboardStatusCount {
+  status: VendorOrderStatus;
+  count: number;
+}
+
+export interface VendorDashboardOrderItem {
+  productName: string;
+  variantName: string;
+  quantity: string;
+  unit: string;
+  lineTotal: string;
+}
+
+export interface VendorDashboardOrder {
+  id: string;
+  orderNumber: string;
+  status: Extract<VendorOrderStatus, "PENDING" | "ACCEPTED">;
+  createdAt: string;
+  customerName: string;
+  customerPhone: string;
+  shippingAddress: string;
+  subtotal: string;
+  items: VendorDashboardOrderItem[];
+}
+
+export interface VendorDashboardLowStockOffer {
+  id: string;
+  productName: string;
+  variantName: string;
+  stock: string;
+  unit: string;
+}
+
+export interface VendorDashboard {
+  vendor: {
+    name: string;
+    slug: string;
+  };
+  summary: VendorDashboardSummary;
+  ordersByStatus: VendorDashboardStatusCount[];
+  ordersNeedingAction: VendorDashboardOrder[];
+  lowStockOffers: VendorDashboardLowStockOffer[];
+}
 
 export interface VendorStorefrontCategory {
   id: string;
