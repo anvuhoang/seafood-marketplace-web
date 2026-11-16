@@ -57,7 +57,7 @@ export class ProductService {
       },
       include: {
         species: true,
-        categories: { include: { category: true } },
+        categories: { include: { category: { include: { parent: { select: { isActive: true } } } } } },
         images: { orderBy: { sortOrder: 'asc' } },
         variants: {
           include: {
@@ -143,7 +143,8 @@ export class ProductService {
           }
         : null,
       categories: product.categories
-        .filter((pc) => pc.category.isActive)
+        // A category is hidden from customers when it, or its parent, is inactive.
+        .filter((pc) => pc.category.isActive && (pc.category.parent?.isActive ?? true))
         .map((pc) => ({ id: pc.category.id, name: pc.category.name, slug: pc.category.slug })),
       images: product.images.map((image) => ({
         id: image.id,
