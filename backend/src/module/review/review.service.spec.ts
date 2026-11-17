@@ -8,7 +8,8 @@ import {
 import { createHash } from 'node:crypto';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { ReviewService, anonymizeName, signCloudinaryParams } from './review.service.js';
+import { ReviewService, anonymizeName } from './review.service.js';
+import { CloudinaryService, signCloudinaryParams } from '../../common/cloudinary/cloudinary.service.js';
 import { CreateReviewDto } from './dto/review.dto.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ConfigService } from '@nestjs/config';
@@ -57,7 +58,7 @@ describe('ReviewService', () => {
       review: { findMany: vi.fn().mockResolvedValue([]), create: vi.fn() },
     };
     const config = { get: vi.fn(() => cloudinary) } as unknown as ConfigService;
-    service = new ReviewService(prisma as PrismaService, config);
+    service = new ReviewService(prisma as PrismaService, new CloudinaryService(config));
   });
 
   describe('getReviewCenter', () => {

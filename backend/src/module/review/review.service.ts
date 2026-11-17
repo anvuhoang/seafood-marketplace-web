@@ -3,11 +3,12 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  ServiceUnavailableException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createHash } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import {
+  CLOUDINARY_FOLDER_ROOT,
+  CloudinaryService,
+} from '../../common/cloudinary/cloudinary.service.js';
 import type {
   CreateReviewDto,
   PendingReviewItemDto,
@@ -17,27 +18,13 @@ import type {
   SubmittedReviewDto,
 } from './dto/review.dto.js';
 
-const UPLOAD_FOLDER_ROOT = 'haisan-express/reviews';
-const ALLOWED_FORMATS = 'jpg,jpeg,png,webp';
-export const REVIEW_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const UPLOAD_FOLDER_ROOT = `${CLOUDINARY_FOLDER_ROOT}/reviews`;
 
 /** "Nguyễn Văn An" -> "n***n"; shown instead of the name on anonymous reviews. */
 export function anonymizeName(fullName: string): string {
   const name = fullName.trim();
   if (!name) return '***';
   return `${name[0]!.toLowerCase()}***${name[name.length - 1]!.toLowerCase()}`;
-}
-
-/**
- * Cloudinary API signature: SHA-1 of the sorted `key=value` pairs joined by
- * `&`, followed by the API secret.
- */
-export function signCloudinaryParams(params: Record<string, string | number>, apiSecret: string): string {
-  const payload = Object.keys(params)
-    .sort()
-    .map((key) => `${key}=${params[key]}`)
-    .join('&');
-  return createHash('sha1').update(payload + apiSecret).digest('hex');
 }
 
 const productSelect = {
@@ -77,7 +64,7 @@ type ReviewRow = {
 export class ReviewService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
   /** Items waiting for a review, the customer's own reviews and their totals. */
@@ -136,7 +123,7 @@ export class ReviewService {
         averageRating: submitted.length > 0 ? Math.round((ratingTotal / submitted.length) * 10) / 10 : 0,
       },
       anonymousName: anonymizeName(user.fullName),
-      imageUploadEnabled: this.cloudinary() !== null,
+      imageUploadEnabled: this.cloudinary.isEnabled(),
       pending,
       submitted,
     };
@@ -194,44 +181,12 @@ export class ReviewService {
 
   /** Signature for one direct browser upload into this customer's folder. */
   createUploadSignature(userId: string): ReviewUploadSignatureDto {
-    const cloudinary = this.cloudinary();
-    if (!cloudinary) {
-      throw new ServiceUnavailableException('Chức năng tải ảnh chưa được cấu hình.');
-    }
-
-    const timestamp = Math.floor(Date.now() / 1000);
-    const folder = `${UPLOAD_FOLDER_ROOT}/${userId}`;
-    const signature = signCloudinaryParams(
-      { allowed_formats: ALLOWED_FORMATS, folder, timestamp },
-      cloudinary.apiSecret,
-    );
-
-    return {
-      uploadUrl: `https://api.cloudinary.com/v1_1/${cloudinary.cloudName}/image/upload`,
-      apiKey: cloudinary.apiKey,
-      timestamp,
-      signature,
-      folder,
-      allowedFormats: ALLOWED_FORMATS,
-      maxFileSizeBytes: REVIEW_IMAGE_MAX_BYTES,
-    };
+    return this.cloudinary.createUploadSignature(`${UPLOAD_FOLDER_ROOT}/${userId}`);
   }
 
   /** Only images uploaded into this customer's own folder on our cloud are accepted. */
   private isOwnUploadedImage(url: string, userId: string): boolean {
-    const cloudinary = this.cloudinary();
-    if (!cloudinary) return false;
-    const prefix = `https://res.cloudinary.com/${cloudinary.cloudName}/image/upload/`;
-    if (!url.startsWith(prefix)) return false;
-    // Optional version segment, then the folder, then a single file name.
-    const rest = url.slice(prefix.length).replace(/^v\d+\//, '');
-    const folder = `${UPLOAD_FOLDER_ROOT}/${userId}/`;
-    return rest.startsWith(folder) && /^[\w-]+\.(jpe?g|png|webp)$/i.test(rest.slice(folder.length));
-  }
-
-  private cloudinary(): { cloudName: string; apiKey: string; apiSecret: string } | null {
-    const settings = this.config.get<{ cloudName: string; apiKey: string; apiSecret: string }>('cloudinary');
-    return settings?.cloudName && settings.apiKey && settings.apiSecret ? settings : null;
+    return this.cloudinary.isUploadedImageInFolder(url, `${UPLOAD_FOLDER_ROOT}/${userId}`);
   }
 
   private toProduct(product: ProductRow): ReviewProductDto {
