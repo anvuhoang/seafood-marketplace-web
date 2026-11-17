@@ -10,11 +10,14 @@ const API_BASE_URL =
 
 export class ApiError extends Error {
   statusCode: number;
+  /** Each message the API returned; validation errors (400) send one per invalid field. */
+  messages: string[];
 
-  constructor(message: string, statusCode: number) {
+  constructor(message: string, statusCode: number, messages: string[] = [message]) {
     super(message);
     this.name = "ApiError";
     this.statusCode = statusCode;
+    this.messages = messages;
   }
 }
 
@@ -42,7 +45,11 @@ async function handleResponse<T>(res: Response): Promise<T> {
       data?.error ||
       `Yêu cầu thất bại với mã lỗi ${res.status}`;
 
-    throw new ApiError(message, res.status);
+    const messages = Array.isArray(rawMessage)
+      ? rawMessage.filter((item): item is string => typeof item === "string")
+      : [message];
+
+    throw new ApiError(message, res.status, messages);
   }
 
   return data as T;
