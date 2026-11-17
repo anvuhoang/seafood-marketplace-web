@@ -113,6 +113,13 @@ export function VendorDashboardContent() {
           className="flex flex-wrap items-center gap-2"
         >
           <Link
+            href="/vendor/settings"
+            className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            Hồ sơ gian hàng
+          </Link>
+
+          <Link
             href="/vendor/products"
             className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50"
           >
