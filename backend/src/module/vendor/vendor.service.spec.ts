@@ -113,22 +113,21 @@ describe('VendorService', () => {
   });
 
   it.each(['PENDING', 'REJECTED', 'SUSPENDED'])(
-    'does not expose products for a %s vendor',
+    'answers 404 for a %s vendor, exactly like an unknown slug',
     async (status) => {
       prismaService.vendor.findUnique.mockResolvedValue(vendorRow(status));
 
-      const result = await vendorService.getStorefront('vua-thuy-san-phu-quoc-xanh');
-
-      expect(result.status).toBe(status);
-      expect(result.isActive).toBe(false);
-      expect(result.products).toEqual([]);
-      expect(result.categories).toEqual([]);
+      await expect(vendorService.getStorefront('vua-thuy-san-phu-quoc-xanh')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       expect(prismaService.vendorOffer.findMany).not.toHaveBeenCalled();
+      expect(prismaService.vendorFollow.count).not.toHaveBeenCalled();
     },
   );
 
   it('includes the ward in the public address when the vendor has one', async () => {
-    prismaService.vendor.findUnique.mockResolvedValue({ ...vendorRow('PENDING'), ward: 'Dương Đông' });
+    prismaService.vendor.findUnique.mockResolvedValue({ ...vendorRow('ACTIVE'), ward: 'Dương Đông' });
+    prismaService.vendorOffer.findMany.mockResolvedValue([]);
     const result = await vendorService.getStorefront('vua-thuy-san-phu-quoc-xanh');
     expect(result.vendor.address).toBe('12 Bến Cảng, Dương Đông, Phú Quốc, Kiên Giang');
   });

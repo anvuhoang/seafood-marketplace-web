@@ -149,6 +149,37 @@ describe('ProductService', () => {
     expect(result.specifications.origin).toBeNull();
   });
 
+  it.each(['PENDING', 'REJECTED', 'SUSPENDED'])('does not leak the price or offer of a %s vendor', async (status) => {
+    prisma.product.findFirst.mockResolvedValue(
+      productRow({
+        variants: [
+          { sku: 'PENDING-SKU', unit: 'kg', sizeLabel: '2 con/kg', isActive: true, offers: [offer('hidden', 990000, 30, vendor('new', status))] },
+        ],
+      }),
+    );
+
+    const result = await service.findByIdOrSlug('p1');
+
+    expect(result).toMatchObject({ vendor: null, offerId: null, price: null, sku: null, inStock: false });
+    expect(JSON.stringify(result)).not.toContain('hidden');
+    expect(JSON.stringify(result)).not.toContain('PENDING-SKU');
+  });
+
+  it('returns a null price for a discontinued product whose only offers belong to non-ACTIVE vendors', async () => {
+    prisma.product.findFirst.mockResolvedValue(
+      productRow({
+        status: 'INACTIVE',
+        variants: [
+          { sku: null, unit: 'kg', sizeLabel: null, isActive: false, offers: [offer('o1', 500000, 0, vendor('x', 'SUSPENDED'), 'PAUSED')] },
+        ],
+      }),
+    );
+
+    const result = await service.findByIdOrSlug('p1');
+
+    expect(result).toMatchObject({ isDiscontinued: true, price: null, offerId: null });
+  });
+
   it('marks inactive products as discontinued and not purchasable', async () => {
     prisma.product.findFirst.mockResolvedValue(
       productRow({

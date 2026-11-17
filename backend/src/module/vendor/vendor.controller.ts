@@ -105,7 +105,8 @@ export class VendorController {
   @ApiOperation({
     summary: 'Retrieve a public vendor storefront by slug',
     description:
-      'Returns vendor profile, categories and products. Products are only returned for ACTIVE vendors.',
+      'Returns vendor profile, categories and products. Only ACTIVE vendors have a public storefront; ' +
+      'PENDING, REJECTED and SUSPENDED vendors return 404 like an unknown slug.',
   })
   @ApiParam({
     name: 'slug',
@@ -118,7 +119,7 @@ export class VendorController {
     description: 'Filter products by category slug',
   })
   @ApiResponse({ status: 200, description: 'Storefront retrieved', type: VendorStorefrontDto })
-  @ApiResponse({ status: 404, description: 'Vendor not found' })
+  @ApiResponse({ status: 404, description: 'Vendor not found or not ACTIVE' })
   async getStorefront(
     @Param('slug') slug: string,
     @Query('category') category?: string,

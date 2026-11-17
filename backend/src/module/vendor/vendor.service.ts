@@ -395,9 +395,9 @@ export class VendorService {
   }
 
   /**
-   * Public storefront for a vendor. Only ACTIVE vendors expose their products;
-   * other statuses return the profile with an empty catalogue so the UI can
-   * explain why the storefront is unavailable.
+   * Public storefront for a vendor. Only ACTIVE vendors have one: a pending,
+   * rejected or suspended store is answered exactly like a missing one (404),
+   * so its details are not public before an admin approves it.
    */
   async getStorefront(
     slug: string,
@@ -405,7 +405,7 @@ export class VendorService {
   ): Promise<VendorStorefrontDto> {
     const vendor = await this.prisma.vendor.findUnique({ where: { slug } });
 
-    if (!vendor) {
+    if (!vendor || vendor.status !== 'ACTIVE') {
       throw new NotFoundException('Gian hàng không tồn tại');
     }
 

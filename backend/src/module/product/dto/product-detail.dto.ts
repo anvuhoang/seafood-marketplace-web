@@ -95,10 +95,12 @@ export class ProductDetailDto {
    */
   sizeLabel: string | null;
   /**
-   * Price in VND per unit.
+   * Price in VND per unit, from the chosen offer of an ACTIVE vendor.
+   * null when no ACTIVE vendor offers the product (offers of pending, rejected
+   * or suspended vendors are never exposed), so 0 never stands for "no price".
    * @example 420000
    */
-  price: number;
+  price: number | null;
   /** Not stored yet; null until vendors can set a list price. */
   originalPrice: number | null;
   discountPercent: number | null;

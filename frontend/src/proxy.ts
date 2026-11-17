@@ -16,6 +16,7 @@ const PROTECTED_ROUTES: {
     { prefix: "/customer/reviews", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
     { prefix: "/customer/followed-vendors", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
     { prefix: "/customer/checkout", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
+    { prefix: "/vendor/register", roles: ["CUSTOMER", "VENDOR", "ADMIN"] },
     { prefix: "/vendor/dashboard", roles: ["VENDOR", "ADMIN"] },
     { prefix: "/vendor/products", roles: ["VENDOR", "ADMIN"] },
     { prefix: "/vendor/orders", roles: ["VENDOR", "ADMIN"] },

@@ -103,9 +103,12 @@ export class ProductService {
     );
     const inStock = sellable.filter(({ offer }) => Number(offer.stock) > 0);
 
+    // Offers of pending, rejected or suspended vendors are never public, not even their price.
+    const fromActiveVendors = offers.filter(({ offer }) => offer.vendor.status === 'ACTIVE');
+
     // Same rule as the listing: cheapest in-stock sellable offer, then any
-    // sellable offer, then any offer (for discontinued products).
-    const pool = inStock.length > 0 ? inStock : sellable.length > 0 ? sellable : offers;
+    // sellable offer, then any offer of an active vendor (for discontinued products).
+    const pool = inStock.length > 0 ? inStock : sellable.length > 0 ? sellable : fromActiveVendors;
     const chosen = pool.reduce<(typeof offers)[number] | undefined>(
       (best, entry) =>
         !best || Number(entry.offer.price) < Number(best.offer.price) ? entry : best,
@@ -126,7 +129,8 @@ export class ProductService {
       sku: chosen?.variant.sku ?? null,
       unit: chosen?.variant.unit ?? 'kg',
       sizeLabel: chosen?.variant.sizeLabel ?? null,
-      price: chosen ? Number(chosen.offer.price) : 0,
+      // null, never 0: no approved vendor offers it, so there is no price.
+      price: chosen ? Number(chosen.offer.price) : null,
       originalPrice: null,
       discountPercent: null,
       stock,
