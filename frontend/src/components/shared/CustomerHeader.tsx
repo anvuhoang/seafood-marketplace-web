@@ -21,6 +21,7 @@ import {
   Package,
   ClipboardList,
   Users,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
@@ -369,6 +370,14 @@ export function CustomerHeader() {
                                   <Store className="h-3.5 w-3.5 text-slate-400" />
                                   <span>Gian hàng của bạn</span>
                                 </Link>
+                                <Link
+                                  href="/vendor/settings"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+                                >
+                                  <Settings className="h-3.5 w-3.5 text-slate-400" />
+                                  <span>Hồ sơ gian hàng</span>
+                                </Link>
                               </>
                             ) : (
                               <>
@@ -549,6 +558,13 @@ export function CustomerHeader() {
                       className="text-slate-600"
                     >
                       Quản lý sản phẩm
+                    </Link>
+                    <Link
+                      href="/vendor/settings"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-slate-600"
+                    >
+                      Hồ sơ gian hàng
                     </Link>
                   </>
                 ) : (
