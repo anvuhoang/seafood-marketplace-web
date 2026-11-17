@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -38,6 +39,7 @@ describe('AuthController', () => {
       providers: [
         { provide: AuthService, useValue: authService },
         { provide: JwtService, useValue: { verifyAsync: vi.fn() } },
+        { provide: PrismaService, useValue: { user: { findUnique: vi.fn() } } },
       ],
     }).compile();
 

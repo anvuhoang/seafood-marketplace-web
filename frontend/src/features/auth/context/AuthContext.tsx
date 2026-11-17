@@ -13,10 +13,12 @@ import {
   LoginFormData,
   RegisterFormData,
   AuthState,
+  AuthResponse,
 } from "../types/auth.types";
 
 import {
   loginApi,
+  adminLoginApi,
   registerApi,
   getMeApi,
   ApiError,
@@ -30,6 +32,11 @@ interface AuthContextType extends AuthState {
 
   register: (
     data: RegisterFormData,
+  ) => Promise<{ success: boolean; error?: string; user?: User }>;
+
+  /** Sign in to the admin site. Rejects every account that is not an ADMIN. */
+  loginAdmin: (
+    data: LoginFormData,
   ) => Promise<{ success: boolean; error?: string; user?: User }>;
 
   logout: () => void;
@@ -305,15 +312,16 @@ export function AuthProvider({
   }, []);
 
   /**
-   * Authenticate a user and persist the resulting session.
+   * Authenticate with the given sign-in call and persist the resulting session.
    */
-  const login = async (
+  const authenticate = async (
+    signIn: (data: LoginFormData) => Promise<AuthResponse>,
     data: LoginFormData,
   ): Promise<{ success: boolean; error?: string; user?: User }> => {
     setIsLoading(true);
 
     try {
-      const response = await loginApi(data);
+      const response = await signIn(data);
       const { user: authUser, accessToken: token } = response;
 
       if (!authUser || !token) {
@@ -347,6 +355,12 @@ export function AuthProvider({
       setIsLoading(false);
     }
   };
+
+  const login = (data: LoginFormData) => authenticate(loginApi, data);
+
+  // Admin sessions last only until the browser closes; the token is short-lived anyway.
+  const loginAdmin = (data: LoginFormData) =>
+    authenticate(adminLoginApi, { ...data, rememberMe: false });
 
   /**
    * Register a new account and establish its session.
@@ -404,6 +418,7 @@ export function AuthProvider({
         isAuthenticated: Boolean(user && accessToken),
         isLoading,
         login,
+        loginAdmin,
         register,
         logout,
         updateUser,

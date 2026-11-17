@@ -6,6 +6,7 @@ import type { StringValue } from 'ms';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { LoginAttemptLimiter } from './login-attempt.limiter.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 
@@ -34,6 +35,7 @@ import { RolesGuard } from '../../common/guards/roles.guard.js';
   controllers: [AuthController],
   providers: [
     AuthService,
+    LoginAttemptLimiter,
     JwtAuthGuard,
     RolesGuard,
     // Every route requires a valid JWT unless it is marked with @Public().

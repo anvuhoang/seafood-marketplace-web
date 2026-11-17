@@ -18,7 +18,12 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: frontendUrl,
+    // FRONTEND_URL may list several origins separated by commas, e.g. the
+    // customer site and the admin subdomain.
+    origin: frontendUrl
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
     credentials: true,
   });
 

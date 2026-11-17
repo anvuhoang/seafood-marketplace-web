@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { LoginAttemptLimiter } from './login-attempt.limiter.js';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -52,6 +54,8 @@ describe('AuthService', () => {
         AuthService,
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwtService },
+        { provide: ConfigService, useValue: { get: (_key: string, fallback?: unknown) => fallback } },
+        LoginAttemptLimiter,
       ],
     }).compile();
 
@@ -182,6 +186,25 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
+    it('should refuse an admin account on the shop sign-in, even with the right password', async () => {
+      const realHash = await bcrypt.hash('CorrectPassword123', 10);
+      prisma.user.findFirst.mockResolvedValue({ ...mockDbUser, role: 'ADMIN', passwordHash: realHash });
+
+      await expect(
+        authService.login({ emailOrPhone: 'test@haisanexpress.com', password: 'CorrectPassword123' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(jwtService.signAsync).not.toHaveBeenCalled();
+    });
+
+    it('should keep answering a wrong admin password with the generic 401', async () => {
+      const realHash = await bcrypt.hash('CorrectPassword123', 10);
+      prisma.user.findFirst.mockResolvedValue({ ...mockDbUser, role: 'ADMIN', passwordHash: realHash });
+
+      await expect(
+        authService.login({ emailOrPhone: 'test@haisanexpress.com', password: 'WrongPassword123' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
     it('should fail login if user is suspended', async () => {
       prisma.user.findFirst.mockResolvedValue({
         ...mockDbUser,
@@ -194,6 +217,87 @@ describe('AuthService', () => {
           password: 'Password123',
         }),
       ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('adminLogin', () => {
+    const credentials = { emailOrPhone: 'admin@haisanexpress.vn', password: 'AdminPassword123' };
+    const ip = '1.2.3.4';
+    const genericMessage = 'Email/Số điện thoại hoặc mật khẩu không chính xác.';
+
+    const adminUser = async (overrides: Record<string, unknown> = {}) => ({
+      ...mockDbUser,
+      email: 'admin@haisanexpress.vn',
+      role: 'ADMIN',
+      passwordHash: await bcrypt.hash('AdminPassword123', 10),
+      ...overrides,
+    });
+
+    it('signs an admin in and issues a token with the shorter admin expiry', async () => {
+      prisma.user.findFirst.mockResolvedValue(await adminUser());
+
+      const result = await authService.adminLogin(credentials, ip);
+
+      expect(result.user.role).toBe('ADMIN');
+      expect((result.user as any).passwordHash).toBeUndefined();
+      expect(jwtService.signAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'ADMIN' }),
+        { expiresIn: '2h' },
+      );
+    });
+
+    it('refuses a customer with the same message as a wrong password', async () => {
+      prisma.user.findFirst.mockResolvedValue(await adminUser({ role: 'CUSTOMER' }));
+
+      await expect(authService.adminLogin(credentials, ip)).rejects.toThrow(genericMessage);
+      expect(jwtService.signAsync).not.toHaveBeenCalled();
+    });
+
+    it('refuses a vendor owner', async () => {
+      prisma.user.findFirst.mockResolvedValue(await adminUser({ role: 'VENDOR' }));
+
+      await expect(authService.adminLogin(credentials, ip)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('does not reveal that an admin account is suspended', async () => {
+      prisma.user.findFirst.mockResolvedValue(await adminUser({ status: 'SUSPENDED' }));
+
+      await expect(authService.adminLogin(credentials, ip)).rejects.toThrow(genericMessage);
+    });
+
+    it('answers a wrong password and an unknown account identically', async () => {
+      prisma.user.findFirst.mockResolvedValueOnce(await adminUser());
+      const wrongPassword = await authService
+        .adminLogin({ ...credentials, password: 'WrongPassword1' }, ip)
+        .catch((error) => error);
+
+      prisma.user.findFirst.mockResolvedValueOnce(null);
+      const unknownAccount = await authService.adminLogin(credentials, ip).catch((error) => error);
+
+      expect(wrongPassword).toBeInstanceOf(UnauthorizedException);
+      expect(unknownAccount.message).toBe(wrongPassword.message);
+    });
+
+    it('locks the caller out after 5 wrong attempts, even if the next password is right', async () => {
+      prisma.user.findFirst.mockResolvedValue(await adminUser());
+
+      for (let i = 0; i < 5; i++) {
+        await expect(
+          authService.adminLogin({ ...credentials, password: 'WrongPassword1' }, ip),
+        ).rejects.toThrow(UnauthorizedException);
+      }
+
+      await expect(authService.adminLogin(credentials, ip)).rejects.toMatchObject({ status: 429 });
+    });
+
+    it('does not lock the admin out because someone else guessed from another address', async () => {
+      prisma.user.findFirst.mockResolvedValue(await adminUser());
+
+      for (let i = 0; i < 5; i++) {
+        await authService.adminLogin({ ...credentials, password: 'WrongPassword1' }, '6.6.6.6').catch(() => undefined);
+      }
+
+      await expect(authService.adminLogin(credentials, ip)).resolves.toHaveProperty('accessToken');
     });
   });
 

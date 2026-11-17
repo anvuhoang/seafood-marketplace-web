@@ -35,8 +35,9 @@ const productRow = (overrides: Record<string, unknown> = {}) => ({
   isFeatured: true,
   species: null,
   categories: [
-    { category: { id: 'c1', name: 'Hải Sản Đặc Sản', slug: 'hai-san-dac-san', isActive: true } },
-    { category: { id: 'c2', name: 'Ẩn', slug: 'an', isActive: false } },
+    { category: { id: 'c1', name: 'Hải Sản Đặc Sản', slug: 'hai-san-dac-san', isActive: true, parent: { isActive: true } } },
+    { category: { id: 'c2', name: 'Ẩn', slug: 'an', isActive: false, parent: null } },
+    { category: { id: 'c3', name: 'Con của danh mục ẩn', slug: 'con', isActive: true, parent: { isActive: false } } },
   ],
   images: [],
   variants: [

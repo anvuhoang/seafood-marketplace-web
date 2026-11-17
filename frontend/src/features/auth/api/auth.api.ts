@@ -141,3 +141,33 @@ export async function getMeApi(token: string): Promise<User> {
     emailOrPhone: user.phone || user.email,
   };
 }
+
+/**
+ * Sign in to the admin site. Only ADMIN accounts succeed; the backend answers
+ * every other case with the same message, and with 429 after repeated failures.
+ */
+export async function adminLoginApi(
+  data: LoginFormData,
+): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/admin/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      emailOrPhone: data.emailOrPhone,
+      password: data.password,
+    }),
+  });
+
+  const result = await handleResponse<AuthResponse>(response);
+
+  return {
+    ...result,
+    user: {
+      ...result.user,
+      name: result.user.fullName,
+      emailOrPhone: result.user.phone || result.user.email,
+    },
+  };
+}

@@ -56,17 +56,23 @@ function ProtectedRouteContent({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // Admin-only pages have their own sign-in page.
+  const loginPath =
+    allowedRoles?.length === 1 && allowedRoles[0] === "ADMIN"
+      ? "/admin/login"
+      : "/customer/login";
+
   const currentPathWithSearch = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""
     }`;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      const redirectUrl = `/customer/login?redirect=${encodeURIComponent(
+      const redirectUrl = `${loginPath}?redirect=${encodeURIComponent(
         currentPathWithSearch
       )}`;
       router.replace(redirectUrl);
     }
-  }, [isLoading, isAuthenticated, currentPathWithSearch, router]);
+  }, [isLoading, isAuthenticated, currentPathWithSearch, loginPath, router]);
 
   // 1. Loading state while authentication is being resolved
   if (isLoading) {
@@ -88,7 +94,7 @@ function ProtectedRouteContent({
             Bạn cần đăng nhập tài khoản để truy cập trang này. Đang chuyển hướng đến trang đăng nhập...
           </p>
           <Link
-            href={`/customer/login?redirect=${encodeURIComponent(
+            href={`${loginPath}?redirect=${encodeURIComponent(
               currentPathWithSearch
             )}`}
             className="mt-2 rounded-xl bg-[#0F3860] px-4 py-2 text-xs font-bold text-white hover:bg-[#0A2744]"
