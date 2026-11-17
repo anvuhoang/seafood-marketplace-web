@@ -104,9 +104,16 @@ describe('Vendor dashboard', () => {
     expect(prisma.vendorOffer.count).not.toHaveBeenCalled();
   });
 
-  it('allows only VENDOR role through the dashboard route guard', () => {
+  it('allows only VENDOR role through the dashboard route guard', async () => {
     const reflector = new Reflector();
-    const guard = new RolesGuard(reflector);
+    const findUnique = vi.fn();
+    const guard = new RolesGuard(reflector, {
+      user: { findUnique },
+    } as unknown as PrismaService);
+    const asRole = (role: string) => {
+      findUnique.mockResolvedValue({ role, status: 'ACTIVE' });
+      return guard.canActivate(roleContext(role));
+    };
 
     expect(
       reflector.getAllAndOverride<string[]>(ROLES_KEY, [
@@ -114,9 +121,9 @@ describe('Vendor dashboard', () => {
         VendorController,
       ]),
     ).toEqual(['VENDOR']);
-    expect(guard.canActivate(roleContext('VENDOR'))).toBe(true);
-    expect(() => guard.canActivate(roleContext('CUSTOMER'))).toThrow(ForbiddenException);
-    expect(() => guard.canActivate(roleContext('ADMIN'))).toThrow(ForbiddenException);
+    await expect(asRole('VENDOR')).resolves.toBe(true);
+    await expect(asRole('CUSTOMER')).rejects.toThrow(ForbiddenException);
+    await expect(asRole('ADMIN')).rejects.toThrow(ForbiddenException);
   });
 
   it('counts active VendorOffers rather than distinct catalog products', async () => {
