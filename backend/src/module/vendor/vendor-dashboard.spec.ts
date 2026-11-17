@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ROLES_KEY } from '../../common/decorators/roles.decorator.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import type { CloudinaryService } from '../../common/cloudinary/cloudinary.service.js';
 import { VendorController } from './vendor.controller.js';
 import { VendorService } from './vendor.service.js';
 
@@ -51,7 +52,7 @@ describe('Vendor dashboard', () => {
         findMany: vi.fn().mockResolvedValue([]),
       },
     };
-    service = new VendorService(prisma as unknown as PrismaService);
+    service = new VendorService(prisma as unknown as PrismaService, {} as CloudinaryService);
   });
 
   it('resolves and returns only the authenticated Vendor dashboard', async () => {

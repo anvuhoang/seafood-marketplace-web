@@ -1,7 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { VendorOrderStatus } from '@prisma/client';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma, VendorOrderStatus } from '@prisma/client';
 import type { Vendor } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { CLOUDINARY_FOLDER_ROOT, CloudinaryService } from '../../common/cloudinary/cloudinary.service.js';
+import type { UpdateVendorStoreDto, VendorStoreDto, VendorStoreUploadSignatureDto } from './dto/vendor-store.dto.js';
 import type {
   FollowStateDto,
   VendorStorefrontCategoryDto,
@@ -24,6 +26,46 @@ const SELLABLE_OFFER_WHERE = {
   },
 } as const;
 
+export const VENDOR_STORE_NOT_FOUND = 'Tài khoản của bạn chưa có gian hàng.';
+export const VENDOR_STORE_SUSPENDED = 'Gian hàng đang bị tạm ngưng nên không thể chỉnh sửa hồ sơ.';
+export const VENDOR_STORE_INVALID_IMAGE = 'Ảnh không hợp lệ. Vui lòng tải ảnh lên lại.';
+
+/** Folder that one vendor's store images are uploaded into. */
+export const vendorUploadFolder = (vendorId: string) => `${CLOUDINARY_FOLDER_ROOT}/vendors/${vendorId}`;
+
+const vendorStoreSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  description: true,
+  logoUrl: true,
+  coverUrl: true,
+  phone: true,
+  email: true,
+  province: true,
+  district: true,
+  ward: true,
+  streetAddress: true,
+  status: true,
+  updatedAt: true,
+} as const;
+
+type VendorStoreRow = Pick<Vendor, keyof typeof vendorStoreSelect>;
+
+/** Store fields a vendor may change themselves; slug and status are not among them. */
+const EDITABLE_STORE_FIELDS = [
+  'name',
+  'description',
+  'logoUrl',
+  'coverUrl',
+  'phone',
+  'email',
+  'province',
+  'district',
+  'ward',
+  'streetAddress',
+] as const satisfies ReadonlyArray<keyof UpdateVendorStoreDto>;
+
 const ACTIONABLE_ORDER_STATUSES = [
   VendorOrderStatus.PENDING,
   VendorOrderStatus.ACCEPTED,
@@ -31,7 +73,88 @@ const ACTIONABLE_ORDER_STATUSES = [
 
 @Injectable()
 export class VendorService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+  ) {}
+
+  /** The signed-in user's own store. Always looked up by owner, never by an id from the client. */
+  async getMyStore(userId: string): Promise<VendorStoreDto> {
+    return this.toStoreDto(await this.findOwnStore(userId));
+  }
+
+  /**
+   * Partial update of the signed-in user's store. Suspended stores are read-only;
+   * pending, active and rejected stores can be edited. New images must come from
+   * this store's own upload folder on our Cloudinary account.
+   */
+  async updateMyStore(userId: string, dto: UpdateVendorStoreDto): Promise<VendorStoreDto> {
+    const current = await this.findOwnStore(userId);
+    if (current.status === 'SUSPENDED') {
+      throw new ForbiddenException(VENDOR_STORE_SUSPENDED);
+    }
+
+    const folder = vendorUploadFolder(current.id);
+    for (const field of ['logoUrl', 'coverUrl'] as const) {
+      const url = dto[field];
+      // null clears the image; resending the stored URL is a no-op.
+      if (url == null || url === current[field]) continue;
+      if (!this.cloudinary.isUploadedImageInFolder(url, folder)) {
+        throw new BadRequestException(VENDOR_STORE_INVALID_IMAGE);
+      }
+    }
+
+    // Copy only the editable fields that were sent, whatever else the object holds.
+    // The DTO already rejects null for the required columns (name, region, address).
+    const data: Record<string, string | null> = {};
+    for (const field of EDITABLE_STORE_FIELDS) {
+      if (dto[field] !== undefined) data[field] = dto[field];
+    }
+
+    const updated = await this.prisma.vendor.update({
+      where: { ownerId: userId },
+      data: data as Prisma.VendorUpdateInput,
+      select: vendorStoreSelect,
+    });
+    return this.toStoreDto(updated);
+  }
+
+  /** Signature for one direct upload into the signed-in vendor's store folder. */
+  async createStoreUploadSignature(userId: string): Promise<VendorStoreUploadSignatureDto> {
+    const store = await this.findOwnStore(userId);
+    return this.cloudinary.createUploadSignature(vendorUploadFolder(store.id));
+  }
+
+  private async findOwnStore(userId: string): Promise<VendorStoreRow> {
+    const store = await this.prisma.vendor.findUnique({
+      where: { ownerId: userId },
+      select: vendorStoreSelect,
+    });
+    if (!store) {
+      throw new NotFoundException(VENDOR_STORE_NOT_FOUND);
+    }
+    return store;
+  }
+
+  private toStoreDto(store: VendorStoreRow): VendorStoreDto {
+    return {
+      id: store.id,
+      name: store.name,
+      slug: store.slug,
+      description: store.description,
+      logoUrl: store.logoUrl,
+      coverUrl: store.coverUrl,
+      phone: store.phone,
+      email: store.email,
+      province: store.province,
+      district: store.district,
+      ward: store.ward,
+      streetAddress: store.streetAddress,
+      status: store.status as VendorStorefrontStatus,
+      updatedAt: store.updatedAt.toISOString(),
+      imageUploadEnabled: this.cloudinary.isEnabled(),
+    };
+  }
 
   async getDashboard(userId: string): Promise<VendorDashboardDto> {
     const vendor = await this.prisma.vendor.findUnique({

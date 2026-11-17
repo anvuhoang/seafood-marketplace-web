@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { VendorService } from './vendor.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import type { CloudinaryService } from '../../common/cloudinary/cloudinary.service.js';
 
 const vendorRow = (status: string) => ({
   id: 'vendor-1',
@@ -77,7 +78,7 @@ describe('VendorService', () => {
         deleteMany: vi.fn(),
       },
     };
-    vendorService = new VendorService(prismaService as PrismaService);
+    vendorService = new VendorService(prismaService as PrismaService, {} as CloudinaryService);
   });
 
   it('lists only ACTIVE vendors with distinct product counts', async () => {
