@@ -421,7 +421,7 @@ export class VendorService {
         logoUrl: vendor.logoUrl,
         coverUrl: vendor.coverUrl,
         phone: vendor.phone,
-        address: `${vendor.streetAddress}, ${vendor.district}, ${vendor.province}`,
+        address: [vendor.streetAddress, vendor.ward, vendor.district, vendor.province].filter(Boolean).join(', '),
         province: vendor.province,
         district: vendor.district,
         ratingAverage: Number(vendor.ratingAverage),

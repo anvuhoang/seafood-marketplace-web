@@ -127,6 +127,12 @@ describe('VendorService', () => {
     },
   );
 
+  it('includes the ward in the public address when the vendor has one', async () => {
+    prismaService.vendor.findUnique.mockResolvedValue({ ...vendorRow('PENDING'), ward: 'Dương Đông' });
+    const result = await vendorService.getStorefront('vua-thuy-san-phu-quoc-xanh');
+    expect(result.vendor.address).toBe('12 Bến Cảng, Dương Đông, Phú Quốc, Kiên Giang');
+  });
+
   it('returns the public profile without the email address', async () => {
     prismaService.vendor.findUnique.mockResolvedValue(vendorRow('ACTIVE'));
     prismaService.vendorOffer.findMany.mockResolvedValue([]);
