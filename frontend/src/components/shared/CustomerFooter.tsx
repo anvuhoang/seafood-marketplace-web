@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Fish, Mail, MapPin, Phone, RefreshCw, Snowflake, Truck } from "lucide-react";
+import { SUPPORT_HOTLINE } from "@/lib/constants/contact";
 
 const GUARANTEES = [
   { icon: Fish, title: "Tươi sống mỗi ngày", desc: "Hàng về trong ngày từ vựa đối tác" },
@@ -79,8 +80,8 @@ export function CustomerFooter() {
             </li>
             <li className="flex items-center gap-2.5">
               <Phone className="h-4 w-4 shrink-0 text-slate-500" />
-              <a href="tel:19006868" className="hover:text-white">
-                1900 6868
+              <a href={`tel:${SUPPORT_HOTLINE.tel}`} className="hover:text-white">
+                {SUPPORT_HOTLINE.display}
               </a>
               <span className="text-slate-500">7:00 – 21:00</span>
             </li>
