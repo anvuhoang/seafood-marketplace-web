@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { DAY_MS, vietnamDayStart } from '../../common/utils/vietnam-date.js';
 import {
   OrderLifecycleService,
   VENDOR_ORDER_NOT_FOUND,
@@ -41,18 +42,6 @@ import {
 import { matchesKeywords } from './vendor-offer.service.js';
 
 export const INVALID_DATE_RANGE = 'Khoảng ngày không hợp lệ.';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** Start of a calendar day in Vietnam time (UTC+7), or null for an impossible date like 2026-02-31. */
-function vietnamDayStart(day: string): Date | null {
-  const date = new Date(`${day}T00:00:00+07:00`);
-  if (Number.isNaN(date.getTime())) return null;
-  const roundTrip = new Date(date.getTime() + 7 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
-  return roundTrip === day ? date : null;
-}
 
 const listSelect = {
   id: true,

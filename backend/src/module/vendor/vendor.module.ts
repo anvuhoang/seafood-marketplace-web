@@ -12,13 +12,28 @@ import { VendorOfferService } from './vendor-offer.service.js';
 import { VendorProductService } from './vendor-product.service.js';
 import { VendorOrderController } from './vendor-order.controller.js';
 import { VendorOrderService } from './vendor-order.service.js';
+import { VendorStatsController } from './vendor-stats.controller.js';
+import { VendorStatsService } from './vendor-stats.service.js';
 import { OrderModule } from '../order/order.module.js';
 
 @Module({
   imports: [PrismaModule, AuthModule, CloudinaryModule, AdministrativeUnitModule, OrderModule],
   // Registration and the /vendors/me/... routes are listed first so they are matched before /vendors/:slug/...
-  controllers: [VendorRegistrationController, VendorOfferController, VendorOrderController, VendorController],
-  providers: [VendorService, VendorRegistrationService, VendorOfferService, VendorProductService, VendorOrderService],
+  controllers: [
+    VendorRegistrationController,
+    VendorOfferController,
+    VendorOrderController,
+    VendorStatsController,
+    VendorController,
+  ],
+  providers: [
+    VendorService,
+    VendorRegistrationService,
+    VendorOfferService,
+    VendorProductService,
+    VendorOrderService,
+    VendorStatsService,
+  ],
   exports: [VendorService],
 })
 export class VendorModule {}
