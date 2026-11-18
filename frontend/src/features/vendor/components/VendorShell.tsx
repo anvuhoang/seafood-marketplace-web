@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Anchor,
+  ChartLine,
   ExternalLink,
   Headset,
   House,
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { href: "/vendor/dashboard", label: "Tổng quan", icon: LayoutGrid },
   { href: "/vendor/products", label: "Sản phẩm", icon: Package },
   { href: ORDERS_PATH, label: "Đơn hàng", icon: ShoppingBag },
+  { href: "/vendor/statistics", label: "Thống kê và doanh thu", icon: ChartLine },
   { href: "/vendor/settings", label: "Cài đặt cửa hàng", icon: Store },
 ];
 

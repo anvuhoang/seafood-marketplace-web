@@ -20,6 +20,7 @@ const PROTECTED_ROUTES: {
     { prefix: "/vendor/dashboard", roles: ["VENDOR", "ADMIN"] },
     { prefix: "/vendor/products", roles: ["VENDOR", "ADMIN"] },
     { prefix: "/vendor/orders", roles: ["VENDOR", "ADMIN"] },
+    { prefix: "/vendor/statistics", roles: ["VENDOR", "ADMIN"] },
     { prefix: "/vendor/settings", roles: ["VENDOR", "ADMIN"] },
     { prefix: "/admin", roles: ["ADMIN"] },
   ];
