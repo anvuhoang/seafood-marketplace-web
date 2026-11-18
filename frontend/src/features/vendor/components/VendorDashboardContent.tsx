@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, Banknote, Clock, Loader2, Package, ShoppingBag, Store } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
+import { VENDOR_ORDER_STATUS } from "@/features/order/constants/order-status";
 import { VENDOR_REGISTER_PATH } from "../constants/store-status";
 import { useVendorDashboard } from "../context/VendorDashboardContext";
 import type { VendorDashboard, VendorDashboardOrder, VendorOrderStatus } from "../types/vendor.types";
@@ -13,15 +14,6 @@ import { VendorPageHeader } from "./VendorPageHeader";
 const LOW_STOCK_LIMIT = 5;
 /** Orders listed on the overview; the rest are counted below the table. */
 const VISIBLE_ORDERS = 8;
-
-const ORDER_STATUS: Record<VendorOrderStatus, { label: string; className: string }> = {
-  PENDING: { label: "Chờ xác nhận", className: "bg-rose-50 text-rose-800 ring-rose-200" },
-  ACCEPTED: { label: "Đã tiếp nhận", className: "bg-sky-50 text-sky-800 ring-sky-200" },
-  PREPARING: { label: "Đang chuẩn bị", className: "bg-amber-50 text-amber-800 ring-amber-200" },
-  SHIPPING: { label: "Đang giao", className: "bg-indigo-50 text-indigo-800 ring-indigo-200" },
-  COMPLETED: { label: "Hoàn tất", className: "bg-emerald-50 text-emerald-800 ring-emerald-200" },
-  CANCELLED: { label: "Đã hủy", className: "bg-slate-100 text-slate-700 ring-slate-300" },
-};
 
 const timeFormat = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit" });
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -185,7 +177,9 @@ function OrdersPanel({ orders, total }: { orders: VendorDashboardOrder[]; total:
                 {visible.map((order) => (
                   <tr key={order.id} className="align-top">
                     <td className="px-5 py-4">
-                      <p className="font-semibold break-all text-slate-900">#{order.orderNumber}</p>
+                      <Link href={`/vendor/orders/${order.id}`} className="font-semibold break-all text-brand hover:underline">
+                        #{order.orderNumber}
+                      </Link>
                       <OrderTime createdAt={order.createdAt} />
                     </td>
                     <td className="px-3 py-4">
@@ -211,7 +205,9 @@ function OrdersPanel({ orders, total }: { orders: VendorDashboardOrder[]; total:
               <li key={order.id} className="space-y-2 px-5 py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold break-all text-slate-900">#{order.orderNumber}</p>
+                    <Link href={`/vendor/orders/${order.id}`} className="font-semibold break-all text-brand hover:underline">
+                        #{order.orderNumber}
+                      </Link>
                     <OrderTime createdAt={order.createdAt} />
                   </div>
                   <OrderStatusBadge status={order.status} />
@@ -271,7 +267,7 @@ function OrderItems({ order }: { order: VendorDashboardOrder }) {
 }
 
 function OrderStatusBadge({ status }: { status: VendorOrderStatus }) {
-  const badge = ORDER_STATUS[status];
+  const badge = VENDOR_ORDER_STATUS[status];
   return (
     <span className={cn("inline-block shrink-0 rounded-md px-2 py-1 text-xs font-semibold ring-1 ring-inset", badge.className)}>
       {badge.label}

@@ -1,21 +1,24 @@
-import { ShoppingBag } from "lucide-react";
-import { VendorComingSoon } from "@/features/vendor/components/VendorComingSoon";
-import { VendorPageHeader } from "@/features/vendor/components/VendorPageHeader";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
+import { VendorOrdersView } from "@/features/vendor/components/VendorOrdersView";
 
 export const metadata = {
   title: "Quản lý đơn hàng | HaiSan Express",
   description: "Theo dõi và xử lý các đơn hàng của gian hàng.",
 };
 
+/** The status tab is read from the URL, so the list renders inside Suspense (Cache Components). */
 export default function VendorOrdersPage() {
   return (
-    <>
-      <VendorPageHeader title="Quản lý đơn hàng" description="Theo dõi tiến độ chuẩn bị và bàn giao các đơn hàng của gian hàng." />
-      <VendorComingSoon
-        icon={ShoppingBag}
-        title="Chức năng đang được hoàn thiện"
-        description="Danh sách đơn, lọc theo trạng thái và xác nhận đơn sẽ có ở đây trong bản cập nhật tới. Các đơn cần xử lý hiện đang hiển thị ở trang Tổng quan."
-      />
-    </>
+    <Suspense
+      fallback={
+        <p className="flex min-h-48 items-center justify-center gap-2 text-sm text-slate-500" role="status">
+          <Loader2 className="h-5 w-5 animate-spin text-brand motion-reduce:animate-none" aria-hidden="true" />
+          Đang tải đơn hàng...
+        </p>
+      }
+    >
+      <VendorOrdersView />
+    </Suspense>
   );
 }
