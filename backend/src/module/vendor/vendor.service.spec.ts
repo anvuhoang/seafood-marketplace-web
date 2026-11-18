@@ -125,6 +125,20 @@ describe('VendorService', () => {
     },
   );
 
+  it('builds the storefront from ACTIVE offers on active variants of published products only', async () => {
+    prismaService.vendor.findUnique.mockResolvedValue(vendorRow('ACTIVE'));
+    prismaService.vendorOffer.findMany.mockResolvedValue([]);
+
+    await vendorService.getStorefront('vua-thuy-san-phu-quoc-xanh');
+
+    // PAUSED, OUT_OF_STOCK and DISCONTINUED offers and DRAFT products never reach the storefront.
+    expect(prismaService.vendorOffer.findMany.mock.calls[0][0].where).toEqual({
+      vendorId: 'vendor-1',
+      status: 'ACTIVE',
+      variant: { isActive: true, product: { status: 'ACTIVE' } },
+    });
+  });
+
   it('includes the ward in the public address when the vendor has one', async () => {
     prismaService.vendor.findUnique.mockResolvedValue({ ...vendorRow('ACTIVE'), ward: 'Dương Đông' });
     prismaService.vendorOffer.findMany.mockResolvedValue([]);

@@ -165,6 +165,41 @@ describe('ProductService', () => {
     expect(JSON.stringify(result)).not.toContain('PENDING-SKU');
   });
 
+  it.each(['PAUSED', 'DISCONTINUED'])('does not sell or show a %s offer, not even as the last known price', async (status) => {
+    prisma.product.findFirst.mockResolvedValue(
+      productRow({
+        variants: [
+          { sku: 'WITHDRAWN', unit: 'kg', sizeLabel: null, isActive: true, offers: [offer('withdrawn', 990000, 30, vendor('a'), status)] },
+        ],
+      }),
+    );
+
+    const result = await service.findByIdOrSlug('p1');
+
+    expect(result).toMatchObject({ vendor: null, offerId: null, price: null, sku: null, inStock: false, stock: 0 });
+  });
+
+  it('sells the ACTIVE offer and ignores a cheaper discontinued one', async () => {
+    prisma.product.findFirst.mockResolvedValue(
+      productRow({
+        variants: [
+          {
+            sku: null,
+            unit: 'kg',
+            sizeLabel: null,
+            isActive: true,
+            offers: [offer('gone', 100000, 50, vendor('cheap'), 'DISCONTINUED'), offer('ok', 500000, 5, vendor('b'))],
+          },
+        ],
+      }),
+    );
+
+    const result = await service.findByIdOrSlug('p1');
+
+    expect(result).toMatchObject({ offerId: 'ok', price: 500000 });
+    expect(result.vendor?.slug).toBe('b');
+  });
+
   it('returns a null price for a discontinued product whose only offers belong to non-ACTIVE vendors', async () => {
     prisma.product.findFirst.mockResolvedValue(
       productRow({
