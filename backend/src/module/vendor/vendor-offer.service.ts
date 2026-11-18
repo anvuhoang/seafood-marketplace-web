@@ -129,7 +129,7 @@ function toOfferDto(row: OfferRow, vendorId: string): VendorOfferDto {
 }
 
 /** Every keyword must start a word of the text, like the customer search. */
-function matchesKeywords(
+export function matchesKeywords(
   parts: Array<string | null | undefined>,
   keywords: string[],
 ): boolean {

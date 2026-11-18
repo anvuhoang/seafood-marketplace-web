@@ -39,13 +39,13 @@ export type VendorProductStatus = (typeof PRODUCT_STATUSES)[number];
 export const VENDOR_LIST_DEFAULT_PAGE_SIZE = 10;
 export const VENDOR_LIST_MAX_PAGE_SIZE = 50;
 
-const trimOrUndefined = ({ value }: { value: unknown }) => {
+export const trimOrUndefined = ({ value }: { value: unknown }) => {
   if (typeof value !== 'string') return value;
   const trimmed = value.trim();
   return trimmed === '' ? undefined : trimmed;
 };
 
-class PageQueryDto {
+export class PageQueryDto {
   /** @example 1 */
   @ApiPropertyOptional({ minimum: 1, default: 1 })
   @IsOptional()
