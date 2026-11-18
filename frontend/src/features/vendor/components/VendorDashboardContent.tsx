@@ -1,13 +1,20 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, Banknote, Clock, Loader2, Package, ShoppingBag, Store } from "lucide-react";
+import { AlertTriangle, ArrowRight, Banknote, Clock, Info, Loader2, Package, ShoppingBag, Store } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { cn, formatPrice } from "@/lib/utils";
 import { VENDOR_ORDER_STATUS } from "@/features/order/constants/order-status";
+import { getMyStats } from "../api/vendor-stats.api";
+import { REVENUE_RULE } from "../constants/revenue";
 import { VENDOR_REGISTER_PATH } from "../constants/store-status";
 import { useVendorDashboard } from "../context/VendorDashboardContext";
 import type { VendorDashboard, VendorDashboardOrder, VendorOrderStatus } from "../types/vendor.types";
+import type { VendorStats } from "../types/vendor-stats.types";
+import { describeDay } from "../utils/vendor-stats";
+import { RevenueBarChart } from "./RevenueBarChart";
 import { VendorPageHeader } from "./VendorPageHeader";
 
 
@@ -91,6 +98,13 @@ function DashboardBody({ dashboard }: { dashboard: VendorDashboard }) {
           note={`Từ ${completedCount} đơn hoàn tất trên tổng ${summary.orderCount} đơn`}
         />
       </section>
+
+      <p className="flex gap-2 text-sm text-slate-600">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
+        <span>{REVENUE_RULE}</span>
+      </p>
+
+      <WeekRevenue />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <OrdersPanel
@@ -359,6 +373,63 @@ function LowStockPanel({
         Quản lý sản phẩm
         <ArrowRight className="h-4 w-4" aria-hidden />
       </Link>
+    </section>
+  );
+}
+
+type WeekState = { kind: "ready"; stats: VendorStats } | { kind: "error"; message: string } | null;
+
+/** Revenue of the last 7 days from GET /vendors/me/stats, with a link to the full statistics page. */
+function WeekRevenue() {
+  const { accessToken } = useAuth();
+  const [state, setState] = useState<WeekState>(null);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    let active = true;
+    getMyStats(accessToken, { range: "7d" })
+      .then((stats) => active && setState({ kind: "ready", stats }))
+      .catch((error: unknown) =>
+        active && setState({ kind: "error", message: error instanceof Error ? error.message : "Không thể tải doanh thu 7 ngày qua." }),
+      );
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
+
+  return (
+    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5" aria-labelledby="week-revenue-title">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 id="week-revenue-title" className="text-lg font-bold text-slate-900">Doanh thu 7 ngày qua</h2>
+          {state?.kind === "ready" && (
+            <p className="mt-0.5 text-sm text-slate-500">
+              <strong className="text-slate-900">{formatPrice(Number(state.stats.summary.revenue.value))}</strong> từ{" "}
+              {state.stats.summary.completedOrders.value} đơn hoàn tất
+            </p>
+          )}
+        </div>
+        <Link href="/vendor/statistics" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline">
+          Xem thống kê chi tiết
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
+      </div>
+
+      <div className="mt-2">
+        {state === null ? (
+          <div className="shimmer h-40 rounded-xl" role="status" aria-label="Đang tải doanh thu 7 ngày qua" />
+        ) : state.kind === "error" ? (
+          <p role="alert" className="rounded-xl bg-rose-50 px-4 py-6 text-center text-sm text-rose-800">
+            {state.message}
+          </p>
+        ) : (
+          <RevenueBarChart
+            compact
+            days={state.stats.series}
+            label={`Doanh thu từ ${describeDay(state.stats.period.from).long} đến ${describeDay(state.stats.period.to).long}`}
+          />
+        )}
+      </div>
     </section>
   );
 }
