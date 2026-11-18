@@ -20,7 +20,7 @@ import type {
  * page, so they are never assigned. vendor-registration.spec.ts reads the real
  * route folders and fails if this list falls out of step.
  */
-export const RESERVED_VENDOR_SLUGS: readonly string[] = ['dashboard', 'orders', 'products', 'register', 'settings'];
+export const RESERVED_VENDOR_SLUGS: readonly string[] = ['dashboard', 'orders', 'products', 'register', 'settings', 'statistics'];
 
 export const VENDOR_REGISTRATION_MESSAGES = {
   admin: 'Tài khoản quản trị viên không thể đăng ký gian hàng.',
