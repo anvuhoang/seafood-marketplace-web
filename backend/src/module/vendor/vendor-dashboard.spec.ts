@@ -7,7 +7,12 @@ import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { CloudinaryService } from '../../common/cloudinary/cloudinary.service.js';
 import { VendorController } from './vendor.controller.js';
-import { VendorService } from './vendor.service.js';
+import {
+  DASHBOARD_LOW_STOCK_LIMIT,
+  DASHBOARD_ORDER_LIMIT,
+  VendorService,
+} from './vendor.service.js';
+import { LOW_STOCK_THRESHOLD } from './vendor-offer.service.js';
 
 const decimal = (value: string) => ({
   toString: () => value,
@@ -287,6 +292,49 @@ describe('Vendor dashboard', () => {
       expect.objectContaining({
         where: { vendorId: 'vendor-a', status: 'ACTIVE', stock: { lte: 5 } },
       }),
+    );
+  });
+
+  it('lists at most a few orders needing action, most urgent first, but counts them all', async () => {
+    prisma.vendor.findUnique.mockResolvedValue({ id: 'vendor-a', name: 'Vendor A', slug: 'vendor-a' });
+    prisma.vendorOrder.count.mockResolvedValueOnce(40).mockResolvedValueOnce(12);
+
+    const result = await service.getDashboard('user-a');
+
+    expect(result.summary.ordersNeedingActionCount).toBe(12);
+    expect(prisma.vendorOrder.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { vendorId: 'vendor-a', status: { in: ['PENDING', 'ACCEPTED'] } },
+        orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
+        take: DASHBOARD_ORDER_LIMIT,
+      }),
+    );
+  });
+
+  it('returns the real low stock count when the low stock list is cut short', async () => {
+    prisma.vendor.findUnique.mockResolvedValue({ id: 'vendor-a', name: 'Vendor A', slug: 'vendor-a' });
+    prisma.vendorOffer.count.mockImplementation(({ where }: { where: { stock?: unknown } }) =>
+      Promise.resolve(where.stock ? 11 : 30),
+    );
+    prisma.vendorOffer.findMany.mockResolvedValue(
+      Array.from({ length: DASHBOARD_LOW_STOCK_LIMIT }, (_, index) => ({
+        id: `offer-${index}`,
+        stock: decimal('1.000'),
+        variant: { name: 'Size', unit: 'kg', product: { name: `Seafood ${index}` } },
+      })),
+    );
+
+    const result = await service.getDashboard('user-a');
+
+    expect(result.summary.productCount).toBe(30);
+    expect(result.summary.lowStockCount).toBe(11);
+    expect(result.summary.lowStockThreshold).toBe(LOW_STOCK_THRESHOLD);
+    expect(result.lowStockOffers).toHaveLength(DASHBOARD_LOW_STOCK_LIMIT);
+    expect(prisma.vendorOffer.count).toHaveBeenCalledWith({
+      where: { vendorId: 'vendor-a', status: 'ACTIVE', stock: { lte: LOW_STOCK_THRESHOLD } },
+    });
+    expect(prisma.vendorOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: DASHBOARD_LOW_STOCK_LIMIT }),
     );
   });
 });

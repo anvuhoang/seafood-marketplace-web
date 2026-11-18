@@ -11,6 +11,9 @@ export interface VendorDashboardSummary {
   productCount: number;
   orderCount: number;
   ordersNeedingActionCount: number;
+  /** Every low stock offer, even when `lowStockOffers` lists only the first few. */
+  lowStockCount: number;
+  lowStockThreshold: number;
   revenue: string;
 }
 

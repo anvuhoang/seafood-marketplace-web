@@ -72,6 +72,11 @@ const ACTIONABLE_ORDER_STATUSES = [
   VendorOrderStatus.ACCEPTED,
 ] as const;
 
+/** Orders listed on the dashboard; `ordersNeedingActionCount` still counts all of them. */
+export const DASHBOARD_ORDER_LIMIT = 5;
+/** Low stock offers listed on the dashboard; `lowStockCount` still counts all of them. */
+export const DASHBOARD_LOW_STOCK_LIMIT = 8;
+
 @Injectable()
 export class VendorService {
   constructor(
@@ -172,6 +177,7 @@ export class VendorService {
       productCount,
       orderCount,
       ordersNeedingActionCount,
+      lowStockCount,
       revenue,
       groupedOrders,
       actionableOrders,
@@ -184,6 +190,9 @@ export class VendorService {
       this.prisma.vendorOrder.count({
         where: { vendorId, status: { in: [...ACTIONABLE_ORDER_STATUSES] } },
       }),
+      this.prisma.vendorOffer.count({
+        where: { vendorId, status: 'ACTIVE', stock: { lte: LOW_STOCK_THRESHOLD } },
+      }),
       this.prisma.vendorOrder.aggregate({
         where: { vendorId, status: VendorOrderStatus.COMPLETED },
         _sum: { subtotal: true },
@@ -195,7 +204,11 @@ export class VendorService {
       }),
       this.prisma.vendorOrder.findMany({
         where: { vendorId, status: { in: [...ACTIONABLE_ORDER_STATUSES] } },
-        orderBy: { createdAt: 'desc' },
+        // The most urgent first: waiting for confirmation before already accepted
+        // (Postgres sorts an enum in declaration order, PENDING < ACCEPTED), then
+        // the order that has waited longest.
+        orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
+        take: DASHBOARD_ORDER_LIMIT,
         select: {
           id: true,
           status: true,
@@ -223,6 +236,7 @@ export class VendorService {
       this.prisma.vendorOffer.findMany({
         where: { vendorId, status: 'ACTIVE', stock: { lte: LOW_STOCK_THRESHOLD } },
         orderBy: [{ stock: 'asc' }, { createdAt: 'desc' }],
+        take: DASHBOARD_LOW_STOCK_LIMIT,
         select: {
           id: true,
           stock: true,
@@ -271,6 +285,8 @@ export class VendorService {
         productCount,
         orderCount,
         ordersNeedingActionCount,
+        lowStockCount,
+        lowStockThreshold: LOW_STOCK_THRESHOLD,
         revenue: revenue._sum.subtotal?.toFixed(2) ?? '0.00',
       },
       ordersByStatus,

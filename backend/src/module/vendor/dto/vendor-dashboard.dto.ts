@@ -9,8 +9,13 @@ export class VendorDashboardVendorDto {
 export class VendorDashboardSummaryDto {
   productCount: number;
   orderCount: number;
+  /** Every PENDING or ACCEPTED order, even when `ordersNeedingAction` lists only the first few. */
   ordersNeedingActionCount: number;
-  /** Decimal string, fixed to two decimal places. */
+  /** Every ACTIVE offer at or below `lowStockThreshold`, even when `lowStockOffers` lists only the first few. */
+  lowStockCount: number;
+  /** @example 5 */
+  lowStockThreshold: number;
+  /** Subtotal of COMPLETED orders, shipping fees excluded. Decimal string, fixed to two decimal places. */
   revenue: string;
 }
 
@@ -63,9 +68,11 @@ export class VendorDashboardDto {
   @ApiProperty({ type: VendorDashboardStatusCountDto, isArray: true })
   ordersByStatus: VendorDashboardStatusCountDto[];
 
+  /** At most 5: PENDING before ACCEPTED, then the oldest first. */
   @ApiProperty({ type: VendorDashboardOrderDto, isArray: true })
   ordersNeedingAction: VendorDashboardOrderDto[];
 
+  /** At most 8, lowest stock first. */
   @ApiProperty({ type: VendorDashboardLowStockOfferDto, isArray: true })
   lowStockOffers: VendorDashboardLowStockOfferDto[];
 }

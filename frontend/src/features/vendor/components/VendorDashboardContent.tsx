@@ -10,10 +10,6 @@ import { useVendorDashboard } from "../context/VendorDashboardContext";
 import type { VendorDashboard, VendorDashboardOrder, VendorOrderStatus } from "../types/vendor.types";
 import { VendorPageHeader } from "./VendorPageHeader";
 
-/** The API marks offers with this much stock or less as low. */
-const LOW_STOCK_LIMIT = 5;
-/** Orders listed on the overview; the rest are counted below the table. */
-const VISIBLE_ORDERS = 8;
 
 const timeFormat = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit" });
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -67,7 +63,8 @@ export function VendorDashboardContent() {
 
 function DashboardBody({ dashboard }: { dashboard: VendorDashboard }) {
   const { summary, ordersNeedingAction, lowStockOffers, ordersByStatus } = dashboard;
-  const completedCount = ordersByStatus.find((row) => row.status === "COMPLETED")?.count ?? 0;
+  const countOf = (status: VendorOrderStatus) => ordersByStatus.find((row) => row.status === status)?.count ?? 0;
+  const completedCount = countOf("COMPLETED");
 
   return (
     <div className="space-y-6">
@@ -83,9 +80,9 @@ function DashboardBody({ dashboard }: { dashboard: VendorDashboard }) {
         <StatCard
           icon={AlertTriangle}
           label="Sắp hết hàng"
-          value={`${lowStockOffers.length} loại`}
-          note={`Còn từ ${LOW_STOCK_LIMIT} đơn vị trở xuống`}
-          tone={lowStockOffers.length > 0 ? "danger" : "default"}
+          value={`${summary.lowStockCount} loại`}
+          note={`Còn từ ${summary.lowStockThreshold} đơn vị trở xuống`}
+          tone={summary.lowStockCount > 0 ? "danger" : "default"}
         />
         <StatCard
           icon={Banknote}
@@ -96,8 +93,13 @@ function DashboardBody({ dashboard }: { dashboard: VendorDashboard }) {
       </section>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <OrdersPanel orders={ordersNeedingAction} total={summary.ordersNeedingActionCount} />
-        <LowStockPanel offers={lowStockOffers} />
+        <OrdersPanel
+          orders={ordersNeedingAction}
+          total={summary.ordersNeedingActionCount}
+          pendingCount={countOf("PENDING")}
+          acceptedCount={countOf("ACCEPTED")}
+        />
+        <LowStockPanel offers={lowStockOffers} total={summary.lowStockCount} threshold={summary.lowStockThreshold} />
       </div>
     </div>
   );
@@ -137,8 +139,17 @@ function StatCard({
   );
 }
 
-function OrdersPanel({ orders, total }: { orders: VendorDashboardOrder[]; total: number }) {
-  const visible = orders.slice(0, VISIBLE_ORDERS);
+function OrdersPanel({
+  orders: visible,
+  total,
+  pendingCount,
+  acceptedCount,
+}: {
+  orders: VendorDashboardOrder[];
+  total: number;
+  pendingCount: number;
+  acceptedCount: number;
+}) {
 
   return (
     <section className="min-w-0 rounded-2xl border border-slate-200 bg-white" aria-labelledby="new-orders-title">
@@ -148,7 +159,7 @@ function OrdersPanel({ orders, total }: { orders: VendorDashboardOrder[]; total:
             <span className="h-2 w-2 rounded-full bg-danger" aria-hidden />
             Đơn hàng mới cần xử lý
           </h2>
-          <p className="mt-0.5 text-sm text-slate-500">Mới nhất ở trên cùng.</p>
+          <p className="mt-0.5 text-sm text-slate-500">Đơn chờ xác nhận trước, đơn chờ lâu nhất ở trên cùng.</p>
         </div>
         {total > 0 && (
           <span className="rounded-md bg-rose-50 px-2.5 py-1 text-xs font-semibold text-danger">{total} đơn cần xử lý</span>
@@ -227,10 +238,20 @@ function OrdersPanel({ orders, total }: { orders: VendorDashboardOrder[]; total:
               Đang hiển thị <strong className="text-slate-900">{visible.length}</strong> trên{" "}
               <strong className="text-slate-900">{total}</strong> đơn cần xử lý.
             </p>
-            <Link href="/vendor/orders" className="inline-flex items-center gap-1.5 font-semibold text-brand hover:underline">
-              Đi tới quản lý đơn hàng
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {pendingCount > 0 && (
+                <Link href="/vendor/orders?status=PENDING" className="inline-flex items-center gap-1.5 font-semibold text-brand hover:underline">
+                  Xem {pendingCount} đơn chờ xác nhận
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+              )}
+              {acceptedCount > 0 && (
+                <Link href="/vendor/orders?status=ACCEPTED" className="inline-flex items-center gap-1.5 font-semibold text-brand hover:underline">
+                  Xem {acceptedCount} đơn đã nhận
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+              )}
+            </div>
           </div>
         </>
       )}
@@ -275,7 +296,15 @@ function OrderStatusBadge({ status }: { status: VendorOrderStatus }) {
   );
 }
 
-function LowStockPanel({ offers }: { offers: VendorDashboard["lowStockOffers"] }) {
+function LowStockPanel({
+  offers,
+  total,
+  threshold,
+}: {
+  offers: VendorDashboard["lowStockOffers"];
+  total: number;
+  threshold: number;
+}) {
   return (
     <section className="min-w-0 self-start rounded-2xl border border-slate-200 bg-white p-5" aria-labelledby="low-stock-title">
       <div className="flex items-start justify-between gap-3">
@@ -283,13 +312,13 @@ function LowStockPanel({ offers }: { offers: VendorDashboard["lowStockOffers"] }
           <AlertTriangle className="h-5 w-5 text-danger" aria-hidden />
           Cảnh báo tồn kho thấp
         </h2>
-        {offers.length > 0 && (
+        {total > 0 && (
           <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-danger px-1.5 text-xs font-semibold text-white">
-            {offers.length}
+            {total}
           </span>
         )}
       </div>
-      <p className="mt-1 text-sm text-slate-500">Sản phẩm đang bán còn từ {LOW_STOCK_LIMIT} đơn vị trở xuống.</p>
+      <p className="mt-1 text-sm text-slate-500">Sản phẩm đang bán còn từ {threshold} đơn vị trở xuống.</p>
 
       {offers.length === 0 ? (
         <p className="mt-4 rounded-xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">Chưa có sản phẩm nào sắp hết.</p>
@@ -309,12 +338,18 @@ function LowStockPanel({ offers }: { offers: VendorDashboard["lowStockOffers"] }
                   </p>
                 </div>
                 <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200" aria-hidden>
-                  <div className="h-full rounded-full bg-danger" style={{ width: `${Math.max(4, Math.min(100, (stock / LOW_STOCK_LIMIT) * 100))}%` }} />
+                  <div className="h-full rounded-full bg-danger" style={{ width: `${Math.max(4, Math.min(100, (stock / threshold) * 100))}%` }} />
                 </div>
               </li>
             );
           })}
         </ul>
+      )}
+
+      {total > offers.length && (
+        <p className="mt-3 text-xs text-slate-500">
+          Đang hiển thị {offers.length} trên {total} sản phẩm sắp hết, tồn kho thấp nhất trước.
+        </p>
       )}
 
       <Link
