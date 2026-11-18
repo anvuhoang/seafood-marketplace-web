@@ -7,12 +7,15 @@ import { VendorController } from './vendor.controller.js';
 import { VendorService } from './vendor.service.js';
 import { VendorRegistrationController } from './vendor-registration.controller.js';
 import { VendorRegistrationService } from './vendor-registration.service.js';
+import { VendorOfferController } from './vendor-offer.controller.js';
+import { VendorOfferService } from './vendor-offer.service.js';
+import { VendorProductService } from './vendor-product.service.js';
 
 @Module({
   imports: [PrismaModule, AuthModule, CloudinaryModule, AdministrativeUnitModule],
-  // Registration is listed first so /vendors/registration/... is matched before /vendors/:slug/...
-  controllers: [VendorRegistrationController, VendorController],
-  providers: [VendorService, VendorRegistrationService],
+  // Registration and the /vendors/me/... routes are listed first so they are matched before /vendors/:slug/...
+  controllers: [VendorRegistrationController, VendorOfferController, VendorController],
+  providers: [VendorService, VendorRegistrationService, VendorOfferService, VendorProductService],
   exports: [VendorService],
 })
 export class VendorModule {}
