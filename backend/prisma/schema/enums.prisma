@@ -26,7 +26,10 @@ enum ProductStatus {
 enum OfferStatus {
   ACTIVE
   PAUSED
+  /// Legacy value still used by the seed; vendors cannot set it, sold-out is derived from stock = 0.
   OUT_OF_STOCK
+  /// The vendor stopped selling this variant for good. Terminal: never reactivated, never deleted.
+  DISCONTINUED
 }
 
 enum OrderStatus {
