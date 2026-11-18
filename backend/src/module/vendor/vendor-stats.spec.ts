@@ -53,7 +53,7 @@ async function expectBadRequest(promise: Promise<unknown> | (() => unknown), mes
 
 describe('Vendor statistics', () => {
   let service: VendorStatsService;
-  let dailyRows: Array<{ day: string; revenue: string; orders: number }>;
+  let dailyRows: Array<{ completedAt: Date; subtotal: string }>;
   let topRows: Array<Record<string, string>>;
   let prisma: {
     vendor: { findUnique: ReturnType<typeof vi.fn> };
@@ -266,7 +266,7 @@ describe('Vendor statistics', () => {
       const sql = dailySql().sql;
 
       expect(sql).toContain(`vo.status = 'COMPLETED'`);
-      expect(sql).toContain('SUM(vo.subtotal)');
+      expect(sql).toContain('vo.subtotal');
       expect(sql).not.toMatch(/shipping_fee|grand_total/);
     });
 
@@ -279,11 +279,11 @@ describe('Vendor statistics', () => {
         expect(sql.sql).toContain(`${COMPLETED_AT_SQL.sql} >= ?`);
         expect(sql.sql).toContain(`${COMPLETED_AT_SQL.sql} < ?`);
       }
-      // Days are grouped in Vietnam time, and the query reaches back to the previous period.
-      expect(dailySql().sql).toContain(`to_char(${COMPLETED_AT_SQL.sql} AT TIME ZONE ?`);
+      // The query reaches back to the previous period; days are cut in TypeScript, not with AT TIME ZONE.
+      expect(dailySql().sql).toContain(`SELECT ${COMPLETED_AT_SQL.sql} AS "completedAt"`);
+      expect(dailySql().sql).not.toContain('AT TIME ZONE');
       expect(dailySql().values).toEqual(
         expect.arrayContaining([
-          'Asia/Ho_Chi_Minh',
           new Date('2026-11-05T17:00:00.000Z'), // previous period starts 2026-11-06 00:00 in Vietnam
           new Date('2026-11-19T17:00:00.000Z'), // period ends after 2026-11-19
         ]),
@@ -296,9 +296,10 @@ describe('Vendor statistics', () => {
 
     it('splits revenue into the period and the period before, and fills every day', async () => {
       dailyRows = [
-        { day: '2026-11-08', revenue: '200000.00', orders: 1 },
-        { day: '2026-11-13', revenue: '150000.00', orders: 1 },
-        { day: '2026-11-19', revenue: '450000.50', orders: 2 },
+        { completedAt: new Date('2026-11-08T03:00:00.000Z'), subtotal: '200000.00' },
+        { completedAt: new Date('2026-11-13T02:00:00.000Z'), subtotal: '150000.00' },
+        { completedAt: new Date('2026-11-19T01:00:00.000Z'), subtotal: '450000.00' },
+        { completedAt: new Date('2026-11-19T09:30:00.000Z'), subtotal: '0.50' },
       ];
 
       const result = await service.getStats('user-a', { range: '7d' }, NOW);
@@ -318,6 +319,27 @@ describe('Vendor statistics', () => {
         value: '200000.17',
         previous: '200000.00',
         changePercent: 0,
+      });
+    });
+
+    it('puts an order completed just after midnight in Vietnam on the new day', async () => {
+      dailyRows = [
+        // 23:59 on 17 Nov and 00:56 on 18 Nov in Vietnam, though both are 17 Nov in UTC.
+        { completedAt: new Date('2026-11-17T16:59:00.000Z'), subtotal: '100000.00' },
+        { completedAt: new Date('2026-11-17T17:56:00.000Z'), subtotal: '580000.00' },
+      ];
+
+      const { series } = await service.getStats('user-a', { range: '7d' }, NOW);
+
+      expect(series.find((day) => day.date === '2026-11-17')).toEqual({
+        date: '2026-11-17',
+        revenue: '100000.00',
+        completedOrders: 1,
+      });
+      expect(series.find((day) => day.date === '2026-11-18')).toEqual({
+        date: '2026-11-18',
+        revenue: '580000.00',
+        completedOrders: 1,
       });
     });
 

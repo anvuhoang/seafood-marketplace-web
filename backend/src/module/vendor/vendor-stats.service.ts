@@ -7,7 +7,6 @@ import {
   daysInclusive,
   eachDay,
   startOfMonth,
-  VIETNAM_TIME_ZONE,
   vietnamDayKey,
   vietnamDayStart,
 } from '../../common/utils/vietnam-date.js';
@@ -134,10 +133,9 @@ const average = (total: Prisma.Decimal, count: number) =>
 const cancellationRate = (cancelled: number, placed: number) =>
   placed === 0 ? 0 : Math.round((cancelled / placed) * 1000) / 10;
 
-interface DailyRow {
-  day: string;
-  revenue: Prisma.Decimal | number | string | null;
-  orders: number | bigint;
+interface CompletedRow {
+  completedAt: Date;
+  subtotal: Prisma.Decimal | number | string;
 }
 
 interface TopProductRow {
@@ -164,14 +162,14 @@ export class VendorStatsService {
     const end = dayEnd(period.to);
     const previousStart = dayStart(period.previousFrom);
 
-    const [dailyRows, placedNow, placedBefore, topRows] = await Promise.all([
-      // One query covers both periods; rows are split by day below.
-      this.prisma.$queryRaw<DailyRow[]>(Prisma.sql`
-        SELECT to_char(${COMPLETED_AT_SQL} AT TIME ZONE ${VIETNAM_TIME_ZONE}, 'YYYY-MM-DD') AS day,
-               SUM(vo.subtotal) AS revenue,
-               COUNT(*)::int AS orders
+    const [completedRows, placedNow, placedBefore, topRows] = await Promise.all([
+      // One row per completed order of both periods. The Vietnam day is worked out
+      // here rather than with AT TIME ZONE in SQL: the pg adapter stores and reads
+      // timestamps relative to the session time zone, so only the Date it returns
+      // is reliable, whatever the database's TimeZone setting is.
+      this.prisma.$queryRaw<CompletedRow[]>(Prisma.sql`
+        SELECT ${COMPLETED_AT_SQL} AS "completedAt", vo.subtotal
         ${completedOrdersFrom(vendorId, previousStart, end)}
-        GROUP BY 1
       `),
       this.prisma.vendorOrder.groupBy({
         by: ['status'],
@@ -204,14 +202,21 @@ export class VendorStatsService {
     ]);
 
     // Daily series with every day present, and the totals of both periods.
-    const byDay = new Map(dailyRows.map((row) => [row.day, row]));
+    const byDay = new Map<string, { revenue: Prisma.Decimal; orders: number }>();
+    for (const row of completedRows) {
+      const day = vietnamDayKey(new Date(row.completedAt));
+      const bucket = byDay.get(day) ?? { revenue: new Prisma.Decimal(0), orders: 0 };
+      bucket.revenue = bucket.revenue.add(decimal(row.subtotal));
+      bucket.orders += 1;
+      byDay.set(day, bucket);
+    }
     let revenue = new Prisma.Decimal(0);
     let completed = 0;
     let previousRevenue = new Prisma.Decimal(0);
     let previousCompleted = 0;
     for (const [day, row] of byDay) {
-      const amount = decimal(row.revenue);
-      const count = Number(row.orders);
+      const amount = row.revenue;
+      const count = row.orders;
       if (day >= period.from && day <= period.to) {
         revenue = revenue.add(amount);
         completed += count;
@@ -224,8 +229,8 @@ export class VendorStatsService {
       const row = byDay.get(date);
       return {
         date,
-        revenue: decimal(row?.revenue).toFixed(2),
-        completedOrders: Number(row?.orders ?? 0),
+        revenue: (row?.revenue ?? new Prisma.Decimal(0)).toFixed(2),
+        completedOrders: row?.orders ?? 0,
       };
     });
 
