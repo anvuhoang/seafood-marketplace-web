@@ -499,7 +499,7 @@ function StockBadge({ product, threshold }: { product: VendorStatsTopProduct; th
 /** Price and stock are edited from the product list, so that is where this goes. */
 function ManageLink() {
   return (
-    <Link href="/vendor/products" className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline">
+    <Link href="/vendor/products" className="inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap text-brand hover:underline">
       Cập nhật kho
       <ArrowRight className="h-3.5 w-3.5" aria-hidden />
     </Link>

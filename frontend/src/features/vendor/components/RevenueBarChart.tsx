@@ -32,8 +32,11 @@ export function RevenueBarChart({
   const ticks = niceAxisTicks(Math.max(0, ...values));
   const axisMax = ticks[ticks.length - 1]!;
   const hasRevenue = values.some((value) => value > 0);
+  const peak = Math.max(0, ...values);
   const plotHeight = compact ? 120 : 240;
+  // Fewer day labels on phones, where every label needs about 40px.
   const step = labelStep(days.length, compact ? 7 : 10);
+  const phoneStep = labelStep(days.length, 6);
   const focusable = days.length <= FOCUSABLE_BAR_LIMIT;
   const lastIndex = days.length - 1;
 
@@ -111,14 +114,17 @@ export function RevenueBarChart({
                   const name = describeDay(day.date);
                   const barProps = {
                     onMouseEnter: () => setActive(index),
-                    className:
-                      "group absolute inset-y-0 inset-x-px flex items-end justify-center outline-none transition-colors hover:bg-slate-50/80",
+                    // Long periods leave a pixel or two per day, so the gap between bars goes.
+                    className: cn(
+                      "group absolute inset-y-0 flex items-end justify-center outline-none transition-colors hover:bg-slate-50/80",
+                      focusable ? "inset-x-px" : "inset-x-0",
+                    ),
                   };
                   const bar = (
                     <span
                       className={cn(
                         "grow-y block w-full rounded-t-[3px] transition-colors duration-200",
-                        isActive || index === lastIndex ? "bg-brand" : "bg-brand-soft",
+                        isActive || index === lastIndex || (value > 0 && value === peak) ? "bg-brand" : "bg-brand-soft",
                         "group-focus-visible:ring-2 group-focus-visible:ring-brand/40 group-focus-visible:ring-offset-1",
                       )}
                       style={{
@@ -169,11 +175,23 @@ export function RevenueBarChart({
             </div>
 
             <div className="mt-2 flex text-[11px] text-slate-500 tabular-nums" aria-hidden>
-              {days.map((day, index) => (
-                <span key={day.date} className="min-w-0 flex-1 overflow-visible text-center whitespace-nowrap">
-                  {(days.length - 1 - index) % step === 0 ? describeDay(day.date).short : ""}
-                </span>
-              ))}
+              {days.map((day, index) => {
+                const fromEnd = days.length - 1 - index;
+                return (
+                  <span
+                    key={day.date}
+                    // Flex alignment lets the end labels overflow inwards instead of being clipped.
+                    className={cn(
+                      "flex min-w-0 flex-1 overflow-visible whitespace-nowrap",
+                      index === 0 ? "justify-start" : index === lastIndex ? "justify-end" : "justify-center",
+                      fromEnd % phoneStep !== 0 && "max-sm:invisible",
+                      fromEnd % step !== 0 && "sm:invisible",
+                    )}
+                  >
+                    {fromEnd % step === 0 || fromEnd % phoneStep === 0 ? describeDay(day.date).short : ""}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>
