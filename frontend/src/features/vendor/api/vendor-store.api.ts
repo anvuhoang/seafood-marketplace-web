@@ -31,7 +31,12 @@ export function updateMyStore(token: string, data: VendorStoreUpdate): Promise<V
  * Upload one logo or cover straight to Cloudinary with a short-lived signature
  * from the API, and return its URL. The file is only used once the form is saved.
  */
-export async function uploadStoreImage(token: string, file: File): Promise<string> {
+export function uploadStoreImage(token: string, file: File): Promise<string> {
+  return uploadSignedImage(token, `${API_BASE_URL}/vendors/me/store/upload-signature`, file);
+}
+
+/** Upload one image to Cloudinary with a signature from `signatureUrl` and return its URL. */
+export async function uploadSignedImage(token: string, signatureUrl: string, file: File): Promise<string> {
   if (!STORE_IMAGE_TYPES.includes(file.type)) {
     throw new Error("Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.");
   }
@@ -39,11 +44,9 @@ export async function uploadStoreImage(token: string, file: File): Promise<strin
     throw new Error("Ảnh tối đa 5MB.");
   }
 
-  const signature = await authenticatedRequest<VendorStoreUploadSignature>(
-    `${API_BASE_URL}/vendors/me/store/upload-signature`,
-    token,
-    { method: "POST" },
-  );
+  const signature = await authenticatedRequest<VendorStoreUploadSignature>(signatureUrl, token, {
+    method: "POST",
+  });
 
   if (file.size > signature.maxFileSizeBytes) {
     throw new Error(`Ảnh tối đa ${Math.round(signature.maxFileSizeBytes / 1024 / 1024)}MB.`);
