@@ -180,8 +180,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </nav>
         </header>
 
-        {/* Keyed by path so each page fades in when you switch tabs. */}
-        <main key={pathname} className="animate-fade-in mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        {/* Page changes are cross-faded by the browser (see view-transitions.css); fading in here too would blank the content twice. */}
+        <main key={pathname} className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {children}
         </main>
       </div>
