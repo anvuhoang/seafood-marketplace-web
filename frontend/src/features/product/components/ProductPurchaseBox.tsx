@@ -35,8 +35,14 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
     text: string;
   } | null>(null);
 
+  // null when no approved vendor sells it; never treated as a price of 0.
+  const price = product.price;
   const isAvailable =
-    product.inStock && !product.isDiscontinued && product.stock > 0 && product.offerId !== null;
+    product.inStock &&
+    !product.isDiscontinued &&
+    product.stock > 0 &&
+    product.offerId !== null &&
+    price !== null;
   const maxStock = product.stock || 0;
   const { reviewsSummary, vendor } = product;
 
@@ -50,7 +56,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
   };
 
   const handleAddToCart = async () => {
-    if (!isAvailable) {
+    if (!isAvailable || price === null) {
       setActionFeedback({
         type: "error",
         text: "Sản phẩm hiện không khả dụng để thêm vào giỏ hàng.",
@@ -72,7 +78,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
       productId: product.id,
       productName: product.name,
       productImage: product.images[0]?.imageUrl || "",
-      price: product.price,
+      price,
       quantity,
       unit: product.unit,
       preparationOption: selectedPrep,
@@ -110,7 +116,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
     router.push("/customer/cart");
   };
 
-  const calculatedTotal = product.price * quantity;
+  const calculatedTotal = price === null ? null : price * quantity;
 
   return (
     <div className="space-y-5">
@@ -174,10 +180,10 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
       {/* 4. Price Box */}
       <div className="rounded-xl bg-slate-50 p-4 sm:p-5 space-y-3">
         <div className="flex flex-wrap items-baseline gap-3">
-          {product.offerId || product.isDiscontinued ? (
+          {price !== null ? (
             <>
               <span className="text-3xl font-bold text-[#E63946] tracking-tight">
-                {formatPrice(product.price)}
+                {formatPrice(price)}
               </span>
               <span className="text-sm font-medium text-slate-500">
                 / 1 {product.unit}
@@ -187,7 +193,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
             // No approved vendor sells it, so there is no price to show.
             <span className="text-xl font-bold text-slate-500">Chưa có giá bán</span>
           )}
-          {product.originalPrice && product.originalPrice > product.price && (
+          {price !== null && product.originalPrice && product.originalPrice > price && (
             <>
               <span className="text-sm text-slate-400 line-through">
                 {formatPrice(product.originalPrice)}
@@ -307,7 +313,7 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
       </div>
 
       {/* 7. Total Price Preview */}
-      {isAvailable && (
+      {isAvailable && calculatedTotal !== null && (
         <div className="flex items-baseline justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-200/80">
           <span className="text-sm font-medium text-slate-600">
             Tổng tiền tạm tính:

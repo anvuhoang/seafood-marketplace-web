@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { VendorService } from './vendor.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import type { CloudinaryService } from '../../common/cloudinary/cloudinary.service.js';
 
 const vendorRow = (status: string) => ({
   id: 'vendor-1',
@@ -77,7 +78,7 @@ describe('VendorService', () => {
         deleteMany: vi.fn(),
       },
     };
-    vendorService = new VendorService(prismaService as PrismaService);
+    vendorService = new VendorService(prismaService as PrismaService, {} as CloudinaryService);
   });
 
   it('lists only ACTIVE vendors with distinct product counts', async () => {
@@ -112,19 +113,38 @@ describe('VendorService', () => {
   });
 
   it.each(['PENDING', 'REJECTED', 'SUSPENDED'])(
-    'does not expose products for a %s vendor',
+    'answers 404 for a %s vendor, exactly like an unknown slug',
     async (status) => {
       prismaService.vendor.findUnique.mockResolvedValue(vendorRow(status));
 
-      const result = await vendorService.getStorefront('vua-thuy-san-phu-quoc-xanh');
-
-      expect(result.status).toBe(status);
-      expect(result.isActive).toBe(false);
-      expect(result.products).toEqual([]);
-      expect(result.categories).toEqual([]);
+      await expect(vendorService.getStorefront('vua-thuy-san-phu-quoc-xanh')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       expect(prismaService.vendorOffer.findMany).not.toHaveBeenCalled();
+      expect(prismaService.vendorFollow.count).not.toHaveBeenCalled();
     },
   );
+
+  it('builds the storefront from ACTIVE offers on active variants of published products only', async () => {
+    prismaService.vendor.findUnique.mockResolvedValue(vendorRow('ACTIVE'));
+    prismaService.vendorOffer.findMany.mockResolvedValue([]);
+
+    await vendorService.getStorefront('vua-thuy-san-phu-quoc-xanh');
+
+    // PAUSED, OUT_OF_STOCK and DISCONTINUED offers and DRAFT products never reach the storefront.
+    expect(prismaService.vendorOffer.findMany.mock.calls[0][0].where).toEqual({
+      vendorId: 'vendor-1',
+      status: 'ACTIVE',
+      variant: { isActive: true, product: { status: 'ACTIVE' } },
+    });
+  });
+
+  it('includes the ward in the public address when the vendor has one', async () => {
+    prismaService.vendor.findUnique.mockResolvedValue({ ...vendorRow('ACTIVE'), ward: 'Dương Đông' });
+    prismaService.vendorOffer.findMany.mockResolvedValue([]);
+    const result = await vendorService.getStorefront('vua-thuy-san-phu-quoc-xanh');
+    expect(result.vendor.address).toBe('12 Bến Cảng, Dương Đông, Phú Quốc, Kiên Giang');
+  });
 
   it('returns the public profile without the email address', async () => {
     prismaService.vendor.findUnique.mockResolvedValue(vendorRow('ACTIVE'));

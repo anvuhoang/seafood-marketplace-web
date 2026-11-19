@@ -36,10 +36,13 @@ model Product {
   description String?       @db.Text
   status      ProductStatus @default(DRAFT)
   isFeatured  Boolean       @default(false) @map("is_featured")
+  /// Vendor that proposed this product as a draft; null for products created by admins or the seed.
+  createdByVendorId String? @map("created_by_vendor_id") @db.Uuid
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   species    SeafoodSpecies?  @relation(fields: [speciesId], references: [id], onDelete: SetNull)
+  createdByVendor Vendor? @relation("VendorProposedProducts", fields: [createdByVendorId], references: [id], onDelete: SetNull)
   categories ProductCategory[]
   images     ProductImage[]
   variants   ProductVariant[]
@@ -47,6 +50,7 @@ model Product {
 
   @@index([status, isFeatured])
   @@index([speciesId])
+  @@index([createdByVendorId])
   @@map("products")
 }
 

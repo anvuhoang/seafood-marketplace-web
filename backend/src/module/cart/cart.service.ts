@@ -6,6 +6,8 @@ import {
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AddToCartDto } from './dto/add-to-cart.dto.js';
 
+export const VENDOR_NOT_SELLING_MESSAGE = 'Gian hàng bán sản phẩm này hiện chưa mở bán hoặc đang tạm ngưng.';
+
 @Injectable()
 export class CartService {
   constructor(private readonly prisma: PrismaService) {}
@@ -30,11 +32,17 @@ export class CartService {
                 product: true,
               },
             },
+            vendor: { select: { status: true } },
           },
         });
 
         if (!offer) {
           throw new NotFoundException('Không tìm thấy mặt hàng yêu cầu.');
+        }
+
+        // Only approved stores sell: pending, rejected or suspended vendors cannot take orders.
+        if (offer.vendor.status !== 'ACTIVE') {
+          throw new BadRequestException(VENDOR_NOT_SELLING_MESSAGE);
         }
 
         // Verify product & offer availability

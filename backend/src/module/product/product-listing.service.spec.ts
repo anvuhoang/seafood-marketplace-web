@@ -75,6 +75,18 @@ describe('ProductListingService', () => {
     expect(result.items[0].id).toBe('tom-pq');
   });
 
+  it('loads only published products and ACTIVE offers of ACTIVE vendors (no paused, discontinued or draft)', async () => {
+    await service.listProducts({});
+
+    const query = prisma.product.findMany.mock.calls[0][0];
+    expect(query.where).toEqual({
+      status: 'ACTIVE',
+      variants: { some: { isActive: true, offers: { some: { status: 'ACTIVE', vendor: { status: 'ACTIVE' } } } } },
+    });
+    expect(query.select.variants.where).toEqual({ isActive: true });
+    expect(query.select.variants.select.offers.where).toEqual({ status: 'ACTIVE', vendor: { status: 'ACTIVE' } });
+  });
+
   it('filters by category and computes category facets without their own filter', async () => {
     const result = await service.listProducts({ category: 'tom-song' });
 

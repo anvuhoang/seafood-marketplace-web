@@ -61,7 +61,8 @@ export interface ProductDetail {
   sku: string | null;
   unit: string;
   sizeLabel: string | null;
-  price: number;
+  /** null when no approved (ACTIVE) vendor offers the product: there is no price, not a price of 0. */
+  price: number | null;
   originalPrice: number | null;
   discountPercent: number | null;
   stock: number;

@@ -23,6 +23,7 @@ model Vendor {
   orders VendorOrder[]
   follows VendorFollow[]
   decisions VendorDecision[]
+  proposedProducts Product[] @relation("VendorProposedProducts")
 
   @@index([status])
   @@map("vendors")

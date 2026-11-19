@@ -6,6 +6,9 @@ import { anonymizeName } from '../review/review.service.js';
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Offer statuses a vendor chose to stop selling. */
+const WITHDRAWN_OFFER_STATUSES = new Set(['PAUSED', 'DISCONTINUED']);
+
 /** How many recent reviews the detail page shows. */
 const RECENT_REVIEW_LIMIT = 5;
 
@@ -103,9 +106,16 @@ export class ProductService {
     );
     const inStock = sellable.filter(({ offer }) => Number(offer.stock) > 0);
 
+    // Offers of pending, rejected or suspended vendors are never public, not even their price.
+    // Neither are offers the vendor paused or discontinued: they withdrew them, so they are not
+    // shown as the seller or as the last known price.
+    const fromActiveVendors = offers.filter(
+      ({ offer }) => offer.vendor.status === 'ACTIVE' && !WITHDRAWN_OFFER_STATUSES.has(offer.status),
+    );
+
     // Same rule as the listing: cheapest in-stock sellable offer, then any
-    // sellable offer, then any offer (for discontinued products).
-    const pool = inStock.length > 0 ? inStock : sellable.length > 0 ? sellable : offers;
+    // sellable offer, then any offer of an active vendor (for discontinued products).
+    const pool = inStock.length > 0 ? inStock : sellable.length > 0 ? sellable : fromActiveVendors;
     const chosen = pool.reduce<(typeof offers)[number] | undefined>(
       (best, entry) =>
         !best || Number(entry.offer.price) < Number(best.offer.price) ? entry : best,
@@ -126,7 +136,8 @@ export class ProductService {
       sku: chosen?.variant.sku ?? null,
       unit: chosen?.variant.unit ?? 'kg',
       sizeLabel: chosen?.variant.sizeLabel ?? null,
-      price: chosen ? Number(chosen.offer.price) : 0,
+      // null, never 0: no approved vendor offers it, so there is no price.
+      price: chosen ? Number(chosen.offer.price) : null,
       originalPrice: null,
       discountPercent: null,
       stock,

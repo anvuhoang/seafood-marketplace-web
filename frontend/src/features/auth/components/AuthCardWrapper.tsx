@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Fish } from "lucide-react";
+import { SUPPORT_HOTLINE } from "@/lib/constants/contact";
 
 interface AuthCardWrapperProps {
   title: string;
@@ -85,8 +86,8 @@ export function AuthCardWrapper({ title, subtitle, children }: AuthCardWrapperPr
           <Link href="/help/privacy" className="hover:text-slate-700">
             Chính sách bảo mật
           </Link>
-          <a href="tel:19006868" className="hover:text-slate-700">
-            Hỗ trợ 1900 6868
+          <a href={`tel:${SUPPORT_HOTLINE.tel}`} className="hover:text-slate-700">
+            Hỗ trợ {SUPPORT_HOTLINE.display}
           </a>
         </footer>
       </div>

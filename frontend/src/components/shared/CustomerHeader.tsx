@@ -24,7 +24,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
+import { useMyStoreSlug } from "@/features/vendor/hooks/useMyStoreSlug";
 import { formatPrice } from "@/lib/utils";
+import { SUPPORT_HOTLINE } from "@/lib/constants/contact";
 
 const NAV_LINKS = [
   { name: "Trang chủ", href: "/" },
@@ -100,6 +102,8 @@ export function CustomerHeader() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
   const { itemCount, totalPrice } = useCart();
+  // Hidden until the vendor's own store is known; no link when the account has none.
+  const myStoreSlug = useMyStoreSlug();
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -158,11 +162,11 @@ export function CustomerHeader() {
 
           <div className="flex items-center gap-5 text-slate-300">
             <a
-              href="tel:19006868"
+              href={`tel:${SUPPORT_HOTLINE.tel}`}
               className="flex items-center gap-1.5 transition-colors hover:text-white"
             >
               <Phone className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Hotline: <strong className="text-white">1900 6868</strong></span>
+              <span>Hotline: <strong className="text-white">{SUPPORT_HOTLINE.display}</strong></span>
             </a>
             {/* Role-specific top bar action (hides register for existing vendors/admins) */}
             {user?.role === "VENDOR" ? (
@@ -361,14 +365,16 @@ export function CustomerHeader() {
                                   <ClipboardList className="h-3.5 w-3.5 text-slate-400" />
                                   <span>Quản lý Đơn hàng</span>
                                 </Link>
-                                <Link
-                                  href="/vendor/vua-thuy-san-phu-quoc-xanh"
-                                  onClick={() => setUserMenuOpen(false)}
-                                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
-                                >
-                                  <Store className="h-3.5 w-3.5 text-slate-400" />
-                                  <span>Gian hàng của bạn</span>
-                                </Link>
+                                {myStoreSlug && (
+                                  <Link
+                                    href={`/vendor/${encodeURIComponent(myStoreSlug)}`}
+                                    onClick={() => setUserMenuOpen(false)}
+                                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+                                  >
+                                    <Store className="h-3.5 w-3.5 text-slate-400" />
+                                    <span>Gian hàng của bạn</span>
+                                  </Link>
+                                )}
                               </>
                             ) : (
                               <>

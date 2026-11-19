@@ -11,6 +11,7 @@ import { AccountModule } from './module/account/account.module.js';
 import { ReviewModule } from './module/review/review.module.js';
 import { VendorModule } from './module/vendor/vendor.module.js';
 import { AdminModule } from './module/admin/admin.module.js';
+import { OrderModule } from './module/order/order.module.js';
 import configuration from './config/configuration.js';
 import { validateEnv } from './config/env.validation.js';
 
@@ -30,6 +31,7 @@ import { validateEnv } from './config/env.validation.js';
     ReviewModule,
     VendorModule,
     AdminModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],
