@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { AuthCardWrapper } from "./AuthCardWrapper";
+import { AuthPageFallback } from "./AuthPageFallback";
 import { getSafeRedirectPath } from "../utils/safe-redirect";
 
 function RegisterFormContent() {
@@ -383,11 +384,7 @@ function RegisterFormContent() {
 export function RegisterForm() {
   return (
     <Suspense
-      fallback={
-        <div className="min-h-[500px] flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0F3860]" />
-        </div>
-      }
+      fallback={<AuthPageFallback />}
     >
       <RegisterFormContent />
     </Suspense>
