@@ -2,7 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Fish } from "lucide-react";
+import { Check } from "lucide-react";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { SUPPORT_HOTLINE } from "@/lib/constants/contact";
 
 interface AuthCardWrapperProps {
@@ -15,17 +16,8 @@ const BRAND_POINTS = ["Mua trực tiếp từ vựa, giá minh bạch", "Giao tr
 
 function Logo({ inverted = false }: { inverted?: boolean }) {
   return (
-    <Link href="/" className="inline-flex items-center gap-2.5">
-      <span
-        className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-          inverted ? "bg-white text-[#0F3860]" : "bg-[#0F3860] text-white"
-        }`}
-      >
-        <Fish className="h-5 w-5" strokeWidth={2.25} />
-      </span>
-      <span className={`text-xl font-bold tracking-tight ${inverted ? "text-white" : "text-[#0F3860]"}`}>
-        HaiSan<span className={inverted ? "text-[#FF6B6B]" : "text-[#E63946]"}>Express</span>
-      </span>
+    <Link href="/" className="inline-flex items-center">
+      <BrandLogo variant={inverted ? "dark" : "light"} className="h-11" />
     </Link>
   );
 }
@@ -64,13 +56,6 @@ export function AuthCardWrapper({ title, subtitle, children }: AuthCardWrapperPr
           <div className="lg:hidden">
             <Logo />
           </div>
-          <Link
-            href="/"
-            className="ml-auto inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-[#0F3860]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Trang chủ
-          </Link>
         </div>
 
         <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">

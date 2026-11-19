@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Fish, LayoutDashboard, LogOut, MapPin, Moon, Store, Sun, Tags, UserRound, Users } from "lucide-react";
+import { LayoutDashboard, LogOut, MapPin, Moon, Store, Sun, Tags, UserRound, Users } from "lucide-react";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getAdminVendors } from "../api/admin-vendor.api";
 import { useAdminTheme } from "../hooks/useAdminTheme";
@@ -54,11 +55,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className={`${dark ? "admin-dark " : ""}min-h-screen bg-slate-50 text-slate-800 lg:flex`}>
       <aside className="admin-chrome sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-shell text-white lg:flex">
         <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-          <Fish className="h-7 w-7 shrink-0" strokeWidth={2} />
-          <span className="text-[15px] leading-tight font-semibold">
-            HaiSan Express
-            <span className="block text-[11px] font-medium tracking-wide text-white/65 uppercase">Quản trị hệ thống</span>
-          </span>
+          <BrandLogo variant="dark" className="h-9" />
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5" aria-label="Điều hướng quản trị">
@@ -134,10 +131,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <header className="admin-chrome sticky top-0 z-20 bg-shell text-white lg:hidden">
           <div className="flex h-14 items-center justify-between px-4">
-            <span className="flex items-center gap-2 text-sm font-semibold">
-              <Fish className="h-5 w-5" strokeWidth={2} />
-              Quản trị
-            </span>
+            <BrandLogo variant="dark" className="h-7" />
             <span className="flex items-center gap-2">
               <button
                 type="button"

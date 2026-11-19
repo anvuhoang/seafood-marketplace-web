@@ -4,11 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Anchor,
   ChartLine,
   ExternalLink,
   Headset,
-  House,
   LayoutGrid,
   LogOut,
   Menu,
@@ -18,6 +16,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { SUPPORT_HOTLINE } from "@/lib/constants/contact";
 import { cn } from "@/lib/utils";
@@ -128,14 +127,9 @@ function VendorShellFrame({ children }: { children: React.ReactNode }) {
 
 function Brand() {
   return (
-    <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-brand" aria-hidden>
-        <Anchor className="h-5 w-5" />
-      </span>
-      <span className="min-w-0 leading-tight">
-        <span className="block text-[15px] font-bold">HaiSan Express</span>
-        <span className="block text-xs text-white/65">Đối tác vựa hải sản</span>
-      </span>
+    <div className="border-b border-white/10 px-5 py-5">
+      <BrandLogo variant="dark" className="h-10" />
+      <span className="mt-2 block text-xs text-white/65">Đối tác vựa hải sản</span>
     </div>
   );
 }
@@ -215,10 +209,6 @@ function StoreBar() {
   return (
     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2 py-3">
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <House className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
-        <span className="text-slate-300" aria-hidden>
-          /
-        </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900">
             {store?.name ??
