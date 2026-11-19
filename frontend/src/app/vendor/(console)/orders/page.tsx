@@ -7,6 +7,9 @@ export const metadata = {
   description: "Theo dõi và xử lý các đơn hàng của gian hàng.",
 };
 
+// Rendered behind a client-side sign-in check, so there is no instant shell to validate.
+export const instant = false;
+
 /** The status tab is read from the URL, so the list renders inside Suspense (Cache Components). */
 export default function VendorOrdersPage() {
   return (
