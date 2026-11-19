@@ -241,11 +241,15 @@ function StoreBar() {
         {store && (
           <Link
             href={`/vendor/${encodeURIComponent(store.slug)}`}
+            // The public page opens beside the console, so the vendor never loses their place.
+            target="_blank"
+            rel="noopener noreferrer"
             prefetch={false}
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
           >
             <ExternalLink className="h-3.5 w-3.5" aria-hidden />
             Xem gian hàng
+            <span className="sr-only"> (mở trong tab mới)</span>
           </Link>
         )}
         <span className="hidden h-8 w-px bg-slate-200 md:block" aria-hidden />
