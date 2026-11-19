@@ -13,6 +13,7 @@ import {
 import { StorefrontProductCard } from "./StorefrontProductCard";
 import { StorefrontSortSelect } from "./StorefrontSortSelect";
 import { FollowVendorButton } from "./FollowVendorButton";
+import { HideForStoreOwner } from "./HideForStoreOwner";
 import { VendorShareButton } from "./VendorShareButton";
 
 const INACTIVE_STATUS_MESSAGES = {
@@ -98,16 +99,18 @@ export function VendorStorefrontView({ storefront, query }: VendorStorefrontView
             </div>
 
             <div className="flex items-center gap-2">
-              {vendor.phone && (
-                <a
-                  href={`tel:${vendor.phone}`}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#0F3860] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#0A2744]"
-                >
-                  <Phone className="h-4 w-4" />
-                  Gọi vựa
-                </a>
-              )}
-              <FollowVendorButton slug={vendor.slug} initialFollowerCount={vendor.followerCount} />
+              <HideForStoreOwner slug={vendor.slug}>
+                {vendor.phone && (
+                  <a
+                    href={`tel:${vendor.phone}`}
+                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#0F3860] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#0A2744]"
+                  >
+                    <Phone className="h-4 w-4" />
+                    Gọi vựa
+                  </a>
+                )}
+                <FollowVendorButton slug={vendor.slug} initialFollowerCount={vendor.followerCount} />
+              </HideForStoreOwner>
               <VendorShareButton vendorName={vendor.name} />
             </div>
           </div>
@@ -292,7 +295,7 @@ function ProductsTab({
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 xl:grid-cols-4">
             {items.map((product, index) => (
               <ScrollReveal key={product.id} delay={(index % 3) * 60} className="h-full">
-                <StorefrontProductCard product={product} vendorName={vendor.name} originLabel={vendor.district} />
+                <StorefrontProductCard product={product} vendorName={vendor.name} vendorSlug={vendor.slug} originLabel={vendor.district} />
               </ScrollReveal>
             ))}
           </div>
