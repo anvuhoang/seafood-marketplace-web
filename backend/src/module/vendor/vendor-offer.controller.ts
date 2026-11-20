@@ -124,7 +124,7 @@ export class VendorOfferController {
   @ApiOperation({
     summary: 'Start selling one variant',
     description:
-      'The variant must be active, on a published product or on a draft this vendor proposed.',
+      'The variant must be active, on a published product.',
   })
   @ApiResponse({
     status: 201,
@@ -230,7 +230,7 @@ export class VendorOfferController {
   @ApiOperation({
     summary: 'Search products the vendor can add an offer to',
     description:
-      'Published products plus drafts this vendor proposed, with active variants and `alreadyOffered`.',
+      'Published products, with active variants and `alreadyOffered`.',
   })
   @ApiResponse({
     status: 200,
@@ -286,9 +286,9 @@ export class VendorOfferController {
 
   @Post('products')
   @ApiOperation({
-    summary: 'Propose a new product (saved as a draft for admin approval)',
+    summary: 'Add a new product (published as soon as it is saved)',
     description:
-      'Creates the product as DRAFT with its variants and, per variant, an optional offer, in one transaction. ' +
+      'Creates the product as ACTIVE (no admin approval) with its variants and, per variant, an optional offer, in one transaction. ' +
       'Images must come from POST /vendors/me/products/upload-signature.',
   })
   @ApiResponse({
@@ -317,7 +317,7 @@ export class VendorOfferController {
   }
 
   @Get('products/:id')
-  @ApiOperation({ summary: 'Get one draft product this vendor proposed' })
+  @ApiOperation({ summary: 'Get one product this vendor created' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({
     status: 200,
@@ -328,7 +328,7 @@ export class VendorOfferController {
   @ApiNotVendor()
   @ApiResponse({
     status: 404,
-    description: 'Not a draft of this vendor',
+    description: 'Not a product of this vendor',
     type: ErrorResponseDto,
   })
   @ApiResponse({
@@ -345,7 +345,7 @@ export class VendorOfferController {
 
   @Patch('products/:id')
   @ApiOperation({
-    summary: 'Edit one draft product this vendor proposed',
+    summary: 'Edit one product this vendor created',
     description:
       'Omitted fields are kept; categoryIds, images and variants replace the whole list when sent. ' +
       'A variant left out is removed, unless it is in a cart or an order (409).',
@@ -366,7 +366,7 @@ export class VendorOfferController {
   @ApiReadOnly()
   @ApiResponse({
     status: 404,
-    description: 'Not a draft of this vendor',
+    description: 'Not a product of this vendor',
     type: ErrorResponseDto,
   })
   @ApiResponse({

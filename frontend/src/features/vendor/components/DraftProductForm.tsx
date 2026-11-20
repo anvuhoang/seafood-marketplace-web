@@ -268,8 +268,7 @@ export function DraftProductForm({
       <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
         <p className="flex gap-2 text-sm text-slate-600">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
-          Sản phẩm mới được lưu ở trạng thái chờ duyệt. Khách hàng chỉ thấy sản phẩm sau khi quản trị viên duyệt, và sau đó bạn
-          không thể tự sửa thông tin sản phẩm nữa.
+          Sản phẩm hiển thị trên sàn ngay sau khi bạn đăng. Bạn có thể quay lại chỉnh sửa thông tin sản phẩm này sau.
         </p>
         {formError && (
           <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
@@ -290,7 +289,7 @@ export function DraftProductForm({
               ) : (
                 <Save className="h-4 w-4" aria-hidden="true" />
               )}
-              {submitting ? "Đang lưu..." : mode === "create" ? "Gửi sản phẩm chờ duyệt" : "Lưu thay đổi"}
+              {submitting ? "Đang lưu..." : mode === "create" ? "Đăng sản phẩm" : "Lưu thay đổi"}
             </button>
           </div>
         )}

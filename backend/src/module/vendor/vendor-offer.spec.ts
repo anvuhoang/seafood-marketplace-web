@@ -254,7 +254,7 @@ describe('Vendor offers', () => {
           name: 'Tôm hùm bông Nha Trang',
           slug: 'tom-hum-bong-nha-trang',
           status: 'ACTIVE',
-          isOwnDraft: false,
+          isOwnProduct: false,
           imageUrl: 'https://img/1.jpg',
           categories: [{ id: 'cat-tom', name: 'Tôm' }],
         },
@@ -625,7 +625,7 @@ describe('Vendor offers', () => {
           .where,
       ).toEqual({ vendorId: VENDOR_A });
       expect(result.items).toHaveLength(1);
-      expect(result.items[0]).toMatchObject({ id: 'p1', isOwnDraft: true });
+      expect(result.items[0]).toMatchObject({ id: 'p1', isOwnProduct: true });
       expect(
         result.items[0].variants.map((v) => [v.id, v.alreadyOffered]),
       ).toEqual([

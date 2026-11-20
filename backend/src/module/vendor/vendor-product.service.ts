@@ -30,9 +30,7 @@ import {
 import { toDecimal } from './vendor-offer.service.js';
 
 export const PRODUCT_NOT_FOUND =
-  'Không tìm thấy sản phẩm nháp này trong gian hàng của bạn.';
-export const PRODUCT_PUBLISHED =
-  'Sản phẩm đã được duyệt nên không thể chỉnh sửa tại đây. Vui lòng liên hệ admin nếu cần thay đổi.';
+  'Không tìm thấy sản phẩm này trong gian hàng của bạn.';
 export const PRODUCT_INVALID_IMAGE =
   'Ảnh sản phẩm không hợp lệ. Vui lòng tải ảnh lên lại.';
 export const PRODUCT_INVALID_CATEGORY =
@@ -108,9 +106,10 @@ const isSlugTaken = (error: unknown) =>
   error.code === 'P2002';
 
 /**
- * Products a vendor proposes. They are saved as drafts (hidden from customers)
- * until an admin publishes them; after that the vendor can no longer edit them,
- * since the published product is part of the shared catalogue.
+ * Products a vendor adds to the catalogue. There is no admin approval step: a
+ * product is published as soon as it is saved (the store itself was approved at
+ * registration). The vendor who created it can keep editing it; variants already
+ * in a cart or an order cannot be removed, so other sellers' offers stay valid.
  */
 @Injectable()
 export class VendorProductService {
@@ -124,7 +123,7 @@ export class VendorProductService {
     productId: string,
   ): Promise<VendorProductDto> {
     const vendor = await findOwnVendor(this.prisma, userId);
-    return this.toDto(await this.findOwnDraft(vendor.id, productId), vendor);
+    return this.toDto(await this.findOwnProduct(vendor.id, productId), vendor);
   }
 
   /** Product, variants and optional offers are created together in one transaction. */
@@ -146,7 +145,7 @@ export class VendorProductService {
               name: dto.name,
               slug,
               description: dto.description ?? null,
-              status: 'DRAFT',
+              status: 'ACTIVE',
               createdByVendorId: vendor.id,
               categories: {
                 create: dto.categoryIds.map((categoryId) => ({ categoryId })),
@@ -181,7 +180,7 @@ export class VendorProductService {
     dto: UpdateVendorProductDto,
   ): Promise<VendorProductDto> {
     const vendor = await findWritableVendor(this.prisma, userId);
-    const current = await this.findOwnDraft(vendor.id, productId);
+    const current = await this.findOwnProduct(vendor.id, productId);
 
     if (dto.categoryIds) await this.assertActiveCategories(dto.categoryIds);
     if (dto.images) {
@@ -214,8 +213,7 @@ export class VendorProductService {
 
     await this.prisma.$transaction(async (tx) => {
       await tx.product.update({
-        // Guarded again here, in case an admin published it meanwhile (then 404).
-        where: { id: productId, createdByVendorId: vendor.id, status: 'DRAFT' },
+        where: { id: productId, createdByVendorId: vendor.id },
         data: {
           ...(dto.name !== undefined && { name: dto.name }),
           ...(dto.description !== undefined && {
@@ -275,8 +273,8 @@ export class VendorProductService {
     );
   }
 
-  /** 404 when it is not this vendor's draft; 409 once an admin has published it. */
-  private async findOwnDraft(
+  /** 404 when the product was not created by this vendor. */
+  private async findOwnProduct(
     vendorId: string,
     productId: string,
   ): Promise<DraftRow> {
@@ -285,8 +283,6 @@ export class VendorProductService {
       select: draftSelect,
     });
     if (!product) throw new NotFoundException(PRODUCT_NOT_FOUND);
-    if (product.status !== 'DRAFT')
-      throw new ConflictException(PRODUCT_PUBLISHED);
     return product;
   }
 

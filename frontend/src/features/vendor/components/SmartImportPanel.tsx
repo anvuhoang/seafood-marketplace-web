@@ -93,7 +93,7 @@ export function SmartImportPanel({ token, onApply }: SmartImportPanelProps) {
           </h2>
           <p className="mt-0.5 text-xs text-slate-600">
             Gõ hoặc nói về sản phẩm (tên, giá, đơn vị, số lượng). AI điền sẵn biểu mẫu bên dưới để bạn kiểm tra và sửa. Chưa có gì được lưu
-            cho đến khi bạn gửi sản phẩm.
+            cho đến khi bạn đăng sản phẩm.
           </p>
         </div>
       </div>

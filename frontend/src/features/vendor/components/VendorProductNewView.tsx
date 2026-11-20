@@ -99,7 +99,7 @@ export function VendorProductNewView() {
 
   const tabs: Array<{ value: Mode; label: string; description: string; icon: typeof Search }> = [
     { value: "catalog", label: "Bán sản phẩm có sẵn", description: "Chọn từ danh mục chung của sàn", icon: Search },
-    { value: "draft", label: "Đề xuất sản phẩm mới", description: "Sàn chưa có, gửi để quản trị viên duyệt", icon: PackagePlus },
+    { value: "draft", label: "Tạo sản phẩm mới", description: "Sàn chưa có, đăng mới lên sàn", icon: PackagePlus },
   ];
 
   return (

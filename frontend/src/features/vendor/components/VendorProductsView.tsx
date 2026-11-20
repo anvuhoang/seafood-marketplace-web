@@ -349,7 +349,7 @@ function EmptyState({ filtered, total, readOnly }: { filtered: boolean; total: n
           ? "Thử đổi từ khóa hoặc bộ lọc."
           : total > 0
             ? 'Chọn bộ lọc "Đã ngừng bán" để xem lại các sản phẩm này.'
-            : "Thêm sản phẩm có sẵn trong danh mục chung hoặc đề xuất sản phẩm mới."}
+            : "Thêm sản phẩm có sẵn trong danh mục chung hoặc tạo sản phẩm mới."}
       </p>
       {!filtered && !readOnly && (
         <Link
@@ -565,7 +565,7 @@ function RowActions({
         )}
         {offer.status === "ACTIVE" ? "Tạm ngưng" : "Mở bán"}
       </button>
-      {offer.product.isOwnDraft && (
+      {offer.product.isOwnProduct && (
         <Link
           href={`/vendor/products/${offer.product.id}/edit`}
           className={cn(button, "border-slate-300 text-slate-700 hover:bg-slate-50")}

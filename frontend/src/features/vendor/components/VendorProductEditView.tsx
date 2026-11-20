@@ -54,7 +54,7 @@ export function VendorProductEditView({ productId }: { productId: string }) {
   if (!accessToken || !loaded || loaded.id !== productId) {
     return (
       <>
-        <VendorPageHeader title="Sửa sản phẩm chờ duyệt" actions={back} />
+        <VendorPageHeader title="Sửa sản phẩm" actions={back} />
         <p className="flex min-h-48 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm text-slate-500" role="status">
           <Loader2 className="h-5 w-5 animate-spin text-brand motion-reduce:animate-none" aria-hidden="true" />
           Đang tải sản phẩm...
@@ -66,7 +66,7 @@ export function VendorProductEditView({ productId }: { productId: string }) {
   if ("error" in loaded) {
     return (
       <>
-        <VendorPageHeader title="Sửa sản phẩm chờ duyệt" actions={back} />
+        <VendorPageHeader title="Sửa sản phẩm" actions={back} />
         <section role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">
           <h2 className="font-bold">
             {loaded.status === 409
@@ -85,7 +85,7 @@ export function VendorProductEditView({ productId }: { productId: string }) {
   return (
     <>
       <VendorPageHeader
-        title="Sửa sản phẩm chờ duyệt"
+        title="Sửa sản phẩm"
         description={
           <>
             {product.name} ·{" "}

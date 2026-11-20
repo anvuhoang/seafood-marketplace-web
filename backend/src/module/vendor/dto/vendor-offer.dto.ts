@@ -110,11 +110,11 @@ export class VendorOfferProductDto {
   name: string;
   /** @example "tom-hum-bong-nha-trang" */
   slug: string;
-  /** DRAFT means it is waiting for an admin to publish it. */
+  /** Vendor-created products are ACTIVE as soon as they are saved. */
   @ApiProperty({ enum: PRODUCT_STATUSES, example: 'ACTIVE' })
   status: VendorProductStatus;
-  /** True for a draft this vendor proposed; only those can be edited here. @example false */
-  isOwnDraft: boolean;
+  /** True for a product this vendor created; only those can be edited here. @example false */
+  isOwnProduct: boolean;
   /** Primary image, or the first one. @example "https://res.cloudinary.com/demo/image/upload/v1/tom-hum.jpg" */
   imageUrl: string | null;
   categories: VendorCategoryRefDto[];
@@ -187,7 +187,7 @@ export class VendorCatalogProductDto {
   @ApiProperty({ enum: ['ACTIVE', 'DRAFT'], example: 'ACTIVE' })
   status: VendorProductStatus;
   /** @example false */
-  isOwnDraft: boolean;
+  isOwnProduct: boolean;
   /** @example "https://res.cloudinary.com/demo/image/upload/v1/tom-hum.jpg" */
   imageUrl: string | null;
   categories: VendorCategoryRefDto[];
