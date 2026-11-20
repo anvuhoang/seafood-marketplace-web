@@ -1,0 +1,648 @@
+{
+ "test": {
+  "data/test-00000-of-00014.parquet": {
+   "CaoBang": 35,
+   "LangSon": 33,
+   "QuangNinh": 34,
+   "HaiPhong": 33,
+   "ThaiBinh": 10
+  },
+  "data/test-00001-of-00014.parquet": {
+   "ThaiBinh": 23,
+   "NamDinh": 31,
+   "PhuTho": 32,
+   "ThaiNguyen": 31,
+   "YenBai": 28
+  },
+  "data/test-00002-of-00014.parquet": {
+   "YenBai": 5,
+   "TuyenQuang": 34,
+   "HaGiang": 33,
+   "LaoCai": 38,
+   "LaiChau": 27,
+   "SonLa": 8
+  },
+  "data/test-00003-of-00014.parquet": {
+   "SonLa": 27,
+   "DienBien": 28,
+   "HoaBinh": 32,
+   "HaNoi": 29,
+   "HaiDuong": 29
+  },
+  "data/test-00004-of-00014.parquet": {
+   "HaiDuong": 1,
+   "NinhBinh": 26,
+   "ThanhHoa": 29,
+   "NgheAn": 43,
+   "HaTinh": 33,
+   "DaNang": 13
+  },
+  "data/test-00005-of-00014.parquet": {
+   "DaNang": 20,
+   "DakLak": 34,
+   "DakNong": 31,
+   "LamDong": 33,
+   "HoChiMinh": 27
+  },
+  "data/test-00006-of-00014.parquet": {
+   "HoChiMinh": 7,
+   "DongNai": 31,
+   "BinhDuong": 33,
+   "LongAn": 38,
+   "TienGiang": 33,
+   "VinhLong": 3
+  },
+  "data/test-00007-of-00014.parquet": {
+   "VinhLong": 27,
+   "CanTho": 28,
+   "DongThap": 28,
+   "AnGiang": 31,
+   "KienGiang": 31
+  },
+  "data/test-00008-of-00014.parquet": {
+   "KienGiang": 1,
+   "CaMau": 37,
+   "TayNinh": 34,
+   "BenTre": 31,
+   "BaRiaVungTau": 31,
+   "QuangBinh": 11
+  },
+  "data/test-00009-of-00014.parquet": {
+   "QuangBinh": 25,
+   "QuangTri": 30,
+   "ThuaThienHue": 32,
+   "QuangNgai": 38,
+   "BinhDinh": 20
+  },
+  "data/test-00010-of-00014.parquet": {
+   "BinhDinh": 8,
+   "PhuYen": 32,
+   "KhanhHoa": 30,
+   "GiaLai": 33,
+   "KonTum": 31,
+   "SocTrang": 10
+  },
+  "data/test-00011-of-00014.parquet": {
+   "SocTrang": 21,
+   "TraVinh": 40,
+   "NinhThuan": 34,
+   "BinhThuan": 33,
+   "VinhPhuc": 16
+  },
+  "data/test-00012-of-00014.parquet": {
+   "VinhPhuc": 12,
+   "HungYen": 30,
+   "HaNam": 27,
+   "QuangNam": 30,
+   "BinhPhuoc": 35,
+   "BacLieu": 10
+  },
+  "data/test-00013-of-00014.parquet": {
+   "BacLieu": 23,
+   "HauGiang": 30,
+   "BacKan": 34,
+   "BacGiang": 28,
+   "BacNinh": 29
+  }
+ },
+ "train": {
+  "data/train-00000-of-00103.parquet": {
+   "CaoBang": 146
+  },
+  "data/train-00001-of-00103.parquet": {
+   "CaoBang": 141,
+   "LangSon": 5
+  },
+  "data/train-00002-of-00103.parquet": {
+   "LangSon": 146
+  },
+  "data/train-00003-of-00103.parquet": {
+   "LangSon": 89,
+   "QuangNinh": 57
+  },
+  "data/train-00004-of-00103.parquet": {
+   "QuangNinh": 146
+  },
+  "data/train-00005-of-00103.parquet": {
+   "QuangNinh": 46,
+   "HaiPhong": 100
+  },
+  "data/train-00006-of-00103.parquet": {
+   "HaiPhong": 141,
+   "ThaiBinh": 5
+  },
+  "data/train-00007-of-00103.parquet": {
+   "ThaiBinh": 146
+  },
+  "data/train-00008-of-00103.parquet": {
+   "ThaiBinh": 114,
+   "NamDinh": 32
+  },
+  "data/train-00009-of-00103.parquet": {
+   "NamDinh": 146
+  },
+  "data/train-00010-of-00103.parquet": {
+   "NamDinh": 62,
+   "PhuTho": 84
+  },
+  "data/train-00011-of-00103.parquet": {
+   "PhuTho": 146
+  },
+  "data/train-00012-of-00103.parquet": {
+   "PhuTho": 18,
+   "ThaiNguyen": 128
+  },
+  "data/train-00013-of-00103.parquet": {
+   "ThaiNguyen": 123,
+   "YenBai": 23
+  },
+  "data/train-00014-of-00103.parquet": {
+   "YenBai": 146
+  },
+  "data/train-00015-of-00103.parquet": {
+   "YenBai": 63,
+   "TuyenQuang": 83
+  },
+  "data/train-00016-of-00103.parquet": {
+   "TuyenQuang": 141,
+   "HaGiang": 5
+  },
+  "data/train-00017-of-00103.parquet": {
+   "HaGiang": 146
+  },
+  "data/train-00018-of-00103.parquet": {
+   "HaGiang": 109,
+   "LaoCai": 37
+  },
+  "data/train-00019-of-00103.parquet": {
+   "LaoCai": 146
+  },
+  "data/train-00020-of-00103.parquet": {
+   "LaoCai": 58,
+   "LaiChau": 88
+  },
+  "data/train-00021-of-00103.parquet": {
+   "LaiChau": 146
+  },
+  "data/train-00022-of-00103.parquet": {
+   "LaiChau": 1,
+   "SonLa": 145
+  },
+  "data/train-00023-of-00103.parquet": {
+   "SonLa": 96,
+   "DienBien": 50
+  },
+  "data/train-00024-of-00103.parquet": {
+   "DienBien": 146
+  },
+  "data/train-00025-of-00103.parquet": {
+   "DienBien": 29,
+   "HoaBinh": 117
+  },
+  "data/train-00026-of-00103.parquet": {
+   "HoaBinh": 103,
+   "HaNoi": 43
+  },
+  "data/train-00027-of-00103.parquet": {
+   "HaNoi": 146
+  },
+  "data/train-00028-of-00103.parquet": {
+   "HaNoi": 59,
+   "HaiDuong": 87
+  },
+  "data/train-00029-of-00103.parquet": {
+   "HaiDuong": 144,
+   "NinhBinh": 2
+  },
+  "data/train-00030-of-00103.parquet": {
+   "NinhBinh": 146
+  },
+  "data/train-00031-of-00103.parquet": {
+   "NinhBinh": 70,
+   "ThanhHoa": 76
+  },
+  "data/train-00032-of-00103.parquet": {
+   "ThanhHoa": 146
+  },
+  "data/train-00033-of-00103.parquet": {
+   "ThanhHoa": 14,
+   "NgheAn": 132
+  },
+  "data/train-00034-of-00103.parquet": {
+   "NgheAn": 146
+  },
+  "data/train-00035-of-00103.parquet": {
+   "NgheAn": 2,
+   "HaTinh": 144
+  },
+  "data/train-00036-of-00103.parquet": {
+   "HaTinh": 94,
+   "DaNang": 52
+  },
+  "data/train-00037-of-00103.parquet": {
+   "DaNang": 146
+  },
+  "data/train-00038-of-00103.parquet": {
+   "DaNang": 73,
+   "DakLak": 73
+  },
+  "data/train-00039-of-00103.parquet": {
+   "DakLak": 146
+  },
+  "data/train-00040-of-00103.parquet": {
+   "DakLak": 25,
+   "DakNong": 121
+  },
+  "data/train-00041-of-00103.parquet": {
+   "DakNong": 123,
+   "LamDong": 23
+  },
+  "data/train-00042-of-00103.parquet": {
+   "LamDong": 146
+  },
+  "data/train-00043-of-00103.parquet": {
+   "LamDong": 70,
+   "HoChiMinh": 76
+  },
+  "data/train-00044-of-00103.parquet": {
+   "HoChiMinh": 146
+  },
+  "data/train-00045-of-00103.parquet": {
+   "HoChiMinh": 24,
+   "DongNai": 122
+  },
+  "data/train-00046-of-00103.parquet": {
+   "DongNai": 96,
+   "BinhDuong": 50
+  },
+  "data/train-00047-of-00103.parquet": {
+   "BinhDuong": 146
+  },
+  "data/train-00048-of-00103.parquet": {
+   "BinhDuong": 53,
+   "LongAn": 93
+  },
+  "data/train-00049-of-00103.parquet": {
+   "LongAn": 146
+  },
+  "data/train-00050-of-00103.parquet": {
+   "LongAn": 4,
+   "TienGiang": 142
+  },
+  "data/train-00051-of-00103.parquet": {
+   "TienGiang": 86,
+   "VinhLong": 60
+  },
+  "data/train-00052-of-00103.parquet": {
+   "VinhLong": 146
+  },
+  "data/train-00053-of-00103.parquet": {
+   "VinhLong": 20,
+   "CanTho": 126
+  },
+  "data/train-00054-of-00103.parquet": {
+   "CanTho": 83,
+   "DongThap": 63
+  },
+  "data/train-00055-of-00103.parquet": {
+   "DongThap": 146
+  },
+  "data/train-00056-of-00103.parquet": {
+   "DongThap": 8,
+   "AnGiang": 138
+  },
+  "data/train-00057-of-00103.parquet": {
+   "AnGiang": 82,
+   "KienGiang": 64
+  },
+  "data/train-00058-of-00103.parquet": {
+   "KienGiang": 146
+  },
+  "data/train-00059-of-00103.parquet": {
+   "KienGiang": 10,
+   "CaMau": 136
+  },
+  "data/train-00060-of-00103.parquet": {
+   "CaMau": 100,
+   "TayNinh": 46
+  },
+  "data/train-00061-of-00103.parquet": {
+   "TayNinh": 146
+  },
+  "data/train-00062-of-00103.parquet": {
+   "TayNinh": 45,
+   "BenTre": 101
+  },
+  "data/train-00063-of-00103.parquet": {
+   "BenTre": 130,
+   "BaRiaVungTau": 16
+  },
+  "data/train-00064-of-00103.parquet": {
+   "BaRiaVungTau": 146
+  },
+  "data/train-00065-of-00103.parquet": {
+   "BaRiaVungTau": 93,
+   "QuangBinh": 53
+  },
+  "data/train-00066-of-00103.parquet": {
+   "QuangBinh": 146
+  },
+  "data/train-00067-of-00103.parquet": {
+   "QuangBinh": 81,
+   "QuangTri": 65
+  },
+  "data/train-00068-of-00103.parquet": {
+   "QuangTri": 146
+  },
+  "data/train-00069-of-00103.parquet": {
+   "QuangTri": 22,
+   "ThuaThienHue": 124
+  },
+  "data/train-00070-of-00103.parquet": {
+   "ThuaThienHue": 116,
+   "QuangNgai": 30
+  },
+  "data/train-00071-of-00103.parquet": {
+   "QuangNgai": 146
+  },
+  "data/train-00072-of-00103.parquet": {
+   "QuangNgai": 84,
+   "BinhDinh": 62
+  },
+  "data/train-00073-of-00103.parquet": {
+   "BinhDinh": 146
+  },
+  "data/train-00074-of-00103.parquet": {
+   "BinhDinh": 33,
+   "PhuYen": 113
+  },
+  "data/train-00075-of-00103.parquet": {
+   "PhuYen": 129,
+   "KhanhHoa": 17
+  },
+  "data/train-00076-of-00103.parquet": {
+   "KhanhHoa": 146
+  },
+  "data/train-00077-of-00103.parquet": {
+   "KhanhHoa": 62,
+   "GiaLai": 84
+  },
+  "data/train-00078-of-00103.parquet": {
+   "GiaLai": 146
+  },
+  "data/train-00079-of-00103.parquet": {
+   "GiaLai": 22,
+   "KonTum": 124
+  },
+  "data/train-00080-of-00103.parquet": {
+   "KonTum": 118,
+   "SocTrang": 28
+  },
+  "data/train-00081-of-00103.parquet": {
+   "SocTrang": 146
+  },
+  "data/train-00082-of-00103.parquet": {
+   "SocTrang": 42,
+   "TraVinh": 104
+  },
+  "data/train-00083-of-00103.parquet": {
+   "TraVinh": 121,
+   "NinhThuan": 25
+  },
+  "data/train-00084-of-00103.parquet": {
+   "NinhThuan": 146
+  },
+  "data/train-00085-of-00103.parquet": {
+   "NinhThuan": 75,
+   "BinhThuan": 71
+  },
+  "data/train-00086-of-00103.parquet": {
+   "BinhThuan": 146
+  },
+  "data/train-00087-of-00103.parquet": {
+   "BinhThuan": 45,
+   "VinhPhuc": 101
+  },
+  "data/train-00088-of-00103.parquet": {
+   "VinhPhuc": 114,
+   "HungYen": 31
+  },
+  "data/train-00089-of-00103.parquet": {
+   "HungYen": 145
+  },
+  "data/train-00090-of-00103.parquet": {
+   "HungYen": 45,
+   "HaNam": 100
+  },
+  "data/train-00091-of-00103.parquet": {
+   "HaNam": 114,
+   "QuangNam": 31
+  },
+  "data/train-00092-of-00103.parquet": {
+   "QuangNam": 145
+  },
+  "data/train-00093-of-00103.parquet": {
+   "QuangNam": 54,
+   "BinhPhuoc": 91
+  },
+  "data/train-00094-of-00103.parquet": {
+   "BinhPhuoc": 145
+  },
+  "data/train-00095-of-00103.parquet": {
+   "BinhPhuoc": 24,
+   "BacLieu": 121
+  },
+  "data/train-00096-of-00103.parquet": {
+   "BacLieu": 103,
+   "HauGiang": 42
+  },
+  "data/train-00097-of-00103.parquet": {
+   "HauGiang": 145
+  },
+  "data/train-00098-of-00103.parquet": {
+   "HauGiang": 58,
+   "BacKan": 87
+  },
+  "data/train-00099-of-00103.parquet": {
+   "BacKan": 142,
+   "BacGiang": 3
+  },
+  "data/train-00100-of-00103.parquet": {
+   "BacGiang": 145
+  },
+  "data/train-00101-of-00103.parquet": {
+   "BacGiang": 69,
+   "BacNinh": 76
+  },
+  "data/train-00102-of-00103.parquet": {
+   "BacNinh": 145
+  }
+ },
+ "valid": {
+  "data/valid-00000-of-00013.parquet": {
+   "CaoBang": 35,
+   "LangSon": 31,
+   "QuangNinh": 33,
+   "HaiPhong": 32,
+   "ThaiBinh": 16
+  },
+  "data/valid-00001-of-00013.parquet": {
+   "ThaiBinh": 15,
+   "NamDinh": 29,
+   "PhuTho": 33,
+   "ThaiNguyen": 32,
+   "YenBai": 24,
+   "TuyenQuang": 14
+  },
+  "data/valid-00002-of-00013.parquet": {
+   "TuyenQuang": 14,
+   "HaGiang": 32,
+   "LaoCai": 34,
+   "LaiChau": 33,
+   "SonLa": 32,
+   "DienBien": 1
+  },
+  "data/valid-00003-of-00013.parquet": {
+   "DienBien": 29,
+   "HoaBinh": 29,
+   "HaNoi": 39,
+   "HaiDuong": 29,
+   "NinhBinh": 20
+  },
+  "data/valid-00004-of-00013.parquet": {
+   "NinhBinh": 4,
+   "ThanhHoa": 35,
+   "NgheAn": 40,
+   "HaTinh": 34,
+   "DaNang": 33
+  },
+  "data/valid-00005-of-00013.parquet": {
+   "DakLak": 28,
+   "DakNong": 29,
+   "LamDong": 31,
+   "HoChiMinh": 38,
+   "DongNai": 20
+  },
+  "data/valid-00006-of-00013.parquet": {
+   "DongNai": 6,
+   "BinhDuong": 32,
+   "LongAn": 27,
+   "TienGiang": 28,
+   "VinhLong": 28,
+   "CanTho": 25
+  },
+  "data/valid-00007-of-00013.parquet": {
+   "CanTho": 1,
+   "DongThap": 28,
+   "AnGiang": 34,
+   "KienGiang": 26,
+   "CaMau": 29,
+   "TayNinh": 28
+  },
+  "data/valid-00008-of-00013.parquet": {
+   "TayNinh": 3,
+   "BenTre": 27,
+   "BaRiaVungTau": 33,
+   "QuangBinh": 29,
+   "QuangTri": 29,
+   "ThuaThienHue": 25
+  },
+  "data/valid-00009-of-00013.parquet": {
+   "ThuaThienHue": 6,
+   "QuangNgai": 32,
+   "BinhDinh": 38,
+   "PhuYen": 31,
+   "KhanhHoa": 26,
+   "GiaLai": 13
+  },
+  "data/valid-00010-of-00013.parquet": {
+   "GiaLai": 16,
+   "KonTum": 32,
+   "SocTrang": 26,
+   "TraVinh": 28,
+   "NinhThuan": 34,
+   "BinhThuan": 10
+  },
+  "data/valid-00011-of-00013.parquet": {
+   "BinhThuan": 20,
+   "VinhPhuc": 23,
+   "HungYen": 26,
+   "HaNam": 31,
+   "QuangNam": 31,
+   "BinhPhuoc": 15
+  },
+  "data/valid-00012-of-00013.parquet": {
+   "BinhPhuoc": 9,
+   "BacLieu": 21,
+   "HauGiang": 34,
+   "BacKan": 28,
+   "BacGiang": 27,
+   "BacNinh": 27
+  }
+ },
+ "regions": {
+  "AnGiang": "South",
+  "BaRiaVungTau": "South",
+  "BacGiang": "North",
+  "BacKan": "North",
+  "BacLieu": "South",
+  "BacNinh": "North",
+  "BenTre": "South",
+  "BinhDinh": "Central",
+  "BinhDuong": "South",
+  "BinhPhuoc": "South",
+  "BinhThuan": "Central",
+  "CaMau": "South",
+  "CanTho": "South",
+  "CaoBang": "North",
+  "DaNang": "Central",
+  "DakLak": "Central",
+  "DakNong": "Central",
+  "DienBien": "North",
+  "DongNai": "South",
+  "DongThap": "South",
+  "GiaLai": "Central",
+  "HaGiang": "North",
+  "HaNam": "North",
+  "HaNoi": "North",
+  "HaTinh": "Central",
+  "HaiDuong": "North",
+  "HaiPhong": "North",
+  "HauGiang": "South",
+  "HoChiMinh": "South",
+  "HoaBinh": "North",
+  "HungYen": "North",
+  "KhanhHoa": "Central",
+  "KienGiang": "South",
+  "KonTum": "Central",
+  "LaiChau": "North",
+  "LamDong": "Central",
+  "LangSon": "North",
+  "LaoCai": "North",
+  "LongAn": "South",
+  "NamDinh": "North",
+  "NgheAn": "Central",
+  "NinhBinh": "North",
+  "NinhThuan": "Central",
+  "PhuTho": "North",
+  "PhuYen": "Central",
+  "QuangBinh": "Central",
+  "QuangNam": "Central",
+  "QuangNgai": "Central",
+  "QuangNinh": "North",
+  "QuangTri": "Central",
+  "SocTrang": "South",
+  "SonLa": "North",
+  "TayNinh": "South",
+  "ThaiBinh": "North",
+  "ThaiNguyen": "North",
+  "ThanhHoa": "Central",
+  "ThuaThienHue": "Central",
+  "TienGiang": "South",
+  "TraVinh": "South",
+  "TuyenQuang": "North",
+  "VinhLong": "South",
+  "VinhPhuc": "North",
+  "YenBai": "North"
+ }
+}
