@@ -1,12 +1,15 @@
-# speech-service
+# speech
 
-A small Python (FastAPI) service that turns a short voice recording into text with a
+The speech-recognition module. It has two parts: the **service** in this folder (what the
+web app calls) and **`finetune/`** (training and measuring a better model on Colab).
+
+The service is a small Python (FastAPI) service that turns a short voice recording into text with a
 Whisper model **we host**. The NestJS backend calls it for Smart Import when
 `SMART_IMPORT_SPEECH_PROVIDER=local`; if it is down or too slow, the backend falls back
 to Groq, so the feature never dead-ends.
 
 ```
-browser  ->  NestJS /vendors/me/smart-import/transcribe  ->  speech-service /transcribe  ->  Whisper
+browser  ->  NestJS /vendors/me/smart-import/transcribe  ->  speech service /transcribe  ->  Whisper
                                       \__ on failure __>  Groq Whisper
 ```
 
@@ -17,13 +20,13 @@ Only the backend should reach it: bind it to localhost and set a shared token.
 Python 3.11 or 3.12 (not 3.14), in its own virtual environment:
 
 ```bash
-cd ai-service/speech-service
+cd ai-service/speech
 python -m venv .venv && . .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install torch                                   # pick the build for your machine: https://pytorch.org
 pip install -r requirements.txt
 
 export AI_SERVICE_TOKEN=change-me                   # Windows PowerShell: $env:AI_SERVICE_TOKEN="change-me"
-export ASR_MODEL=openai/whisper-small               # or a folder saved by asr-finetune/finetune.py
+export ASR_MODEL=openai/whisper-small               # or a folder saved by finetune/finetune.py
 uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
@@ -57,9 +60,9 @@ The recording is decoded in memory and dropped. Nothing is written to disk and t
 
 ## Serving the fine-tuned model
 
-Train with `../asr-finetune` (Colab), download the saved folder, and start with
+Train with [`finetune/`](finetune/README.md) (Colab), download the saved folder, and start with
 `ASR_MODEL=/path/to/whisper-small-vimd`. Nothing else changes. Only do this if the
-numbers from `asr-finetune` show a clear gain over Groq, and check the licence of the
+numbers from `finetune` show a clear gain over Groq, and check the licence of the
 training data (ViMD is CC BY-NC-ND 4.0, non-commercial).
 
 ## Tests

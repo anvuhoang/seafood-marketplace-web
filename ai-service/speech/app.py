@@ -20,7 +20,7 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from audio import MAX_BYTES, AudioError, decode_audio
 from engine import Engine
 
-log = logging.getLogger("speech-service")
+log = logging.getLogger("speech")
 
 
 def create_app(engine: Engine, token: str | None = None) -> FastAPI:

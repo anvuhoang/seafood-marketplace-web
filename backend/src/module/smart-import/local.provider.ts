@@ -13,7 +13,7 @@ export interface LocalSpeechSettings {
 }
 
 /**
- * Speech recognition by our own Python service (`ai-service/speech-service`).
+ * Speech recognition by our own Python service (`ai-service/speech`).
  * The service runs a Whisper model we host, for example one fine-tuned on
  * regional speech. Only the recording is sent to it, never a name or account.
  */

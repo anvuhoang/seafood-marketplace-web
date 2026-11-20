@@ -1,6 +1,6 @@
 """The speech model. Whisper, loaded on first use from a Hub id or a folder.
 
-Set ASR_MODEL to a folder saved by `ai-service/asr-finetune/finetune.py` to serve the
+Set ASR_MODEL to a folder saved by `ai-service/speech/finetune/finetune.py` to serve the
 fine-tuned model; the default is the stock openai/whisper-small.
 """
 
