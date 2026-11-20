@@ -15,15 +15,25 @@ import { VendorOrderService } from './vendor-order.service.js';
 import { VendorStatsController } from './vendor-stats.controller.js';
 import { VendorStatsService } from './vendor-stats.service.js';
 import { OrderModule } from '../order/order.module.js';
+import { SmartImportModule } from '../smart-import/smart-import.module.js';
+import { SmartImportController } from '../smart-import/smart-import.controller.js';
 
 @Module({
-  imports: [PrismaModule, AuthModule, CloudinaryModule, AdministrativeUnitModule, OrderModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    CloudinaryModule,
+    AdministrativeUnitModule,
+    OrderModule,
+    SmartImportModule,
+  ],
   // Registration and the /vendors/me/... routes are listed first so they are matched before /vendors/:slug/...
   controllers: [
     VendorRegistrationController,
     VendorOfferController,
     VendorOrderController,
     VendorStatsController,
+    SmartImportController,
     VendorController,
   ],
   providers: [
