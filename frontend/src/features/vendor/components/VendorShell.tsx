@@ -10,15 +10,18 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
+  Moon,
   Package,
   ShoppingBag,
   Store,
+  Sun,
   UserRound,
   X,
 } from "lucide-react";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { SUPPORT_HOTLINE } from "@/lib/constants/contact";
+import { useConsoleTheme } from "@/lib/use-console-theme";
 import { cn } from "@/lib/utils";
 import { STORE_STATUS_BADGES } from "../constants/store-status";
 import { VendorDashboardProvider, useVendorDashboard } from "../context/VendorDashboardContext";
@@ -51,6 +54,8 @@ function VendorShellFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
+  const { theme, toggle } = useConsoleTheme();
+  const dark = theme === "dark";
   const [menuOpen, setMenuOpen] = useState(false);
   // Opening another page closes the mobile menu.
   const [menuPath, setMenuPath] = useState(pathname);
@@ -65,8 +70,8 @@ function VendorShellFrame({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 lg:flex">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-brand text-white lg:flex">
+    <div className={cn(dark && "console-dark", "min-h-screen bg-slate-50 text-slate-800 lg:flex")}>
+      <aside className="console-chrome sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-brand text-white lg:flex">
         <Brand />
         <nav className="flex-1 overflow-y-auto px-3 py-5" aria-label="Điều hướng kênh vựa">
           <NavLinks pathname={pathname} />
@@ -90,11 +95,11 @@ function VendorShellFrame({ children }: { children: React.ReactNode }) {
             >
               {menuOpen ? <X className="h-4.5 w-4.5" /> : <Menu className="h-4.5 w-4.5" />}
             </button>
-            <StoreBar />
+            <StoreBar dark={dark} onToggleTheme={toggle} />
           </div>
 
           {menuOpen && (
-            <div id="vendor-mobile-menu" className="animate-fade-in space-y-3 bg-brand px-3 py-4 text-white lg:hidden">
+            <div id="vendor-mobile-menu" className="animate-fade-in console-chrome space-y-3 bg-brand px-3 py-4 text-white lg:hidden">
               <nav aria-label="Điều hướng kênh vựa">
                 <NavLinks pathname={pathname} />
               </nav>
@@ -200,7 +205,7 @@ function SignOutButton({ onClick }: { onClick: () => void }) {
 }
 
 /** Store name, area and status from GET /vendors/me/store, plus the signed-in user. */
-function StoreBar() {
+function StoreBar({ dark, onToggleTheme }: { dark: boolean; onToggleTheme: () => void }) {
   const { user } = useAuth();
   const { state } = useMyStore();
   const store = state.kind === "ready" ? state.store : null;
@@ -228,6 +233,16 @@ function StoreBar() {
       </div>
 
       <div className="flex shrink-0 items-center gap-3">
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          aria-pressed={dark}
+          aria-label={dark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+          title={dark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+        >
+          {dark ? <Sun className="h-4.5 w-4.5" aria-hidden /> : <Moon className="h-4.5 w-4.5" aria-hidden />}
+        </button>
         {store && (
           <Link
             href={`/vendor/${encodeURIComponent(store.slug)}`}
