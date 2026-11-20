@@ -4,6 +4,7 @@ import {
   AiProviderError,
   type DraftExtractor,
   type ExtractionContext,
+  type SpeechResult,
   type SpeechToText,
 } from './smart-import.types.js';
 
@@ -73,7 +74,7 @@ export class GroqProvider implements SpeechToText, DraftExtractor {
     audio: Buffer,
     filename: string,
     mimeType: string,
-  ): Promise<string> {
+  ): Promise<SpeechResult> {
     const settings = this.settings();
     const form = new FormData();
     form.append('file', new Blob([new Uint8Array(audio)], { type: mimeType }), filename);
@@ -88,7 +89,7 @@ export class GroqProvider implements SpeechToText, DraftExtractor {
     if (typeof text !== 'string' || text.trim() === '') {
       throw new AiProviderError('bad_response', 'Empty transcript.');
     }
-    return text.trim();
+    return { text: text.trim(), engine: 'groq' };
   }
 
   async extract(text: string, context: ExtractionContext): Promise<unknown> {

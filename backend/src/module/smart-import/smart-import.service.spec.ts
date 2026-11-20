@@ -152,12 +152,15 @@ describe('createDraft', () => {
 
 describe('transcribe', () => {
   it('sends the detected file name and type to the speech service', async () => {
-    const transcribe = vi.fn().mockResolvedValue('tôm sú ba trăm rưỡi');
+    const transcribe = vi
+      .fn()
+      .mockResolvedValue({ text: 'tôm sú ba trăm rưỡi', engine: 'groq' });
     const { service } = build({ transcribe });
 
-    await expect(service.transcribe('user-1', { buffer: WEBM })).resolves.toBe(
-      'tôm sú ba trăm rưỡi',
-    );
+    await expect(service.transcribe('user-1', { buffer: WEBM })).resolves.toEqual({
+      text: 'tôm sú ba trăm rưỡi',
+      engine: 'groq',
+    });
     expect(transcribe).toHaveBeenCalledWith(WEBM, 'recording.webm', 'audio/webm');
   });
 

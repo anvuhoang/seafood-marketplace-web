@@ -20,6 +20,7 @@ import {
   SPEECH_TO_TEXT,
   type DraftExtractor,
   type ExtractionContext,
+  type SpeechResult,
   type SpeechToText,
 } from './smart-import.types.js';
 
@@ -77,7 +78,7 @@ export class SmartImportService {
   async transcribe(
     userId: string,
     file: { buffer?: Buffer } | undefined,
-  ): Promise<string> {
+  ): Promise<SpeechResult> {
     await findWritableVendor(this.prisma, userId);
     this.assertEnabled();
     const audio = validateAudio(file);
