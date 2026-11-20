@@ -1,160 +1,283 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { CartItem } from "@/features/product/types/product.types";
-
-interface AddToCartParams {
-  productId: string;
-  productName: string;
-  productImage: string;
-  price: number;
-  quantity: number;
-  unit: string;
-  preparationOption: string;
-  vendorName: string;
-  availableStock: number;
-  isDiscontinued?: boolean;
-}
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { ApiError } from "@/features/auth/api/auth.api";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { CartToast, type CartToastMessage } from "../components/CartToast";
+import { addCartItem, clearServerCart, getCart, mergeCart, quoteCart, removeCartItem, updateCartItem } from "../api/cart.api";
+import {
+  EMPTY_CART,
+  type CartActionResult,
+  type CartItemView,
+  type CartLine,
+  type CartView,
+  type MergeResult,
+  type QuoteView,
+} from "../types/cart.types";
+import { cleanLines, clearGuestLines, readGuestLines, roundQuantity, writeGuestLines } from "../utils/guest-cart";
 
 interface CartContextType {
-  items: CartItem[];
+  items: CartItemView[];
+  /** Number of lines (different offers), as shown on the header badge. */
   itemCount: number;
+  /** Total in VND of the lines that can be bought, worked out by the server. */
   totalPrice: number;
-  addToCart: (params: AddToCartParams) => { success: boolean; message: string };
-  removeFromCart: (itemId: string) => void;
-  clearCart: () => void;
-  toastMessage: string | null;
-  clearToast: () => void;
+  /** A line cannot be bought as it is (out of stock, withdrawn...); the cart page says which. */
+  hasProblems: boolean;
+  isSignedIn: boolean;
+  /** True until the cart has been read (from the server, or priced for a guest). */
+  isLoading: boolean;
+  /** The cart could not be read; the page offers a retry instead of showing an empty cart. */
+  loadError: string | null;
+  /** A change is being sent; the page disables the controls meanwhile. */
+  isBusy: boolean;
+  /** Adds to the quantity already in the cart. Never reports success for an offer that cannot be bought. */
+  addToCart: (line: CartLine) => Promise<CartActionResult>;
+  /** Sets (does not add) the quantity of a line. */
+  updateQuantity: (item: CartItemView, quantity: number) => Promise<CartActionResult>;
+  removeItem: (item: CartItemView) => Promise<CartActionResult>;
+  clearCart: () => Promise<CartActionResult>;
+  refresh: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const GUEST = "guest";
+const CONNECTION_ERROR = "Không thể kết nối tới máy chủ. Vui lòng thử lại.";
+
+const errorMessage = (error: unknown) => (error instanceof ApiError ? error.message : CONNECTION_ERROR);
+
 /**
- * Id of a demo item older builds put in every new cart. Browsers that saved
- * it to local storage still have it, so it is dropped when the cart loads.
+ * The customer's cart.
+ *
+ * Signed in: it lives on the server; every change is an API call with the token, and what comes
+ * back (prices, stock, totals) is what the screen shows. Guest: only offer ids and quantities are
+ * kept in the browser, and the server prices them each time (`POST /cart/quote`), so nothing the
+ * browser stores is trusted. After signing in, the browser cart is merged into the account's cart.
  */
-const LEGACY_DEMO_ITEM_ID = "cart-item-initial";
-
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  // The cart starts empty; saved items are restored after mount.
-  const [items, setItems] = useState<CartItem[]>([]);
+  const { accessToken, isAuthenticated, isLoading: authLoading } = useAuth();
+  const token = isAuthenticated ? accessToken : null;
+  // The cart on screen belongs to this key; a cart read for another key is never shown.
+  const key = token ?? GUEST;
 
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState<{ key: string; cart: CartView } | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isBusy, setIsBusy] = useState(false);
+  const [toast, setToast] = useState<CartToastMessage | null>(null);
+  const clearToast = useCallback(() => setToast(null), []);
+  const [reloads, setReloads] = useState(0);
+
+  const keyRef = useRef(key);
+  useEffect(() => {
+    keyRef.current = key;
+  }, [key]);
+  // One merge per sign-in, even when React runs the effect twice in development.
+  const merging = useRef<{ token: string; promise: Promise<MergeResult> } | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("haisan_cart");
-      if (stored) {
-        const parsed: unknown = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          const restored = (parsed as CartItem[]).filter(
-            (item) => item && item.id !== LEGACY_DEMO_ITEM_ID,
-          );
-          if (restored.length !== parsed.length) {
-            localStorage.setItem("haisan_cart", JSON.stringify(restored));
+    if (authLoading) return;
+    let cancelled = false;
+    const show = (cart: CartView) => {
+      if (cancelled) return;
+      setLoaded({ key, cart });
+      setLoadError(null);
+    };
+
+    async function load() {
+      try {
+        if (token) {
+          const lines = readGuestLines();
+          if (lines.length > 0) {
+            if (merging.current?.token !== token) merging.current = { token, promise: mergeCart(token, lines) };
+            try {
+              const result = await merging.current.promise;
+              clearGuestLines();
+              if (result.notices.length > 0) setToast({ message: result.notices.join(" "), kind: "info" });
+              show(result.cart);
+              return;
+            } catch {
+              // The guest lines stay in the browser and are merged next time; show the account's cart now.
+              merging.current = null;
+            }
           }
-          // Defer update to avoid synchronous cascading renders during mount
-          setTimeout(() => {
-            setItems(restored);
-          }, 0);
+          show(await getCart(token));
+          return;
         }
+
+        merging.current = null;
+        const lines = readGuestLines();
+        if (lines.length === 0) return show(EMPTY_CART);
+        show(withoutUnknown(await quoteCart(lines), lines));
+      } catch (error) {
+        if (cancelled) return;
+        setLoaded({ key, cart: EMPTY_CART });
+        setLoadError(errorMessage(error));
       }
-    } catch {
-      // Ignore local storage parse errors in SSR
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, key, authLoading, reloads]);
+
+  const cart = loaded?.key === key ? loaded.cart : EMPTY_CART;
+  const isLoading = authLoading || loaded?.key !== key;
+
+  /** Runs a change and turns its outcome into a message for the toast and the caller. */
+  const run = useCallback(async (change: () => Promise<CartActionResult>): Promise<CartActionResult> => {
+    setIsBusy(true);
+    try {
+      const result = await change();
+      setToast({ message: result.message, kind: "success" });
+      return result;
+    } catch (error) {
+      const result = { success: false, message: errorMessage(error) };
+      setToast({ message: result.message, kind: "error" });
+      return result;
+    } finally {
+      setIsBusy(false);
     }
   }, []);
 
-  const saveToStorage = (updated: CartItem[]) => {
-    setItems(updated);
-    try {
-      localStorage.setItem("haisan_cart", JSON.stringify(updated));
-    } catch {
-      // Ignore local storage write errors
-    }
-  };
+  /** Shows the new cart, unless the user signed in or out while the request was running. */
+  const commit = useCallback((forKey: string, next: CartView) => {
+    if (keyRef.current === forKey) setLoaded({ key: forKey, cart: next });
+  }, []);
 
-  const clearToast = () => setToastMessage(null);
+  /**
+   * Guest only: asks the server to price the wanted lines and keeps them only when the changed
+   * offer can be bought, so a guest cannot hold a line the API would refuse for an account.
+   */
+  const saveGuestLines = useCallback(
+    async (lines: CartLine[], changedOfferId: string, forKey: string): Promise<CartItemView> => {
+      const quote = await quoteCart(lines);
+      const priced = quote.items.find((item) => item.offerId === changedOfferId);
+      if (quote.unknownOfferIds.includes(changedOfferId) || !priced) {
+        throw new ApiError("Không tìm thấy mặt hàng yêu cầu.", 404);
+      }
+      if (!priced.available) {
+        throw new ApiError(priced.problem ?? "Sản phẩm hiện không khả dụng hoặc đã ngừng kinh doanh.", 400);
+      }
+      const kept = withoutUnknown(quote, lines);
+      writeGuestLines(lines.filter((line) => !quote.unknownOfferIds.includes(line.offerId)));
+      commit(forKey, kept);
+      return priced;
+    },
+    [commit],
+  );
 
-  const addToCart = (params: AddToCartParams) => {
-    // 1. Availability validation
-    if (params.isDiscontinued || params.availableStock <= 0) {
-      const err = "Sản phẩm hiện không khả dụng hoặc đã hết hàng. Không thể thêm vào giỏ.";
-      setToastMessage(err);
-      return { success: false, message: err };
-    }
+  const addToCart = useCallback(
+    (line: CartLine) =>
+      run(async () => {
+        const forKey = key;
+        const describe = (item?: CartItemView) =>
+          `Đã thêm ${line.quantity} ${item?.unit ?? ""} "${item?.productName ?? "sản phẩm"}" vào giỏ hàng!`.replace("  ", " ");
 
-    // 2. Stock enforcement
-    const existingIndex = items.findIndex(
-      (it) =>
-        it.productId === params.productId &&
-        it.preparationOption === params.preparationOption
-    );
+        if (token) {
+          const next = await addCartItem(token, line);
+          commit(forKey, next);
+          return { success: true, message: describe(next.items.find((item) => item.offerId === line.offerId)) };
+        }
 
-    const currentQtyInCart = existingIndex >= 0 ? items[existingIndex].quantity : 0;
-    const requestedTotal = currentQtyInCart + params.quantity;
+        const lines = cleanLines([...readGuestLines(), line]);
+        if (!lines.some((entry) => entry.offerId === line.offerId)) {
+          throw new ApiError("Giỏ hàng tối đa 50 mặt hàng.", 400);
+        }
+        return { success: true, message: describe(await saveGuestLines(lines, line.offerId, forKey)) };
+      }),
+    [run, key, token, commit, saveGuestLines],
+  );
 
-    if (requestedTotal > params.availableStock) {
-      const err = `Số lượng yêu cầu (${requestedTotal} ${params.unit}) vượt quá số lượng có sẵn trong kho (${params.availableStock} ${params.unit}).`;
-      setToastMessage(err);
-      return { success: false, message: err };
-    }
+  const updateQuantity = useCallback(
+    (item: CartItemView, quantity: number) =>
+      run(async () => {
+        const forKey = key;
+        if (token && item.id) {
+          commit(forKey, await updateCartItem(token, item.id, quantity));
+          return { success: true, message: "Đã cập nhật số lượng." };
+        }
+        const lines = readGuestLines().map((line) =>
+          line.offerId === item.offerId ? { ...line, quantity: roundQuantity(quantity) } : line,
+        );
+        await saveGuestLines(lines, item.offerId, forKey);
+        return { success: true, message: "Đã cập nhật số lượng." };
+      }),
+    [run, key, token, commit, saveGuestLines],
+  );
 
-    let updated: CartItem[];
-    if (existingIndex >= 0) {
-      updated = [...items];
-      updated[existingIndex] = {
-        ...updated[existingIndex],
-        quantity: requestedTotal,
-      };
-    } else {
-      const newItem: CartItem = {
-        id: `cart-${Date.now()}`,
-        productId: params.productId,
-        productName: params.productName,
-        productImage: params.productImage,
-        price: params.price,
-        quantity: params.quantity,
-        unit: params.unit,
-        preparationOption: params.preparationOption,
-        vendorName: params.vendorName,
-      };
-      updated = [newItem, ...items];
-    }
+  const removeItem = useCallback(
+    (item: CartItemView) =>
+      run(async () => {
+        const forKey = key;
+        if (token && item.id) {
+          commit(forKey, await removeCartItem(token, item.id));
+          return { success: true, message: "Đã xóa khỏi giỏ hàng." };
+        }
+        const lines = readGuestLines().filter((line) => line.offerId !== item.offerId);
+        if (lines.length === 0) {
+          clearGuestLines();
+          commit(forKey, EMPTY_CART);
+        } else {
+          writeGuestLines(lines);
+          commit(forKey, withoutUnknown(await quoteCart(lines), lines));
+        }
+        return { success: true, message: "Đã xóa khỏi giỏ hàng." };
+      }),
+    [run, key, token, commit],
+  );
 
-    saveToStorage(updated);
-    const successMsg = `Đã thêm ${params.quantity} ${params.unit} "${params.productName}" (${params.preparationOption}) vào giỏ hàng!`;
-    setToastMessage(successMsg);
-    return { success: true, message: successMsg };
-  };
+  const clearCart = useCallback(
+    () =>
+      run(async () => {
+        const forKey = key;
+        if (token) commit(forKey, await clearServerCart(token));
+        else {
+          clearGuestLines();
+          commit(forKey, EMPTY_CART);
+        }
+        return { success: true, message: "Đã xóa tất cả sản phẩm khỏi giỏ hàng." };
+      }),
+    [run, key, token, commit],
+  );
 
-  const removeFromCart = (itemId: string) => {
-    const updated = items.filter((it) => it.id !== itemId);
-    saveToStorage(updated);
-  };
-
-  const clearCart = () => {
-    saveToStorage([]);
-  };
-
-  const itemCount = items.reduce((acc, curr) => acc + curr.quantity, 0);
-  const totalPrice = items.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
+  const value = useMemo<CartContextType>(
+    () => ({
+      items: cart.items,
+      itemCount: cart.lineCount,
+      totalPrice: cart.subtotal,
+      hasProblems: cart.hasProblems,
+      isSignedIn: token !== null,
+      isLoading,
+      loadError,
+      isBusy,
+      addToCart,
+      updateQuantity,
+      removeItem,
+      clearCart,
+      refresh: () => setReloads((count) => count + 1),
+    }),
+    [cart, token, isLoading, loadError, isBusy, addToCart, updateQuantity, removeItem, clearCart],
+  );
 
   return (
-    <CartContext.Provider
-      value={{
-        items,
-        itemCount,
-        totalPrice,
-        addToCart,
-        removeFromCart,
-        clearCart,
-        toastMessage,
-        clearToast,
-      }}
-    >
+    <CartContext.Provider value={value}>
       {children}
+      <CartToast toast={toast} onClose={clearToast} />
     </CartContext.Provider>
   );
+}
+
+/** A priced guest cart without the offers that no longer exist, which are also dropped from the browser. */
+function withoutUnknown(quote: QuoteView, lines: CartLine[]): CartView {
+  if (quote.unknownOfferIds.length > 0) {
+    const unknown = new Set(quote.unknownOfferIds);
+    writeGuestLines(lines.filter((line) => !unknown.has(line.offerId)));
+  }
+  const { unknownOfferIds: _unknown, ...cart } = quote;
+  void _unknown;
+  return cart;
 }
 
 export function useCart() {

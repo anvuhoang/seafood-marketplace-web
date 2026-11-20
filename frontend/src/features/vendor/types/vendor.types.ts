@@ -72,6 +72,8 @@ export interface VendorStorefrontProduct {
   id: string;
   name: string;
   slug: string;
+  /** The offer behind the price shown (the cheapest one in stock); this is what the cart adds. */
+  offerId: string;
   unit: string;
   price: number;
   stock: number;

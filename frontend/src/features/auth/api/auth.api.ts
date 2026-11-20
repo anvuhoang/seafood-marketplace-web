@@ -35,7 +35,7 @@ export function setUnauthorizedHandler(
   unauthorizedHandler = handler;
 }
 
-async function handleResponse<T>(res: Response): Promise<T> {
+export async function handleResponse<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {

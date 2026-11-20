@@ -14,10 +14,9 @@ import { ColdChainStandardCard } from "./ColdChainStandardCard";
 import { RelatedVendorProducts } from "./RelatedVendorProducts";
 import { CustomerHeader } from "@/components/shared/CustomerHeader";
 import { CustomerFooter } from "@/components/shared/CustomerFooter";
-import { useCart } from "@/features/cart/context/CartContext";
 import { getProductListing } from "@/features/catalog/api/catalog.api";
 import { ProductListingItem } from "@/features/catalog/types/catalog.types";
-import { CheckCircle2, AlertTriangle, PackageSearch, X } from "lucide-react";
+import { AlertTriangle, PackageSearch } from "lucide-react";
 
 const RELATED_PRODUCT_LIMIT = 4;
 
@@ -37,7 +36,6 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
     items: [],
     total: 0,
   });
-  const { toastMessage, clearToast } = useCart();
 
   useEffect(() => {
     let mounted = true;
@@ -154,21 +152,6 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
         <div className="bg-rose-600 text-white py-2.5 px-4 text-center text-xs font-bold flex items-center justify-center gap-2">
           <AlertTriangle className="h-4 w-4" />
           <span>Sản phẩm này hiện đã ngừng kinh doanh.</span>
-        </div>
-      )}
-
-      {/* Toast Notification for Cart Actions */}
-      {toastMessage && (
-        <div className="fixed top-20 right-4 z-50 flex items-center gap-2 rounded-2xl bg-slate-900 text-white px-4 py-3 shadow-xl border border-slate-700 animate-slide-up">
-          <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-          <p className="text-xs font-medium pr-2">{toastMessage}</p>
-          <button
-            type="button"
-            onClick={clearToast}
-            className="rounded-lg p-1 text-slate-400 hover:text-white"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
       )}
 

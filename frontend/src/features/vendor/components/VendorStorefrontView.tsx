@@ -295,7 +295,7 @@ function ProductsTab({
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 xl:grid-cols-4">
             {items.map((product, index) => (
               <ScrollReveal key={product.id} delay={(index % 3) * 60} className="h-full">
-                <StorefrontProductCard product={product} vendorName={vendor.name} vendorSlug={vendor.slug} originLabel={vendor.district} />
+                <StorefrontProductCard product={product} vendorSlug={vendor.slug} originLabel={vendor.district} />
               </ScrollReveal>
             ))}
           </div>
