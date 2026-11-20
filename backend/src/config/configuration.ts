@@ -25,6 +25,11 @@ export default () => ({
     apiSecret: process.env.CLOUDINARY_API_SECRET ?? '',
   },
 
+  // Checkout. There is no shipping-rate table yet, so every vendor order costs the same flat fee (VND).
+  checkout: {
+    shippingFeePerVendor: Number(process.env.SHIPPING_FEE_PER_VENDOR ?? 30000),
+  },
+
   // Smart Import (vendor product drafts from text or voice). The key stays on the server.
   // 'off' until GROQ_API_KEY is set; 'mock' is a local stand-in that needs no key.
   smartImport: {

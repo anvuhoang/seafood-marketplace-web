@@ -10,6 +10,6 @@ import { OrderLifecycleService } from './order-lifecycle.service.js';
   imports: [PrismaModule, AuthModule],
   controllers: [CustomerOrderController],
   providers: [CustomerOrderService, OrderLifecycleService],
-  exports: [OrderLifecycleService],
+  exports: [OrderLifecycleService, CustomerOrderService],
 })
 export class OrderModule {}
