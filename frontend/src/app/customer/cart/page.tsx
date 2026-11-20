@@ -176,15 +176,25 @@ export default function CustomerCartPage() {
 
                 {isSignedIn ? (
                   <>
-                    <button
-                      type="button"
-                      disabled
-                      className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-[#0F3860] py-3 text-xs font-bold text-white opacity-50"
-                    >
-                      <Zap className="h-4 w-4" aria-hidden />
-                      <span>Tiến hành đặt hàng</span>
-                    </button>
-                    <p className="text-center text-[11px] text-slate-400">Chức năng đặt hàng đang được hoàn thiện.</p>
+                    {selected.length > 0 ? (
+                      <Link
+                        href={`/customer/checkout?items=${selected.map((item) => item.offerId).join(",")}`}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0F3860] py-3 text-xs font-bold text-white shadow-xs hover:bg-[#0A2744]"
+                      >
+                        <Zap className="h-4 w-4" aria-hidden />
+                        <span>Tiến hành đặt hàng ({selected.length})</span>
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-[#0F3860] py-3 text-xs font-bold text-white opacity-50"
+                      >
+                        <Zap className="h-4 w-4" aria-hidden />
+                        <span>Tiến hành đặt hàng</span>
+                      </button>
+                    )}
+                    {selected.length === 0 && <p className="text-center text-[11px] text-slate-400">Chọn ít nhất một sản phẩm để đặt hàng.</p>}
                   </>
                 ) : (
                   <>
