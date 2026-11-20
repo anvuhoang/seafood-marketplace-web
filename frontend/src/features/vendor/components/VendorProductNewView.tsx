@@ -10,8 +10,10 @@ import { createDraftProduct } from "../api/vendor-product.api";
 import { useMyStore } from "../hooks/useMyStore";
 import type { VendorOffer } from "../types/vendor-product.types";
 import { emptyProductForm } from "../utils/vendor-product-form";
+import type { ProductFormValues } from "../utils/vendor-product-form";
 import { CatalogOfferPicker } from "./CatalogOfferPicker";
 import { DraftProductForm } from "./DraftProductForm";
+import { SmartImportPanel } from "./SmartImportPanel";
 import { VendorPageHeader } from "./VendorPageHeader";
 
 type Mode = "catalog" | "draft";
@@ -23,6 +25,10 @@ export function VendorProductNewView() {
   const { state } = useMyStore();
   const [mode, setMode] = useState<Mode>("catalog");
   const [created, setCreated] = useState<VendorOffer | null>(null);
+  const [formSeed, setFormSeed] = useState<{ version: number; initial: ProductFormValues }>(() => ({
+    version: 0,
+    initial: emptyProductForm(),
+  }));
 
   const store = state.kind === "ready" ? state.store : null;
   const readOnly = store?.status === "SUSPENDED" || store?.status === "REJECTED";
@@ -93,7 +99,7 @@ export function VendorProductNewView() {
 
   const tabs: Array<{ value: Mode; label: string; description: string; icon: typeof Search }> = [
     { value: "catalog", label: "Bán sản phẩm có sẵn", description: "Chọn từ danh mục chung của sàn", icon: Search },
-    { value: "draft", label: "Đề xuất sản phẩm mới", description: "Sàn chưa có, gửi để quản trị viên duyệt", icon: PackagePlus },
+    { value: "draft", label: "Tạo sản phẩm mới", description: "Sàn chưa có, đăng mới lên sàn", icon: PackagePlus },
   ];
 
   return (
@@ -128,15 +134,23 @@ export function VendorProductNewView() {
         {mode === "catalog" ? (
           <CatalogOfferPicker token={accessToken} onCreated={setCreated} />
         ) : (
-          <DraftProductForm
-            mode="create"
-            token={accessToken}
-            initial={emptyProductForm()}
-            uploadEnabled={store.imageUploadEnabled}
-            readOnly={false}
-            submit={(input) => createDraftProduct(accessToken, input)}
-            onSaved={() => router.push("/vendor/products")}
-          />
+          <>
+            <SmartImportPanel
+              token={accessToken}
+              onApply={(values) => setFormSeed((seed) => ({ version: seed.version + 1, initial: values }))}
+            />
+            {/* A new key restarts the form from the AI draft; the vendor edits it and decides whether to submit. */}
+            <DraftProductForm
+              key={formSeed.version}
+              mode="create"
+              token={accessToken}
+              initial={formSeed.initial}
+              uploadEnabled={store.imageUploadEnabled}
+              readOnly={false}
+              submit={(input) => createDraftProduct(accessToken, input)}
+              onSaved={() => router.push("/vendor/products")}
+            />
+          </>
         )}
       </div>
     </>

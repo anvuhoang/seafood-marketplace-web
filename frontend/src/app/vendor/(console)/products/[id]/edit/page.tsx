@@ -3,8 +3,8 @@ import { Loader2 } from "lucide-react";
 import { VendorProductEditView } from "@/features/vendor/components/VendorProductEditView";
 
 export const metadata = {
-  title: "Sửa sản phẩm chờ duyệt | HaiSan Express",
-  description: "Chỉnh sửa sản phẩm gian hàng đã đề xuất trong lúc chờ duyệt.",
+  title: "Sửa sản phẩm | HaiSan Express",
+  description: "Chỉnh sửa sản phẩm do gian hàng đã tạo.",
 };
 
 /** The id is only known at request time, so it is read inside Suspense (Cache Components). */

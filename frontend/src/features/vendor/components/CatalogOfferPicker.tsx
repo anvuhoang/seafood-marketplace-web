@@ -60,7 +60,7 @@ export function CatalogOfferPicker({ token, onCreated }: { token: string; onCrea
             1. Chọn sản phẩm và biến thể
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            Gồm sản phẩm đã được duyệt trên sàn và sản phẩm bạn đề xuất đang chờ duyệt.
+            Gồm các sản phẩm đã có trên sàn, kể cả sản phẩm do bạn tạo.
           </p>
           <label className="relative mt-3 block">
             <span className="sr-only">Tìm sản phẩm trong danh mục chung</span>
@@ -86,7 +86,7 @@ export function CatalogOfferPicker({ token, onCreated }: { token: string; onCrea
           </p>
         ) : list.items.length === 0 ? (
           <p className="px-4 py-12 text-center text-sm text-slate-500">
-            Không tìm thấy sản phẩm phù hợp. Nếu sàn chưa có, hãy chọn &quot;Đề xuất sản phẩm mới&quot;.
+            Không tìm thấy sản phẩm phù hợp. Nếu sàn chưa có, hãy chọn &quot;Tạo sản phẩm mới&quot;.
           </p>
         ) : (
           <div className={cn("transition-opacity motion-reduce:transition-none", loading && "opacity-60")} aria-busy={loading}>
@@ -106,9 +106,9 @@ export function CatalogOfferPicker({ token, onCreated }: { token: string; onCrea
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold break-words text-slate-900">
                       {product.name}
-                      {product.isOwnDraft && (
+                      {product.isOwnProduct && (
                         <span className="ml-2 rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-800 ring-1 ring-inset ring-sky-200">
-                          Sản phẩm bạn đề xuất · chờ duyệt
+                          Sản phẩm bạn tạo
                         </span>
                       )}
                     </p>

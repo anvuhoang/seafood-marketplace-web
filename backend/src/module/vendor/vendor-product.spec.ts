@@ -26,7 +26,6 @@ import {
   PRODUCT_INVALID_IMAGE,
   PRODUCT_NOT_FOUND,
   PRODUCT_OFFER_ON_EXISTING_VARIANT,
-  PRODUCT_PUBLISHED,
   PRODUCT_UNKNOWN_VARIANT,
   productVariantInUse,
   VendorProductService,
@@ -190,7 +189,7 @@ describe('Vendor draft products', () => {
   });
 
   describe('createProduct', () => {
-    it('saves a DRAFT owned by my store, with variants and offers, inside one transaction', async () => {
+    it('saves an ACTIVE product owned by my store, with variants and offers, inside one transaction', async () => {
       const result = await service.createProduct(OWNER_A, createDto() as any);
 
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
@@ -202,7 +201,7 @@ describe('Vendor draft products', () => {
       expect(product).toMatchObject({
         name: 'Tôm hùm bông Nha Trang',
         slug: 'tom-hum-bong-nha-trang-2', // the base slug is taken
-        status: 'DRAFT',
+        status: 'ACTIVE',
         createdByVendorId: VENDOR_A,
         categories: { create: [{ categoryId: CATEGORY_ID }] },
         images: {
@@ -346,11 +345,12 @@ describe('Vendor draft products', () => {
       );
     });
 
-    it('is 409 once an admin has published it', async () => {
+    it('can still be read once the product is published', async () => {
       drafts[0].status = 'ACTIVE';
-      await expect(service.getProduct(OWNER_A, PRODUCT_ID)).rejects.toThrow(
-        new ConflictException(PRODUCT_PUBLISHED),
-      );
+      await expect(service.getProduct(OWNER_A, PRODUCT_ID)).resolves.toMatchObject({
+        id: PRODUCT_ID,
+        status: 'ACTIVE',
+      });
     });
 
     it('is read-only (editable false) for a suspended store', async () => {
@@ -380,7 +380,6 @@ describe('Vendor draft products', () => {
       expect(update.where).toEqual({
         id: PRODUCT_ID,
         createdByVendorId: VENDOR_A,
-        status: 'DRAFT',
       });
       expect(update.data.name).toBe('Tôm hùm bông loại đặc biệt');
       expect(update.data.slug).toBeUndefined();
@@ -448,15 +447,17 @@ describe('Vendor draft products', () => {
       ).rejects.toThrow(new BadRequestException(PRODUCT_INVALID_IMAGE));
     });
 
-    it("is 404 for another vendor's draft and 409 for a published product", async () => {
+    it("is 404 for another vendor's product, and my own published product can be edited", async () => {
       await expect(
         service.updateProduct(OWNER_B, PRODUCT_ID, { name: 'Đổi tên' }),
       ).rejects.toThrow(new NotFoundException(PRODUCT_NOT_FOUND));
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+
       drafts[0].status = 'ACTIVE';
       await expect(
         service.updateProduct(OWNER_A, PRODUCT_ID, { name: 'Đổi tên' }),
-      ).rejects.toThrow(new ConflictException(PRODUCT_PUBLISHED));
-      expect(prisma.$transaction).not.toHaveBeenCalled();
+      ).resolves.toBeDefined();
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -15,7 +15,7 @@ export interface VendorOfferProduct {
   slug: string;
   status: VendorProductStatus;
   /** A draft this vendor proposed; only those can be edited. */
-  isOwnDraft: boolean;
+  isOwnProduct: boolean;
   imageUrl: string | null;
   categories: VendorCategoryRef[];
 }

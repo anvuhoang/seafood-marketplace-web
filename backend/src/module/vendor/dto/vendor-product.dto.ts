@@ -160,7 +160,7 @@ export class VendorProductVariantUpsertDto extends VendorProductVariantInputDto 
   id?: string;
 }
 
-/** Propose a new product. It is saved as a draft until an admin publishes it. */
+/** Add a new product. It is published as soon as it is saved. */
 export class CreateVendorProductDto {
   /** @example "Tôm hùm bông Nha Trang" */
   @ApiProperty({
@@ -237,7 +237,7 @@ export class CreateVendorProductDto {
 }
 
 /**
- * Edit a draft. Omitted fields are kept. `categoryIds`, `images` and `variants`
+ * Edit a product this vendor created. Omitted fields are kept. `categoryIds`, `images` and `variants`
  * replace the whole list when sent; a variant left out of `variants` is removed.
  */
 export class UpdateVendorProductDto {
@@ -355,7 +355,7 @@ export class VendorProductVariantDto {
   removable: boolean;
 }
 
-/** A draft product the signed-in vendor proposed. */
+/** A product the signed-in vendor created. */
 export class VendorProductDto {
   /** @example "1b2c3d4e-5f60-4a7b-8c9d-0e1f2a3b4c5d" */
   id: string;
@@ -365,7 +365,7 @@ export class VendorProductDto {
   slug: string;
   /** @example "Tôm hùm bông đánh bắt tại vịnh Nha Trang." */
   description: string | null;
-  @ApiProperty({ enum: PRODUCT_STATUSES, example: 'DRAFT' })
+  @ApiProperty({ enum: PRODUCT_STATUSES, example: 'ACTIVE' })
   status: VendorProductStatus;
   categories: VendorCategoryRefDto[];
   images: VendorProductImageDto[];

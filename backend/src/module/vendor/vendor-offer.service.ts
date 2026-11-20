@@ -101,8 +101,7 @@ function productCard(product: ProductCardRow, vendorId: string) {
     name: product.name,
     slug: product.slug,
     status: product.status as VendorProductStatus,
-    isOwnDraft:
-      product.status === 'DRAFT' && product.createdByVendorId === vendorId,
+    isOwnProduct: product.createdByVendorId === vendorId,
     imageUrl: primary?.imageUrl ?? null,
     categories: product.categories.map(({ category }) => ({
       id: category.id,
