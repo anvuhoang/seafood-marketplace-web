@@ -54,6 +54,7 @@ def main() -> None:
     parser.add_argument("--learning-rate", type=float, default=1e-5)
     parser.add_argument("--eval-steps", type=int, default=200)
     args = parser.parse_args()
+    print("finetune.py rev 2: features are written without the audio column")
 
     import jiwer
     from transformers import (
@@ -73,17 +74,28 @@ def main() -> None:
 
     def prepare(row: dict) -> dict:
         audio = row["audio"]
-        row["input_features"] = processor.feature_extractor(audio["array"], sampling_rate=SAMPLE_RATE).input_features[0]
-        row["seconds"] = len(audio["array"]) / SAMPLE_RATE
-        # Train on the text as written (case and punctuation help Whisper); WER ignores them later.
-        row["labels"] = processor.tokenizer(row["text"].strip()).input_ids
-        return row
+        # A new dict with only what training needs. Returning the incoming row would keep its
+        # columns (datasets keeps any column the function returns), audio included.
+        return {
+            "input_features": processor.feature_extractor(audio["array"], sampling_rate=SAMPLE_RATE).input_features[0],
+            "seconds": len(audio["array"]) / SAMPLE_RATE,
+            # Train on the text as written (case and punctuation help Whisper); WER ignores them later.
+            "labels": processor.tokenizer(row["text"].strip()).input_ids,
+        }
 
     def load(split: str):
         data = load_subset(split, provinces)
-        data = data.map(prepare, remove_columns=[c for c in data.column_names if c != "audio"], desc=f"features {split}")
+        # Every original column is dropped, the audio too: the features are all that training
+        # needs, and keeping the audio made one write exceed Arrow's 2 GB limit
+        # ("offset overflow while concatenating arrays"). Small write batches keep each chunk small.
+        data = data.map(
+            prepare,
+            remove_columns=data.column_names,
+            writer_batch_size=32,
+            desc=f"features {split}",
+        )
         data = data.filter(lambda seconds: seconds <= MAX_SECONDS, input_columns="seconds")
-        return data.remove_columns(["audio", "seconds"])
+        return data.remove_columns(["seconds"])
 
     train, valid = load("train"), load("valid")
     print(f"train clips: {len(train)}  valid clips: {len(valid)}")
