@@ -7,7 +7,7 @@ import { LayoutDashboard, LogOut, MapPin, Moon, Store, Sun, Tags, UserRound, Use
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getAdminVendors } from "../api/admin-vendor.api";
-import { useAdminTheme } from "../hooks/useAdminTheme";
+import { useConsoleTheme } from "@/lib/use-console-theme";
 
 const VENDORS_PATH = "/admin/vendors";
 
@@ -27,7 +27,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const { user, logout, accessToken } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, toggle } = useAdminTheme();
+  const { theme, toggle } = useConsoleTheme();
   const dark = theme === "dark";
   const [pendingVendors, setPendingVendors] = useState(0);
 
@@ -52,8 +52,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const themeLabel = dark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối";
 
   return (
-    <div className={`${dark ? "admin-dark " : ""}min-h-screen bg-slate-50 text-slate-800 lg:flex`}>
-      <aside className="admin-chrome sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-shell text-white lg:flex">
+    <div className={`${dark ? "console-dark " : ""}min-h-screen bg-slate-50 text-slate-800 lg:flex`}>
+      <aside className="console-chrome sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-shell text-white lg:flex">
         <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
           <BrandLogo variant="dark" className="h-9" />
         </div>
@@ -129,7 +129,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </span>
         </header>
 
-        <header className="admin-chrome sticky top-0 z-20 bg-shell text-white lg:hidden">
+        <header className="console-chrome sticky top-0 z-20 bg-shell text-white lg:hidden">
           <div className="flex h-14 items-center justify-between px-4">
             <BrandLogo variant="dark" className="h-7" />
             <span className="flex items-center gap-2">
