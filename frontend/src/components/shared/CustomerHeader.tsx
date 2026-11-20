@@ -270,7 +270,8 @@ export function CustomerHeader() {
                         <span className="hidden text-xs font-bold sm:inline truncate max-w-[120px]">
                           {displayName}
                         </span>
-                        <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                        {/* Left out on phones: with the arrow the signed-in header is 21px wider than the screen. */}
+                        <ChevronDown className="hidden h-3.5 w-3.5 text-slate-400 sm:block" />
                       </button>
 
                       {userMenuOpen && (
