@@ -41,6 +41,11 @@ export class VendorStorefrontProductDto {
   id: string;
   name: string;
   slug: string;
+  /**
+   * The offer behind the price shown (the cheapest one in stock); this is what the cart adds.
+   * @example "3d4e5f60-7182-4c9d-8e0f-2a3b4c5d6e7f"
+   */
+  offerId: string;
   /** @example "kg" */
   unit: string;
   /**

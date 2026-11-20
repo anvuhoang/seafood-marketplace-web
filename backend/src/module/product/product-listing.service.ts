@@ -45,6 +45,7 @@ function splitList(value?: string): string[] {
 }
 
 interface ListingOffer {
+  id: string;
   price: number;
   stock: number;
   unit: string;
@@ -201,6 +202,7 @@ export class ProductListingService {
             offers: {
               where: SELLABLE_OFFER_WHERE,
               select: {
+                id: true,
                 price: true,
                 stock: true,
                 vendor: { select: { name: true, slug: true, district: true, province: true } },
@@ -251,6 +253,7 @@ export class ProductListingService {
           .map((c) => ({ name: c.name, slug: c.slug })),
         offers: row.variants.flatMap((variant) =>
           variant.offers.map((offer) => ({
+            id: offer.id,
             price: Number(offer.price),
             stock: Number(offer.stock),
             unit: variant.unit,
@@ -359,6 +362,7 @@ export class ProductListingService {
       speciesName: product.speciesName,
       imageUrl: product.imageUrl,
       isFeatured: product.isFeatured,
+      offerId: best.id,
       inStock: best.stock > 0,
       stock: best.stock,
       price: best.price,

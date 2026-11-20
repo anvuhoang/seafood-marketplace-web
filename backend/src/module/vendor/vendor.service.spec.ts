@@ -28,7 +28,9 @@ const offerRow = (
   price: number,
   stock: number,
   categorySlug: string,
+  id = `offer-${productId}-${price}`,
 ) => ({
+  id,
   price,
   stock,
   variant: {
@@ -196,6 +198,47 @@ describe('VendorService', () => {
       speciesName: 'Tôm sú',
     });
     expect(result.products[1]).toMatchObject({ id: 'p2', inStock: false });
+  });
+
+  describe('the offer behind a card (what the cart adds)', () => {
+    const storefront = async (...offers: ReturnType<typeof offerRow>[]) => {
+      prismaService.vendor.findUnique.mockResolvedValue(vendorRow('ACTIVE'));
+      prismaService.vendorOffer.findMany.mockResolvedValue(offers);
+      return (await vendorService.getStorefront('vua-thuy-san-phu-quoc-xanh')).products;
+    };
+
+    it('is the cheapest offer that is in stock, with its own price', async () => {
+      const [card] = await storefront(
+        offerRow('p1', 500000, 4, 'tom', 'dear'),
+        offerRow('p1', 420000, 10, 'tom', 'cheap'),
+      );
+      expect(card).toMatchObject({ offerId: 'cheap', price: 420000 });
+    });
+
+    it('is not a cheaper offer that is sold out', async () => {
+      const [card] = await storefront(
+        offerRow('p1', 500000, 4, 'tom', 'in-stock'),
+        offerRow('p1', 300000, 0, 'tom', 'sold-out'),
+      );
+      expect(card).toMatchObject({ offerId: 'in-stock', price: 500000, inStock: true });
+    });
+
+    it('moves to the first offer in stock when the first one is sold out', async () => {
+      const [card] = await storefront(
+        offerRow('p1', 300000, 0, 'tom', 'sold-out'),
+        offerRow('p1', 500000, 4, 'tom', 'in-stock'),
+      );
+      expect(card).toMatchObject({ offerId: 'in-stock', price: 500000, inStock: true });
+    });
+
+    it('is the cheapest one when everything is sold out', async () => {
+      const [card] = await storefront(
+        offerRow('p1', 500000, 0, 'tom', 'a'),
+        offerRow('p1', 300000, 0, 'tom', 'b'),
+      );
+      expect(card).toMatchObject({ price: 300000, inStock: false });
+      expect(card.offerId).toBeDefined();
+    });
   });
 
   it('builds categories with product counts and filters by category slug', async () => {
