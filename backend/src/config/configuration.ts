@@ -35,7 +35,7 @@ export default () => ({
     transcribeModel:
       process.env.SMART_IMPORT_TRANSCRIBE_MODEL ?? 'whisper-large-v3-turbo',
     extractModel:
-      process.env.SMART_IMPORT_EXTRACT_MODEL ?? 'llama-3.3-70b-versatile',
+      process.env.SMART_IMPORT_EXTRACT_MODEL ?? 'openai/gpt-oss-120b',
     timeoutMs: Number(process.env.SMART_IMPORT_TIMEOUT_MS ?? 20000),
   },
 });

@@ -124,9 +124,16 @@ export class SmartImportService {
     };
   }
 
-  /** Only the step and the failure kind are logged; never the key, the audio or what the vendor said. */
+  /**
+   * Logs the step, the failure kind and the provider's short reason (for example
+   * its HTTP status). Those reasons are fixed sentences: they never hold the key,
+   * the audio or what the vendor said.
+   */
   private logFailure(step: string, error: unknown): void {
-    const kind = error instanceof AiProviderError ? error.kind : 'error';
-    this.logger.warn(`Smart import ${step} failed (${kind}).`);
+    const detail =
+      error instanceof AiProviderError
+        ? `${error.kind}: ${error.message}`
+        : 'unexpected error';
+    this.logger.warn(`Smart import ${step} failed (${detail})`);
   }
 }
