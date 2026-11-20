@@ -34,8 +34,6 @@ export class SmartImportStatusDto {
 export class SmartImportTranscriptDto {
   /** The recognised text. The vendor can correct it before asking for a draft. @example "Tôm sú size 30, giá 350 nghìn một ký" */
   text: string;
-  /** Which engine heard it: "groq", "mock" or "local:<model>" for our own speech service. @example "local:whisper-small" */
-  engine: string;
 }
 
 export class SmartImportVariantDto {

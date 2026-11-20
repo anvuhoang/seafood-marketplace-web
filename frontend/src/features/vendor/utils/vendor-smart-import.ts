@@ -32,14 +32,6 @@ export function smartDraftToForm(draft: SmartImportDraft): ProductFormValues {
   };
 }
 
-/** The engine that heard the vendor, in words: our own model, Groq, or the offline stand-in. */
-export function describeEngine(engine: string): string {
-  if (engine.startsWith("local:")) return `Whisper tự host (${engine.slice(6)})`;
-  if (engine === "groq") return "Groq Whisper";
-  if (engine === "mock") return "giả lập (chỉ để thử)";
-  return engine;
-}
-
 /** "giá bán, tồn kho" for the fields still to fill in, or null when nothing is missing. */
 export function describeMissing(missing: SmartImportMissingField[]): string | null {
   return missing.length === 0 ? null : missing.map((field) => MISSING_LABELS[field]).join(", ");

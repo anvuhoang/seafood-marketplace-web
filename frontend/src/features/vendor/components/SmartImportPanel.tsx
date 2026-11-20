@@ -7,7 +7,7 @@ import { SMART_IMPORT_TEXT_MAX, createSmartDraft, getSmartImportEnabled, transcr
 import { MAX_RECORDING_SECONDS, useRecordingSupported, useVoiceRecorder } from "../hooks/useVoiceRecorder";
 import type { SmartImportDraft } from "../types/vendor-smart-import.types";
 import type { ProductFormValues } from "../utils/vendor-product-form";
-import { describeEngine, describeMissing, smartDraftToForm } from "../utils/vendor-smart-import";
+import { describeMissing, smartDraftToForm } from "../utils/vendor-smart-import";
 import { dialogButton, fieldClass } from "./VendorDialog";
 
 type Phase = "idle" | "transcribing" | "drafting";
@@ -32,7 +32,6 @@ export function SmartImportPanel({ token, onApply }: SmartImportPanelProps) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SmartImportDraft | null>(null);
-  const [engine, setEngine] = useState<string | null>(null);
   const micSupported = useRecordingSupported();
 
   useEffect(() => {
@@ -52,8 +51,7 @@ export function SmartImportPanel({ token, onApply }: SmartImportPanelProps) {
       setPhase("transcribing");
       try {
         const heard = await transcribeRecording(token, recording);
-        setEngine(heard.engine);
-        setText((current) => `${current.trim()} ${heard.text}`.trim().slice(0, SMART_IMPORT_TEXT_MAX));
+        setText((current) => `${current.trim()} ${heard}`.trim().slice(0, SMART_IMPORT_TEXT_MAX));
       } catch (caught) {
         setError(errorMessage(caught, "Không thể chuyển giọng nói thành chữ. Vui lòng thử lại hoặc gõ mô tả."));
       } finally {
@@ -148,9 +146,6 @@ export function SmartImportPanel({ token, onApply }: SmartImportPanelProps) {
             <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
             Đang chuyển giọng nói thành chữ... Bạn có thể sửa chữ trước khi tạo bản nháp.
           </span>
-        )}
-        {phase === "idle" && !recorder.recording && engine && (
-          <span>Giọng nói được nhận bằng: {describeEngine(engine)}. Hãy kiểm tra lại chữ trước khi tạo bản nháp.</span>
         )}
       </p>
 

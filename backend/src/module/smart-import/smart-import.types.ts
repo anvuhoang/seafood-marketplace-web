@@ -19,15 +19,9 @@ export class AiProviderError extends Error {
   }
 }
 
-/** The recognised text and which engine produced it ("groq", "mock" or "local:<model>"). */
-export interface SpeechResult {
-  text: string;
-  engine: string;
-}
-
 /** Turns a short voice recording into text. */
 export interface SpeechToText {
-  transcribe(audio: Buffer, filename: string, mimeType: string): Promise<SpeechResult>;
+  transcribe(audio: Buffer, filename: string, mimeType: string): Promise<string>;
 }
 
 /** What the model may choose from, so it names real categories instead of inventing them. */

@@ -1,9 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaModule } from '../../prisma/prisma.module.js';
-import { FallbackSpeechProvider } from './fallback-speech.provider.js';
 import { GroqProvider } from './groq.provider.js';
-import { LocalSpeechProvider } from './local.provider.js';
 import { MockProvider } from './mock.provider.js';
 import { SmartImportLimiter } from './smart-import.limiter.js';
 import { SmartImportService } from './smart-import.service.js';
@@ -29,45 +27,17 @@ function pickProvider(config: ConfigService, groq: GroqProvider, mock: MockProvi
   return disabledProvider;
 }
 
-/**
- * Speech follows SMART_IMPORT_PROVIDER, unless SMART_IMPORT_SPEECH_PROVIDER=local
- * asks for our own Python service. That one falls back to Groq (or the mock) when it is
- * down, but only if that provider is actually set up.
- */
-function pickSpeech(
-  config: ConfigService,
-  groq: GroqProvider,
-  mock: MockProvider,
-  local: LocalSpeechProvider,
-): SpeechToText {
-  const settings = config.get<{
-    provider?: string;
-    speechProvider?: string;
-    groqApiKey?: string;
-  }>('smartImport');
-  if (settings?.speechProvider === 'local') {
-    const fallback = settings.groqApiKey
-      ? groq
-      : settings.provider === 'mock'
-        ? mock
-        : null;
-    return new FallbackSpeechProvider(local, fallback);
-  }
-  return pickProvider(config, groq, mock);
-}
-
 @Module({
   imports: [PrismaModule],
   providers: [
     GroqProvider,
     MockProvider,
-    LocalSpeechProvider,
     SmartImportLimiter,
     SmartImportService,
     {
       provide: SPEECH_TO_TEXT,
-      inject: [ConfigService, GroqProvider, MockProvider, LocalSpeechProvider],
-      useFactory: pickSpeech,
+      inject: [ConfigService, GroqProvider, MockProvider],
+      useFactory: pickProvider,
     },
     {
       provide: DRAFT_EXTRACTOR,

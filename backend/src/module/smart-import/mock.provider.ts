@@ -4,7 +4,6 @@ import {
   AiProviderError,
   type DraftExtractor,
   type ExtractionContext,
-  type SpeechResult,
   type SpeechToText,
 } from './smart-import.types.js';
 
@@ -18,8 +17,8 @@ const SAMPLE_TRANSCRIPT =
  */
 @Injectable()
 export class MockProvider implements SpeechToText, DraftExtractor {
-  transcribe(): Promise<SpeechResult> {
-    return Promise.resolve({ text: SAMPLE_TRANSCRIPT, engine: 'mock' });
+  transcribe(): Promise<string> {
+    return Promise.resolve(SAMPLE_TRANSCRIPT);
   }
 
   extract(text: string, context: ExtractionContext): Promise<unknown> {

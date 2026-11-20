@@ -37,11 +37,5 @@ export default () => ({
     extractModel:
       process.env.SMART_IMPORT_EXTRACT_MODEL ?? 'openai/gpt-oss-120b',
     timeoutMs: Number(process.env.SMART_IMPORT_TIMEOUT_MS ?? 20000),
-    // Who turns speech into text: '' = the same provider as above, or 'local' = our own
-    // Python service (ai-service/speech), with Groq as the fallback when it is down.
-    speechProvider: process.env.SMART_IMPORT_SPEECH_PROVIDER ?? '',
-    aiServiceUrl: process.env.AI_SERVICE_URL ?? 'http://localhost:8000',
-    aiServiceToken: process.env.AI_SERVICE_TOKEN ?? '',
-    aiServiceTimeoutMs: Number(process.env.AI_SERVICE_TIMEOUT_MS ?? 30000),
   },
 });

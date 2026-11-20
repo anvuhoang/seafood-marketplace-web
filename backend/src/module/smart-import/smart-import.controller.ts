@@ -120,7 +120,7 @@ export class SmartImportController {
     @CurrentUser('sub') userId: string,
     @UploadedFile() file: { buffer?: Buffer } | undefined,
   ): Promise<SmartImportTranscriptDto> {
-    return this.smartImport.transcribe(userId, file);
+    return { text: await this.smartImport.transcribe(userId, file) };
   }
 
   @Post('draft')

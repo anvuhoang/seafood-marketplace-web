@@ -13,21 +13,16 @@ export async function getSmartImportEnabled(token: string): Promise<boolean> {
   return status.enabled;
 }
 
-/** The recognised text and the engine that heard it ("groq", "mock" or "local:<model>"). */
-export interface Transcript {
-  text: string;
-  engine: string;
-}
-
 /** Turns a short recording into text the vendor can correct. The recording is not stored. */
-export async function transcribeRecording(token: string, recording: Blob): Promise<Transcript> {
+export async function transcribeRecording(token: string, recording: Blob): Promise<string> {
   const form = new FormData();
   form.append("audio", recording, "recording");
   // No Content-Type here: the browser adds the multipart boundary itself.
-  return authenticatedRequest<Transcript>(`${BASE}/transcribe`, token, {
+  const result = await authenticatedRequest<{ text: string }>(`${BASE}/transcribe`, token, {
     method: "POST",
     body: form,
   });
+  return result.text;
 }
 
 /** Builds an editable draft from a description. Nothing is saved by this call. */
