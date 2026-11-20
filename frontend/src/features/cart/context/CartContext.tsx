@@ -10,6 +10,7 @@ import {
   type CartActionResult,
   type CartItemView,
   type CartLine,
+  type CartVendorGroup,
   type CartView,
   type MergeResult,
   type QuoteView,
@@ -18,6 +19,8 @@ import { cleanLines, clearGuestLines, readGuestLines, roundQuantity, writeGuestL
 
 interface CartContextType {
   items: CartItemView[];
+  /** The lines grouped by vendor, each with the total the server worked out for it. */
+  vendors: CartVendorGroup[];
   /** Number of lines (different offers), as shown on the header badge. */
   itemCount: number;
   /** Total in VND of the lines that can be bought, worked out by the server. */
@@ -36,6 +39,8 @@ interface CartContextType {
   /** Sets (does not add) the quantity of a line. */
   updateQuantity: (item: CartItemView, quantity: number) => Promise<CartActionResult>;
   removeItem: (item: CartItemView) => Promise<CartActionResult>;
+  /** Removes several lines in one go (the ticked ones). */
+  removeItems: (items: CartItemView[]) => Promise<CartActionResult>;
   clearCart: () => Promise<CartActionResult>;
   refresh: () => void;
 }
@@ -228,6 +233,40 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [run, key, token, commit],
   );
 
+  const removeItems = useCallback(
+    (targets: CartItemView[]) =>
+      run(async () => {
+        const forKey = key;
+        const done = { success: true, message: `Đã xóa ${targets.length} sản phẩm khỏi giỏ hàng.` };
+        if (targets.length === 0) return { success: true, message: "Chưa chọn sản phẩm nào." };
+
+        if (token) {
+          let latest: CartView | null = null;
+          try {
+            for (const item of targets) if (item.id) latest = await removeCartItem(token, item.id);
+          } catch (error) {
+            // Some lines may already be gone: show what the server holds now, then report the failure.
+            setReloads((count) => count + 1);
+            throw error;
+          }
+          if (latest) commit(forKey, latest);
+          return done;
+        }
+
+        const drop = new Set(targets.map((item) => item.offerId));
+        const lines = readGuestLines().filter((line) => !drop.has(line.offerId));
+        if (lines.length === 0) {
+          clearGuestLines();
+          commit(forKey, EMPTY_CART);
+        } else {
+          writeGuestLines(lines);
+          commit(forKey, withoutUnknown(await quoteCart(lines), lines));
+        }
+        return done;
+      }),
+    [run, key, token, commit],
+  );
+
   const clearCart = useCallback(
     () =>
       run(async () => {
@@ -245,6 +284,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<CartContextType>(
     () => ({
       items: cart.items,
+      vendors: cart.vendors,
       itemCount: cart.lineCount,
       totalPrice: cart.subtotal,
       hasProblems: cart.hasProblems,
@@ -255,10 +295,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       addToCart,
       updateQuantity,
       removeItem,
+      removeItems,
       clearCart,
       refresh: () => setReloads((count) => count + 1),
     }),
-    [cart, token, isLoading, loadError, isBusy, addToCart, updateQuantity, removeItem, clearCart],
+    [cart, token, isLoading, loadError, isBusy, addToCart, updateQuantity, removeItem, removeItems, clearCart],
   );
 
   return (

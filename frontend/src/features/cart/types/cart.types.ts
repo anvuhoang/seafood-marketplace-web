@@ -1,3 +1,18 @@
+export interface CartVendor {
+  id: string;
+  name: string;
+  slug: string;
+  district: string;
+  province: string;
+}
+
+/** The lines of one vendor, with the total of those that can be bought (worked out by the server). */
+export interface CartVendorGroup {
+  vendor: CartVendor;
+  lineCount: number;
+  subtotal: number;
+}
+
 /** One line of the cart, as the API returns it. Every amount is worked out by the server. */
 export interface CartItemView {
   /** The line on the server (used to change or remove it). Null for a guest cart, which is only priced. */
@@ -9,7 +24,7 @@ export interface CartItemView {
   variantName: string;
   sizeLabel: string | null;
   imageUrl: string | null;
-  vendor: { id: string; name: string; slug: string };
+  vendor: CartVendor;
   unit: string;
   /** VND per unit, read from the offer now. */
   unitPrice: number;
@@ -25,6 +40,8 @@ export interface CartItemView {
 
 export interface CartView {
   items: CartItemView[];
+  /** The same lines grouped by vendor, in the order the vendors first appear. */
+  vendors: CartVendorGroup[];
   lineCount: number;
   /** Total of the lines that can be bought, in VND. */
   subtotal: number;
@@ -53,4 +70,4 @@ export interface CartActionResult {
   message: string;
 }
 
-export const EMPTY_CART: CartView = { items: [], lineCount: 0, subtotal: 0, hasProblems: false };
+export const EMPTY_CART: CartView = { items: [], vendors: [], lineCount: 0, subtotal: 0, hasProblems: false };

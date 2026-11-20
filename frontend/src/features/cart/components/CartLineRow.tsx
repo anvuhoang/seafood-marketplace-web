@@ -16,12 +16,15 @@ interface CartLineRowProps {
   item: CartItemView;
   /** A change is being sent: the controls wait instead of racing it. */
   busy: boolean;
+  /** Ticked lines are the ones the summary adds up (and "remove selected" removes). */
+  selected: boolean;
+  onSelectChange: (checked: boolean) => void;
   onQuantityChange: (item: CartItemView, quantity: number) => Promise<CartActionResult>;
   onRemove: (item: CartItemView) => Promise<CartActionResult>;
 }
 
 /** One line of the cart. Prices and the line total come from the server; this only shows them. */
-export function CartLineRow({ item, busy, onQuantityChange, onRemove }: CartLineRowProps) {
+export function CartLineRow({ item, busy, selected, onSelectChange, onQuantityChange, onRemove }: CartLineRowProps) {
   const canDecrease = item.quantity - STEP > 0;
   const canIncrease = item.quantity < item.stock;
   const detail = [item.variantName, item.sizeLabel].filter(Boolean).join(" · ");
@@ -37,8 +40,16 @@ export function CartLineRow({ item, busy, onQuantityChange, onRemove }: CartLine
   };
 
   return (
-    <li className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-      <div className="flex gap-4">
+    <li className="border-t border-slate-100 p-4 first:border-t-0">
+      <div className="flex gap-3 sm:gap-4">
+        <input
+          type="checkbox"
+          checked={selected}
+          disabled={busy || !item.available}
+          onChange={(event) => onSelectChange(event.target.checked)}
+          aria-label={`Chọn ${item.productName}`}
+          className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#0F3860] disabled:cursor-not-allowed"
+        />
         <Link href={`/products/${item.productSlug}`} className="shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -53,12 +64,6 @@ export function CartLineRow({ item, busy, onQuantityChange, onRemove }: CartLine
             {item.productName}
           </Link>
           {detail && <p className="text-xs text-slate-500">{detail}</p>}
-          <p className="text-xs text-slate-400">
-            Vựa:{" "}
-            <Link href={`/vendor/${item.vendor.slug}`} className="hover:underline">
-              {item.vendor.name}
-            </Link>
-          </p>
           <p className="text-xs text-slate-500">
             {formatPrice(item.unitPrice)} / {item.unit}
           </p>
