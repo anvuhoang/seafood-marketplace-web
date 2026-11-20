@@ -6,6 +6,9 @@ export const metadata = {
   description: "Doanh thu theo ngày, đơn hoàn tất, tỷ lệ hủy và sản phẩm bán chạy của gian hàng.",
 };
 
+// Rendered behind a client-side sign-in check, so there is no instant shell to validate.
+export const instant = false;
+
 /** The period is read from the URL, so the view renders inside Suspense (Cache Components). */
 export default function VendorStatisticsPage() {
   return (

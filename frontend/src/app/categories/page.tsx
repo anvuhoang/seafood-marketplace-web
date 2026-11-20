@@ -184,7 +184,6 @@ async function CategoryGrid() {
         icon={Fish}
         title="Chưa có danh mục nào"
         description="Các danh mục hải sản sẽ hiển thị tại đây khi được mở bán."
-        action={{ href: "/", label: "Về trang chủ" }}
       />
     );
   }

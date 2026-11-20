@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { CustomerHeader } from "@/components/shared/CustomerHeader";
 import { CustomerFooter } from "@/components/shared/CustomerFooter";
-import { ShieldAlert, ArrowLeft, LogOut, Home, UserCheck } from "lucide-react";
+import { ShieldAlert, ArrowLeft, LogOut, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -69,15 +69,7 @@ function UnauthorizedContent() {
         )}
 
         {/* Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          <Link
-            href="/"
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 px-4 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
-          >
-            <Home className="h-4 w-4" />
-            <span>Về Trang Chủ</span>
-          </Link>
-
+        <div className="grid grid-cols-1 gap-3 pt-2">
           {user ? (
             <button
               type="button"

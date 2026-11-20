@@ -6,7 +6,6 @@ import { Suspense, useState, useRef, useEffect } from "react";
 import {
   Search,
   Camera,
-  Fish,
   Heart,
   ShoppingCart,
   User,
@@ -26,6 +25,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
 import { useMyStoreSlug } from "@/features/vendor/hooks/useMyStoreSlug";
 import { formatPrice } from "@/lib/utils";
+import { BrandLogo } from "./BrandLogo";
 import { SUPPORT_HOTLINE } from "@/lib/constants/contact";
 
 const NAV_LINKS = [
@@ -146,8 +146,6 @@ export function CustomerHeader() {
 
   return (
     <header
-      // Anchored during page transitions so only the content below it animates.
-      style={{ viewTransitionName: "site-header" }}
       className={`sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md transition-shadow duration-300 ${
         scrolled ? "shadow-[0_6px_24px_-12px_rgba(15,23,42,0.25)]" : "shadow-none"
       }`}
@@ -217,17 +215,8 @@ export function CustomerHeader() {
       {/* 2. Main Navbar */}
       <div className="border-b border-slate-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:gap-8 lg:px-8">
-          {/* Logo with 3D hover scale */}
-          <Link href="/" className="flex shrink-0 items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0F3860] text-white sm:h-10 sm:w-10">
-              <Fish className="h-5 w-5" strokeWidth={2.25} />
-            </span>
-            <span className="leading-none">
-              <span className="block text-xl font-bold tracking-tight text-[#0F3860] sm:text-[22px]">
-                HaiSan<span className="text-[#E63946]">Express</span>
-              </span>
-              <span className="mt-1 hidden text-[11px] text-slate-500 sm:block">Chợ hải sản trực tuyến</span>
-            </span>
+          <Link href="/" className="flex shrink-0 items-center">
+            <BrandLogo className="h-9 sm:h-10" />
           </Link>
 
           {/* Search bar with Camera Visual Search button */}

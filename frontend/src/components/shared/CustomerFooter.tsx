@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Fish, Mail, MapPin, Phone, RefreshCw, Snowflake, Truck } from "lucide-react";
+import { BrandLogo } from "./BrandLogo";
 import { SUPPORT_HOTLINE } from "@/lib/constants/contact";
 
 const GUARANTEES = [
@@ -61,13 +62,8 @@ export function CustomerFooter() {
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-12 sm:px-6 md:grid-cols-2 lg:grid-cols-5 lg:px-8">
         <div className="lg:col-span-2">
-          <Link href="/" className="inline-flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-[#0F3860]">
-              <Fish className="h-5 w-5" strokeWidth={2.25} />
-            </span>
-            <span className="text-xl font-bold tracking-tight text-white">
-              HaiSan<span className="text-[#FF6B6B]">Express</span>
-            </span>
+          <Link href="/" className="inline-flex items-center">
+            <BrandLogo variant="dark" className="h-11" />
           </Link>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-400">
             Chợ hải sản trực tuyến kết nối các vựa, hộ nuôi và cơ sở kinh doanh hải sản với người mua trên toàn

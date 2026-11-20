@@ -1,6 +1,7 @@
 import { notFound, unstable_rethrow } from "next/navigation";
 import { CustomerHeader } from "@/components/shared/CustomerHeader";
 import { CustomerFooter } from "@/components/shared/CustomerFooter";
+import { OwnStorefrontBanner } from "@/features/vendor/components/OwnStorefrontBanner";
 import { getVendorStorefront } from "@/features/vendor/api/vendor.api";
 import { VendorStorefrontView } from "@/features/vendor/components/VendorStorefrontView";
 import { parseStorefrontQuery } from "@/features/vendor/utils/storefront-query";
@@ -40,6 +41,7 @@ export default async function VendorStorefrontPage({
 
   return (
     <div className="min-h-screen bg-slate-50/40 flex flex-col">
+      <OwnStorefrontBanner slug={slug} />
       <CustomerHeader />
 
       <main className="flex-1 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-8">

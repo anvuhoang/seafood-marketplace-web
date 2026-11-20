@@ -15,12 +15,12 @@
 }
 
 /*
- * Dark mode for the admin area only. It lives on a wrapper class instead of
- * <html>, so the storefront is untouched. Utilities read colours from these
+ * Dark mode for the admin and vendor consoles only. It lives on a wrapper class
+ * instead of <html>, so the storefront is untouched. Utilities read colours from these
  * variables, so redefining the neutral scale here flips every bg-white,
  * text-slate-900 and border-slate-200 inside the wrapper at once.
  */
-.admin-dark {
+.console-dark {
   color-scheme: dark;
   --color-white: #0f1d30;
   --color-slate-50: #0a1626;
@@ -59,13 +59,43 @@
   --color-sky-50: #0c2438;
   --color-sky-100: #10304b;
   --color-sky-200: #174a73;
+  --color-sky-300: #1f5f93;
   --color-sky-700: #7cc3f0;
   --color-sky-800: #a5d8f6;
+  --color-rose-50: #33161a;
+  --color-rose-100: #44191f;
+  --color-rose-200: #6a2530;
+  --color-rose-300: #8a3340;
+  --color-rose-800: #fca5a5;
+  --color-rose-900: #fecaca;
+  --color-amber-300: #7a5c14;
+  --color-orange-50: #331d0c;
+  --color-orange-700: #fdba74;
+  --color-purple-50: #241a3a;
+  --color-purple-200: #43326b;
+  --color-purple-300: #5a458e;
+  --color-purple-900: #e9d5ff;
 }
 
-/* The sidebar and top bar are dark in both themes, so white stays white there. */
-.admin-dark .admin-chrome {
+/*
+ * Strong shades are mostly text colours, but a few buttons and bars are filled
+ * with them. Only the text uses are lightened here, so the fills keep their colour.
+ */
+.console-dark .text-rose-600 { color: #f48a94; }
+.console-dark .text-rose-700 { color: #f7a1a9; }
+.console-dark .text-emerald-600 { color: #34d399; }
+.console-dark .text-emerald-700 { color: #6ee7b7; }
+.console-dark .text-amber-600 { color: #fbbf24; }
+.console-dark .text-amber-700 { color: #fcd34d; }
+.console-dark .text-purple-600 { color: #c4b5fd; }
+.console-dark .text-purple-700 { color: #d8b4fe; }
+/* Hover darkens a red button; the light text tone set above would turn it pale. */
+.console-dark [class~="hover:bg-rose-800"]:hover { background-color: #9f1239; }
+
+/* The sidebar and top bar are dark in both themes, so white stays white there, and brand fills use the shell colour. */
+.console-dark .console-chrome {
   --color-white: #ffffff;
+  --color-brand: #0b2540;
 }
 
 @layer base {

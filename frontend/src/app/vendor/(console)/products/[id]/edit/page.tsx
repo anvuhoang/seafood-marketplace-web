@@ -7,6 +7,9 @@ export const metadata = {
   description: "Chỉnh sửa sản phẩm do gian hàng đã tạo.",
 };
 
+// Rendered behind a client-side sign-in check, so there is no instant shell to validate.
+export const instant = false;
+
 /** The id is only known at request time, so it is read inside Suspense (Cache Components). */
 interface EditPageProps {
   params: Promise<{ id: string }>;

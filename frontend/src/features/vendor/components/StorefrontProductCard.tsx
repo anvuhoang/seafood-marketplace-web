@@ -6,16 +6,21 @@ import { Check, ShoppingCart } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { FALLBACK_PRODUCT_IMAGE } from "@/lib/constants/images";
 import { useCart } from "@/features/cart/context/CartContext";
+import { useMyStoreSlug } from "../hooks/useMyStoreSlug";
 import { VendorStorefrontProduct } from "../types/vendor.types";
 
 interface StorefrontProductCardProps {
   product: VendorStorefrontProduct;
   vendorName: string;
+  /** Slug of the storefront this card is on, to tell the owner apart from visitors. */
+  vendorSlug: string;
   originLabel: string;
 }
 
-export function StorefrontProductCard({ product, vendorName, originLabel }: StorefrontProductCardProps) {
+export function StorefrontProductCard({ product, vendorName, vendorSlug, originLabel }: StorefrontProductCardProps) {
   const { addToCart } = useCart();
+  // An owner looking at their own store cannot buy from it; see HideForStoreOwner.
+  const isOwnProduct = useMyStoreSlug() === vendorSlug;
   const [justAdded, setJustAdded] = useState(false);
 
   const href = `/products/${product.slug}`;
@@ -75,19 +80,25 @@ export function StorefrontProductCard({ product, vendorName, originLabel }: Stor
             <span className="text-base font-bold text-[#D62839]">{formatPrice(product.price)}</span>
             <span className="ml-0.5">/{product.unit}</span>
           </p>
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={!product.inStock}
-            aria-label={`Thêm ${product.name} vào giỏ hàng`}
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all active:scale-90 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 ${
-              justAdded
-                ? "border-emerald-600 bg-emerald-600 text-white"
-                : "border-slate-300 text-[#0F3860] hover:border-[#0F3860] hover:bg-[#0F3860] hover:text-white"
-            }`}
-          >
-            {justAdded ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
-          </button>
+          {isOwnProduct ? (
+            <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+              Sản phẩm của bạn
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!product.inStock}
+              aria-label={`Thêm ${product.name} vào giỏ hàng`}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all active:scale-90 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 ${
+                justAdded
+                  ? "border-emerald-600 bg-emerald-600 text-white"
+                  : "border-slate-300 text-[#0F3860] hover:border-[#0F3860] hover:bg-[#0F3860] hover:text-white"
+              }`}
+            >
+              {justAdded ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
+            </button>
+          )}
         </div>
       </div>
     </article>

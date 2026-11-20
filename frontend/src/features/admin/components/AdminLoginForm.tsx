@@ -1,9 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getSafeRedirectPath } from "@/features/auth/utils/safe-redirect";
 
@@ -46,14 +45,6 @@ export function AdminLoginForm() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 px-5 py-6">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1.5 self-start text-sm text-slate-500 transition-colors hover:text-[#0F3860]"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Về trang chủ
-      </Link>
-
       <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">
         <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm sm:p-8">
           <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0F3860] text-white">

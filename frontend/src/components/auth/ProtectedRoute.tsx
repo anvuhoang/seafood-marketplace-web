@@ -3,7 +3,7 @@
 import React, { Suspense, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { ShieldAlert, ArrowLeft, Loader2, LogIn } from "lucide-react";
+import { ShieldAlert, Loader2, LogIn } from "lucide-react";
 import Link from "next/link";
 
 interface ProtectedRouteProps {
@@ -149,15 +149,7 @@ function ProtectedRouteContent({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
-            <Link
-              href="/"
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Về Trang Chủ</span>
-            </Link>
-
+          <div className="pt-2">
             <Link
               href={
                 userRole === "VENDOR"
@@ -166,7 +158,7 @@ function ProtectedRouteContent({
                     ? "/admin/dashboard"
                     : "/customer/orders"
               }
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-[#0F3860] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#0A2744]"
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#0F3860] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#0A2744]"
             >
               <span>Về Trang Của Bạn</span>
             </Link>
