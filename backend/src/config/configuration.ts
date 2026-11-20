@@ -24,4 +24,18 @@ export default () => ({
     apiKey: process.env.CLOUDINARY_API_KEY ?? '',
     apiSecret: process.env.CLOUDINARY_API_SECRET ?? '',
   },
+
+  // Smart Import (vendor product drafts from text or voice). The key stays on the server.
+  // 'off' until GROQ_API_KEY is set; 'mock' is a local stand-in that needs no key.
+  smartImport: {
+    provider:
+      process.env.SMART_IMPORT_PROVIDER ??
+      (process.env.GROQ_API_KEY ? 'groq' : 'off'),
+    groqApiKey: process.env.GROQ_API_KEY ?? '',
+    transcribeModel:
+      process.env.SMART_IMPORT_TRANSCRIBE_MODEL ?? 'whisper-large-v3-turbo',
+    extractModel:
+      process.env.SMART_IMPORT_EXTRACT_MODEL ?? 'llama-3.3-70b-versatile',
+    timeoutMs: Number(process.env.SMART_IMPORT_TIMEOUT_MS ?? 20000),
+  },
 });
