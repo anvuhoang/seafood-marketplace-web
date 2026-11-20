@@ -14,6 +14,7 @@ import {
 import {
   CartDto,
   CartItemDto,
+  CartVendorGroupDto,
   MergeCartResultDto,
   QuoteDto,
 } from './dto/cart.dto.js';
@@ -34,7 +35,7 @@ const totalExceedsStock = (total: number, stock: number) =>
 
 /** Everything the cart screen needs about an offer, in one read. */
 const offerInclude = {
-  vendor: { select: { id: true, name: true, slug: true, status: true } },
+  vendor: { select: { id: true, name: true, slug: true, district: true, province: true, status: true } },
   variant: {
     select: {
       name: true,
@@ -100,12 +101,26 @@ function lineProblem(offer: OfferRow, quantity: Prisma.Decimal): string | null {
 function toCart(lines: Line[]): CartDto {
   let subtotal = new Prisma.Decimal(0);
   let hasProblems = false;
+  // One group per vendor, in the order the vendors first appear; each keeps its own exact total.
+  const groups = new Map<string, { group: CartVendorGroupDto; total: Prisma.Decimal }>();
 
   const items: CartItemDto[] = lines.map(({ id, offer, quantity }) => {
     const problem = lineProblem(offer, quantity);
     const lineTotal = offer.price.mul(quantity).toDecimalPlaces(2);
     if (problem) hasProblems = true;
     else subtotal = subtotal.plus(lineTotal);
+
+    const vendor = {
+      id: offer.vendor.id,
+      name: offer.vendor.name,
+      slug: offer.vendor.slug,
+      district: offer.vendor.district,
+      province: offer.vendor.province,
+    };
+    const entry = groups.get(vendor.id) ?? { group: { vendor, lineCount: 0, subtotal: 0 }, total: new Prisma.Decimal(0) };
+    entry.group.lineCount += 1;
+    if (!problem) entry.total = entry.total.plus(lineTotal);
+    groups.set(vendor.id, entry);
 
     const { product } = offer.variant;
     const image = product.images.find((i) => i.isPrimary) ?? product.images[0];
@@ -118,11 +133,7 @@ function toCart(lines: Line[]): CartDto {
       variantName: offer.variant.name,
       sizeLabel: offer.variant.sizeLabel,
       imageUrl: image?.imageUrl ?? null,
-      vendor: {
-        id: offer.vendor.id,
-        name: offer.vendor.name,
-        slug: offer.vendor.slug,
-      },
+      vendor,
       unit: offer.variant.unit,
       unitPrice: offer.price.toNumber(),
       quantity: quantity.toNumber(),
@@ -135,6 +146,7 @@ function toCart(lines: Line[]): CartDto {
 
   return {
     items,
+    vendors: [...groups.values()].map(({ group, total }) => ({ ...group, subtotal: total.toDecimalPlaces(2).toNumber() })),
     lineCount: items.length,
     subtotal: subtotal.toDecimalPlaces(2).toNumber(),
     hasProblems,

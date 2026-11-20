@@ -38,6 +38,8 @@ interface OfferSeed {
   productStatus?: string;
   unit?: string;
   name?: string;
+  vendorId?: string;
+  vendorName?: string;
 }
 
 /** An offer row shaped like what the service reads (offer + vendor + variant + product + images). */
@@ -47,9 +49,11 @@ const makeOffer = (seed: OfferSeed) => ({
   stock: D(seed.stock ?? '10'),
   status: seed.status ?? 'ACTIVE',
   vendor: {
-    id: 'vendor-1',
-    name: 'Vựa Phú Quốc',
+    id: seed.vendorId ?? 'vendor-1',
+    name: seed.vendorName ?? 'Vựa Phú Quốc',
     slug: 'vua-phu-quoc',
+    district: 'Phú Quốc',
+    province: 'Kiên Giang',
     status: seed.vendorStatus ?? 'ACTIVE',
   },
   variant: {
@@ -224,6 +228,7 @@ describe('getCart', () => {
   it('is empty for a user with no cart', async () => {
     expect(await service.getCart(ALICE)).toEqual({
       items: [],
+      vendors: [],
       lineCount: 0,
       subtotal: 0,
       hasProblems: false,
@@ -354,6 +359,45 @@ describe('totals', () => {
     expect(cart.items[0].available).toBe(false);
     expect(cart.items[0].problem).toContain('Chỉ còn 5 kg');
     expect(cart.subtotal).toBe(0);
+  });
+});
+
+describe('grouping by vendor', () => {
+  const BOAT = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+  it('groups the lines of each vendor with the vendor location and its own exact total', async () => {
+    seed({ id: BOAT, price: '300000', stock: '10', vendorId: 'vendor-2', vendorName: 'Vựa Năm Căn' });
+    await service.addItem(ALICE, { offerId: SHRIMP, quantity: 1 });
+    await service.addItem(ALICE, { offerId: BOAT, quantity: 2 });
+    const cart = await service.addItem(ALICE, { offerId: CRAB, quantity: 1 });
+
+    // SHRIMP and CRAB belong to vendor-1, BOAT to vendor-2.
+    expect(cart.vendors).toHaveLength(2);
+    const byId = Object.fromEntries(cart.vendors.map((g) => [g.vendor.id, g]));
+    expect(byId['vendor-1']).toMatchObject({ lineCount: 2, subtotal: 519999.99 });
+    expect(byId['vendor-2']).toMatchObject({ lineCount: 1, subtotal: 600000 });
+    expect(byId['vendor-2'].vendor).toMatchObject({ name: 'Vựa Năm Căn', district: 'Phú Quốc', province: 'Kiên Giang' });
+    // The groups add up to the cart total.
+    expect(cart.vendors.reduce((sum, g) => sum + g.subtotal, 0)).toBeCloseTo(cart.subtotal, 2);
+  });
+
+  it('leaves a line that cannot be bought out of the vendor total but still counts it', async () => {
+    await service.addItem(ALICE, { offerId: SHRIMP, quantity: 1 });
+    await service.addItem(ALICE, { offerId: CRAB, quantity: 1 });
+    db.offers.set(SHRIMP, makeOffer({ id: SHRIMP, stock: '0' }));
+    const cart = await service.getCart(ALICE);
+    expect(cart.vendors).toHaveLength(1);
+    expect(cart.vendors[0]).toMatchObject({ lineCount: 2, subtotal: 99999.99 });
+  });
+
+  it('has no groups for an empty cart', async () => {
+    expect((await service.getCart(ALICE)).vendors).toEqual([]);
+  });
+
+  it('groups a priced guest cart the same way', async () => {
+    seed({ id: BOAT, price: '300000', vendorId: 'vendor-2', vendorName: 'Vựa Năm Căn' });
+    const quote = await service.quote({ items: [{ offerId: SHRIMP, quantity: 1 }, { offerId: BOAT, quantity: 1 }] });
+    expect(quote.vendors.map((g) => g.vendor.name)).toEqual(['Vựa Phú Quốc', 'Vựa Năm Căn']);
   });
 });
 

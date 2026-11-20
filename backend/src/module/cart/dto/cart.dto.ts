@@ -6,6 +6,19 @@ export class CartVendorDto {
   name: string;
   /** @example "vua-thuy-san-phu-quoc-xanh" */
   slug: string;
+  /** @example "Phú Quốc" */
+  district: string;
+  /** @example "Kiên Giang" */
+  province: string;
+}
+
+/** The lines of one vendor, with the total of those that can be bought. */
+export class CartVendorGroupDto {
+  vendor: CartVendorDto;
+  /** Lines of this vendor in the cart. @example 2 */
+  lineCount: number;
+  /** Total in VND of this vendor's lines that can be bought, worked out by the server. @example 1400000 */
+  subtotal: number;
 }
 
 /** One line of the cart, with everything the screen shows. All money is worked out by the server. */
@@ -43,6 +56,8 @@ export class CartItemDto {
 
 export class CartDto {
   items: CartItemDto[];
+  /** The same lines grouped by vendor, in the order the vendors first appear, with each vendor's total. */
+  vendors: CartVendorGroupDto[];
   /** Number of lines. @example 3 */
   lineCount: number;
   /** Total in VND of the lines that can be bought, worked out by the server. @example 1890000 */
