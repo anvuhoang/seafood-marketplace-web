@@ -5,9 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { CloudinaryService } from '../../common/cloudinary/cloudinary.service.js';
-import { slugify } from '../product/product-listing.service.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
+import { CloudinaryService } from '../../../common/cloudinary/cloudinary.service.js';
+import { slugify } from '../../product/product-listing.service.js';
 import type {
   VendorOfferStatus,
   VendorProductStatus,
@@ -19,14 +19,14 @@ import type {
   VendorProductImageInputDto,
   VendorProductVariantInputDto,
 } from './dto/vendor-product.dto.js';
-import type { VendorStoreUploadSignatureDto } from './dto/vendor-store.dto.js';
+import type { VendorStoreUploadSignatureDto } from '../dto/vendor-store.dto.js';
 import {
   canVendorWrite,
   findOwnVendor,
   findWritableVendor,
   vendorProductUploadFolder,
   type OwnVendor,
-} from './vendor-access.js';
+} from '../shared/vendor-access.js';
 import { toDecimal } from './vendor-offer.service.js';
 
 export const PRODUCT_NOT_FOUND =

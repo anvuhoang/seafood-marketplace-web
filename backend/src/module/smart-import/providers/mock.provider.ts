@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { parseVietnameseAmount } from './normalize-draft.js';
+import { parseVietnameseAmount } from '../validation/normalize-draft.js';
 import {
   AiProviderError,
   type DraftExtractor,
   type ExtractionContext,
   type SpeechToText,
-} from './smart-import.types.js';
+} from '../smart-import.types.js';
 
 const SAMPLE_TRANSCRIPT =
   'Tôm sú size 30 con một ký, giá 350 nghìn một ký, còn 40 ký, bắt sáng nay ở Cà Mau';

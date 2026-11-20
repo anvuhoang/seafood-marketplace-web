@@ -12,7 +12,7 @@ import {
   DASHBOARD_ORDER_LIMIT,
   VendorService,
 } from './vendor.service.js';
-import { LOW_STOCK_THRESHOLD } from './vendor-offer.service.js';
+import { LOW_STOCK_THRESHOLD } from './offers/vendor-offer.service.js';
 
 const decimal = (value: string) => ({
   toString: () => value,

@@ -5,7 +5,7 @@ import {
   type DraftExtractor,
   type ExtractionContext,
   type SpeechToText,
-} from './smart-import.types.js';
+} from '../smart-import.types.js';
 
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 

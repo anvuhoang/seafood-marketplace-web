@@ -11,19 +11,19 @@ import {
 import { MODULE_METADATA } from '@nestjs/common/constants.js';
 import { Reflector } from '@nestjs/core';
 import { Prisma } from '@prisma/client';
-import { ROLES_KEY } from '../../common/decorators/roles.decorator.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { SELLABLE_OFFER_WHERE } from '../category/category.service.js';
+import { ROLES_KEY } from '../../../common/decorators/roles.decorator.js';
+import { RolesGuard } from '../../../common/guards/roles.guard.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
+import { SELLABLE_OFFER_WHERE } from '../../category/category.service.js';
 import {
   CreateVendorOfferDto,
   UpdateVendorOfferDto,
   UpdateVendorOfferStatusDto,
   VendorOfferQueryDto,
 } from './dto/vendor-offer.dto.js';
-import { VENDOR_READ_ONLY } from './vendor-access.js';
-import { VendorController } from './vendor.controller.js';
-import { VendorModule } from './vendor.module.js';
+import { VENDOR_READ_ONLY } from '../shared/vendor-access.js';
+import { VendorController } from '../vendor.controller.js';
+import { VendorModule } from '../vendor.module.js';
 import { VendorOfferController } from './vendor-offer.controller.js';
 import {
   LOW_STOCK_THRESHOLD,

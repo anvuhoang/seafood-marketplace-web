@@ -16,12 +16,12 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { ErrorResponseDto } from '../../common/dto/error-response.dto.js';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { VENDOR_ORDER_NOT_FOUND } from '../order/order-lifecycle.service.js';
+import { CurrentUser } from '../../../common/decorators/current-user.decorator.js';
+import { Roles } from '../../../common/decorators/roles.decorator.js';
+import { ErrorResponseDto } from '../../../common/dto/error-response.dto.js';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../../../common/guards/roles.guard.js';
+import { VENDOR_ORDER_NOT_FOUND } from '../../order/order-lifecycle.service.js';
 import {
   UpdateVendorOrderStatusDto,
   VendorOrderDetailDto,

@@ -14,12 +14,12 @@ import { Prisma } from '@prisma/client';
 import request from 'supertest';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { AuthModule } from '../auth/auth.module.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { AuthModule } from '../../auth/auth.module.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
 import {
   ADMINISTRATIVE_UNIT_MESSAGES,
   AdministrativeUnitService,
-} from '../administrative-unit/administrative-unit.service.js';
+} from '../../administrative-unit/administrative-unit.service.js';
 import { RegisterVendorDto } from './dto/vendor-registration.dto.js';
 import { VendorRegistrationController } from './vendor-registration.controller.js';
 import {
@@ -382,7 +382,7 @@ describe('Vendor registration', () => {
     });
 
     it('reserves every first-level route folder under frontend app/vendor/, including route groups', () => {
-      const vendorApp = new URL('../../../../frontend/src/app/vendor/', import.meta.url);
+      const vendorApp = new URL('../../../../../frontend/src/app/vendor/', import.meta.url);
       const routeNames = (dir: URL): string[] =>
         readdirSync(dir, { withFileTypes: true })
           .filter((entry) => entry.isDirectory())

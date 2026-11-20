@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, VendorOrderStatus } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
 import {
   addDays,
   DAY_MS,
@@ -9,7 +9,7 @@ import {
   startOfMonth,
   vietnamDayKey,
   vietnamDayStart,
-} from '../../common/utils/vietnam-date.js';
+} from '../../../common/utils/vietnam-date.js';
 import type {
   StatsRange,
   VendorStatsDto,
@@ -19,8 +19,8 @@ import type {
   VendorStatsQueryDto,
   VendorStatsTopProductDto,
 } from './dto/vendor-stats.dto.js';
-import { findOwnVendor } from './vendor-access.js';
-import { LOW_STOCK_THRESHOLD } from './vendor-offer.service.js';
+import { findOwnVendor } from '../shared/vendor-access.js';
+import { LOW_STOCK_THRESHOLD } from '../offers/vendor-offer.service.js';
 
 export const STATS_MAX_DAYS = 366;
 export const TOP_PRODUCT_LIMIT = 5;

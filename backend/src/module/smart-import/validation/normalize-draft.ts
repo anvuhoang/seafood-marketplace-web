@@ -1,9 +1,9 @@
 import {
   OFFER_PRICE_MAX,
   OFFER_STOCK_MAX,
-} from '../vendor/dto/offer-amount.validator.js';
-import { VENDOR_PRODUCT_LIMITS } from '../vendor/dto/vendor-product.dto.js';
-import { AiProviderError, type ExtractionContext } from './smart-import.types.js';
+} from '../../vendor/shared/offer-amount.validator.js';
+import { VENDOR_PRODUCT_LIMITS } from '../../vendor/offers/dto/vendor-product.dto.js';
+import { AiProviderError, type ExtractionContext } from '../smart-import.types.js';
 
 /** Below this a seafood price is almost certainly "350" meant as 350 nghìn. */
 const SUSPICIOUSLY_LOW_PRICE = 1_000;

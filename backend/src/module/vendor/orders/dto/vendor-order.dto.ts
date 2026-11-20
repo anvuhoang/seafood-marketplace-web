@@ -2,18 +2,18 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { VendorOrderStatus } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
-import { PaginationDto } from '../../../common/dto/pagination.dto.js';
+import { PaginationDto } from '../../../../common/dto/pagination.dto.js';
 import {
   OrderItemDto,
   OrderPaymentDto,
   OrderShipmentDto,
-} from '../../order/dto/order-common.dto.js';
+} from '../../../order/dto/order-common.dto.js';
 import {
   VENDOR_ORDER_STATUSES,
   VENDOR_ORDER_TARGETS,
   type VendorOrderTarget,
-} from '../../order/order-status.js';
-import { PageQueryDto, trimOrUndefined } from './vendor-offer.dto.js';
+} from '../../../order/order-status.js';
+import { PageQueryDto, trimOrUndefined } from '../../offers/dto/vendor-offer.dto.js';
 
 export const VENDOR_NOTE_MAX_LENGTH = 500;
 

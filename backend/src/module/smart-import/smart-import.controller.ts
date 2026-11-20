@@ -28,7 +28,7 @@ import { Roles } from '../../common/decorators/roles.decorator.js';
 import { ErrorResponseDto } from '../../common/dto/error-response.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { AUDIO_MAX_BYTES, AUDIO_TOO_LARGE } from './audio-validation.js';
+import { AUDIO_MAX_BYTES, AUDIO_TOO_LARGE } from './validation/audio-validation.js';
 import {
   SmartImportDraftDto,
   SmartImportDraftRequestDto,

@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { VendorOrderStatus } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import { IsIn, IsOptional, Matches } from 'class-validator';
-import { trimOrUndefined } from './vendor-offer.dto.js';
+import { trimOrUndefined } from '../../offers/dto/vendor-offer.dto.js';
 
 export const STATS_RANGES = ['7d', '30d', 'this_month', 'last_month', 'custom'] as const;
 export type StatsRange = (typeof STATS_RANGES)[number];

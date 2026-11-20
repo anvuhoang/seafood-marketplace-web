@@ -1,7 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, Max, Min, ValidateBy } from 'class-validator';
-import { hasAtMostDecimalPlaces } from '../../vendor/dto/offer-amount.validator.js';
+import { hasAtMostDecimalPlaces } from '../../vendor/shared/offer-amount.validator.js';
 
 /** The cart column is Decimal(12, 3): three decimals, and nothing absurd. */
 export const CART_QUANTITY_DECIMALS = 3;

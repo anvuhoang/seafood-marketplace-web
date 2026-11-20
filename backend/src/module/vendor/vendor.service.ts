@@ -3,7 +3,7 @@ import { Prisma, VendorOrderStatus } from '@prisma/client';
 import type { Vendor } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CLOUDINARY_FOLDER_ROOT, CloudinaryService } from '../../common/cloudinary/cloudinary.service.js';
-import { LOW_STOCK_THRESHOLD } from './vendor-offer.service.js';
+import { LOW_STOCK_THRESHOLD } from './offers/vendor-offer.service.js';
 import type { UpdateVendorStoreDto, VendorStoreDto, VendorStoreUploadSignatureDto } from './dto/vendor-store.dto.js';
 import type {
   FollowStateDto,

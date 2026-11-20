@@ -4,11 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
 import {
   normalizeSearchText,
   searchTokens,
-} from '../product/product-listing.service.js';
+} from '../../product/product-listing.service.js';
 import {
   VENDOR_LIST_DEFAULT_PAGE_SIZE,
   type CreateVendorOfferDto,
@@ -27,7 +27,7 @@ import {
   findOwnVendor,
   findWritableVendor,
   pageWindow,
-} from './vendor-access.js';
+} from '../shared/vendor-access.js';
 
 /** An ACTIVE offer at or below this stock counts as running low (same rule as the dashboard). */
 export const LOW_STOCK_THRESHOLD = 5;

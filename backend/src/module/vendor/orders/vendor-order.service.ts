@@ -4,12 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { DAY_MS, vietnamDayStart } from '../../common/utils/vietnam-date.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
+import { DAY_MS, vietnamDayStart } from '../../../common/utils/vietnam-date.js';
 import {
   OrderLifecycleService,
   VENDOR_ORDER_NOT_FOUND,
-} from '../order/order-lifecycle.service.js';
+} from '../../order/order-lifecycle.service.js';
 import {
   orderItemSelect,
   paymentSelect,
@@ -17,14 +17,14 @@ import {
   toOrderItemDto,
   toPaymentDto,
   toShipmentDto,
-} from '../order/order-mapping.js';
+} from '../../order/order-mapping.js';
 import {
   acceptBlockedReason,
   allowedVendorActions,
   VENDOR_ORDER_STATUSES,
-} from '../order/order-status.js';
-import { searchTokens } from '../product/product-listing.service.js';
-import { VENDOR_LIST_DEFAULT_PAGE_SIZE } from './dto/vendor-offer.dto.js';
+} from '../../order/order-status.js';
+import { searchTokens } from '../../product/product-listing.service.js';
+import { VENDOR_LIST_DEFAULT_PAGE_SIZE } from '../offers/dto/vendor-offer.dto.js';
 import type {
   UpdateVendorOrderStatusDto,
   VendorOrderDetailDto,
@@ -38,8 +38,8 @@ import {
   findOwnVendor,
   findWritableVendor,
   pageWindow,
-} from './vendor-access.js';
-import { matchesKeywords } from './vendor-offer.service.js';
+} from '../shared/vendor-access.js';
+import { matchesKeywords } from '../offers/vendor-offer.service.js';
 
 export const INVALID_DATE_RANGE = 'Khoảng ngày không hợp lệ.';
 

@@ -9,9 +9,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
-import { CloudinaryService } from '../../common/cloudinary/cloudinary.service.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { ProductService } from '../product/product.service.js';
+import { CloudinaryService } from '../../../common/cloudinary/cloudinary.service.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
+import { ProductService } from '../../product/product.service.js';
 import {
   CreateVendorProductDto,
   UpdateVendorProductDto,
@@ -19,7 +19,7 @@ import {
 import {
   VENDOR_READ_ONLY,
   vendorProductUploadFolder,
-} from './vendor-access.js';
+} from '../shared/vendor-access.js';
 import {
   PRODUCT_DUPLICATE_VARIANT,
   PRODUCT_INVALID_CATEGORY,

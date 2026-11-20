@@ -1,7 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { VendorStatus } from '@prisma/client';
-import { CLOUDINARY_FOLDER_ROOT } from '../../common/cloudinary/cloudinary.service.js';
-import type { PrismaService } from '../../prisma/prisma.service.js';
+import { CLOUDINARY_FOLDER_ROOT } from '../../../common/cloudinary/cloudinary.service.js';
+import type { PrismaService } from '../../../prisma/prisma.service.js';
 
 export const VENDOR_NOT_FOUND = 'Tài khoản của bạn chưa có gian hàng.';
 export const VENDOR_READ_ONLY =

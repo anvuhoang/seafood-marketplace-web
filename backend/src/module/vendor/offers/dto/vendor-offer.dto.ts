@@ -11,8 +11,8 @@ import {
   Min,
   ValidateIf,
 } from 'class-validator';
-import { PaginationDto } from '../../../common/dto/pagination.dto.js';
-import { IsOfferPrice, IsOfferStock } from './offer-amount.validator.js';
+import { PaginationDto } from '../../../../common/dto/pagination.dto.js';
+import { IsOfferPrice, IsOfferStock } from '../../shared/offer-amount.validator.js';
 
 export const OFFER_STATUSES = [
   'ACTIVE',

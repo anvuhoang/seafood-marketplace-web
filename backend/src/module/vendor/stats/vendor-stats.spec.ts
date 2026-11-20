@@ -8,9 +8,9 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Prisma } from '@prisma/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ROLES_KEY } from '../../common/decorators/roles.decorator.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import type { PrismaService } from '../../prisma/prisma.service.js';
+import { ROLES_KEY } from '../../../common/decorators/roles.decorator.js';
+import { RolesGuard } from '../../../common/guards/roles.guard.js';
+import type { PrismaService } from '../../../prisma/prisma.service.js';
 import { VendorStatsQueryDto } from './dto/vendor-stats.dto.js';
 import { VendorStatsController } from './vendor-stats.controller.js';
 import {
@@ -25,7 +25,7 @@ import {
   TOP_PRODUCT_LIMIT,
   VendorStatsService,
 } from './vendor-stats.service.js';
-import { LOW_STOCK_THRESHOLD } from './vendor-offer.service.js';
+import { LOW_STOCK_THRESHOLD } from '../offers/vendor-offer.service.js';
 
 /** 2026-11-19 17:00 in Vietnam. */
 const NOW = new Date('2026-11-19T10:00:00.000Z');

@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaModule } from '../../prisma/prisma.module.js';
-import { GroqProvider } from './groq.provider.js';
-import { MockProvider } from './mock.provider.js';
+import { GroqProvider } from './providers/groq.provider.js';
+import { MockProvider } from './providers/mock.provider.js';
 import { SmartImportLimiter } from './smart-import.limiter.js';
 import { SmartImportService } from './smart-import.service.js';
 import {

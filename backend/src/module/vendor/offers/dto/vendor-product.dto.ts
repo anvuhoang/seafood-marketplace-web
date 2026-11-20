@@ -25,7 +25,7 @@ import type {
   VendorOfferStatus,
   VendorProductStatus,
 } from './vendor-offer.dto.js';
-import { IsOfferPrice, IsOfferStock } from './offer-amount.validator.js';
+import { IsOfferPrice, IsOfferStock } from '../../shared/offer-amount.validator.js';
 
 /** Same lengths as the catalog columns. */
 export const VENDOR_PRODUCT_LIMITS = {

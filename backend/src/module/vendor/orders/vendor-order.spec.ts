@@ -11,31 +11,31 @@ import {
 import { MODULE_METADATA } from '@nestjs/common/constants.js';
 import { Reflector } from '@nestjs/core';
 import type { VendorOrderStatus } from '@prisma/client';
-import { ROLES_KEY } from '../../common/decorators/roles.decorator.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import type { CloudinaryService } from '../../common/cloudinary/cloudinary.service.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { ROLES_KEY } from '../../../common/decorators/roles.decorator.js';
+import { RolesGuard } from '../../../common/guards/roles.guard.js';
+import type { CloudinaryService } from '../../../common/cloudinary/cloudinary.service.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
 import {
   createFakeOrderDb,
   fakeItem,
   fakeOrder,
   fakeVendorOrder,
   type FakeState,
-} from '../../../test/fake-order-db.js';
+} from '../../../../test/fake-order-db.js';
 import {
   OrderLifecycleService,
   ORDER_CHANGED_MEANWHILE,
   VENDOR_ORDER_NOT_FOUND,
-} from '../order/order-lifecycle.service.js';
+} from '../../order/order-lifecycle.service.js';
 import {
   VENDOR_ORDER_STATUS_LABELS,
   VENDOR_ORDER_STATUSES,
-} from '../order/order-status.js';
-import { ReviewService } from '../review/review.service.js';
+} from '../../order/order-status.js';
+import { ReviewService } from '../../review/review.service.js';
 import { UpdateVendorOrderStatusDto, VendorOrderQueryDto } from './dto/vendor-order.dto.js';
-import { VENDOR_READ_ONLY } from './vendor-access.js';
-import { VendorController } from './vendor.controller.js';
-import { VendorModule } from './vendor.module.js';
+import { VENDOR_READ_ONLY } from '../shared/vendor-access.js';
+import { VendorController } from '../vendor.controller.js';
+import { VendorModule } from '../vendor.module.js';
 import { VendorOrderController } from './vendor-order.controller.js';
 import { INVALID_DATE_RANGE, VendorOrderService } from './vendor-order.service.js';
 

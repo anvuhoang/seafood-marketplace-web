@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeDraft, parseVietnameseAmount } from './normalize-draft.js';
-import { AiProviderError } from './smart-import.types.js';
+import { AiProviderError } from '../smart-import.types.js';
 
 const CATEGORY = '11111111-1111-4111-8111-111111111111';
 const context = { categories: [{ id: CATEGORY, name: 'Tôm' }] };

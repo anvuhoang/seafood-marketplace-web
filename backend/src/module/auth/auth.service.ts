@@ -11,7 +11,7 @@ import bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
-import { LoginAttemptLimiter } from './login-attempt.limiter.js';
+import { LoginAttemptLimiter } from './security/login-attempt.limiter.js';
 import type { AuthResponseDto, AuthUserDto } from './dto/auth-response.dto.js';
 
 export type SafeUser = AuthUserDto;

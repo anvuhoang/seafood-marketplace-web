@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import { ErrorResponseDto } from '../../common/dto/error-response.dto.js';
+import { CurrentUser } from '../../../common/decorators/current-user.decorator.js';
+import { ErrorResponseDto } from '../../../common/dto/error-response.dto.js';
 import { RegisterVendorDto, VendorRegistrationStatusDto } from './dto/vendor-registration.dto.js';
 import { VendorRegistrationService } from './vendor-registration.service.js';
 

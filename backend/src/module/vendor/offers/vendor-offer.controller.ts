@@ -19,11 +19,11 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { ErrorResponseDto } from '../../common/dto/error-response.dto.js';
-import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
+import { ErrorResponseDto } from '../../../common/dto/error-response.dto.js';
+import { CurrentUser } from '../../../common/decorators/current-user.decorator.js';
+import { Roles } from '../../../common/decorators/roles.decorator.js';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../../../common/guards/roles.guard.js';
 import {
   CreateVendorOfferDto,
   UpdateVendorOfferDto,
@@ -39,7 +39,7 @@ import {
   UpdateVendorProductDto,
   VendorProductDto,
 } from './dto/vendor-product.dto.js';
-import { VendorStoreUploadSignatureDto } from './dto/vendor-store.dto.js';
+import { VendorStoreUploadSignatureDto } from '../dto/vendor-store.dto.js';
 import { OFFER_NOT_FOUND, VendorOfferService } from './vendor-offer.service.js';
 import {
   PRODUCT_NOT_FOUND,
