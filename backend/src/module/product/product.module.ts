@@ -10,6 +10,6 @@ import { RegionController } from './region.controller.js';
   imports: [PrismaModule, CategoryModule],
   controllers: [ProductController, RegionController],
   providers: [ProductService, ProductListingService],
-  exports: [ProductService],
+  exports: [ProductService, ProductListingService],
 })
 export class ProductModule {}
