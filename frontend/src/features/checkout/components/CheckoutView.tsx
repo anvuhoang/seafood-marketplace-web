@@ -111,7 +111,9 @@ export function CheckoutView() {
       const result = await placeOrder(accessToken, keyFor(), body);
       // The bought lines have left the cart on the server; make the header and the cart page say so.
       refreshCart();
-      router.push(`/customer/checkout/success?order=${encodeURIComponent(result.order.orderNumber)}`);
+      const orderNumber = encodeURIComponent(result.order.orderNumber);
+      // Paying by QR: go straight to the payment screen. Otherwise the order is placed and waits for the vendors.
+      router.push(payment === "BANK_TRANSFER" ? `/customer/orders/${orderNumber}/payment` : `/customer/checkout/success?order=${orderNumber}`);
     } catch (error) {
       setSubmitError(error instanceof ApiError ? error.message : "Không thể kết nối tới máy chủ. Vui lòng thử lại.");
       // A refused order (stock changed, a line withdrawn...) leaves things as they were: show the new situation.

@@ -11,8 +11,8 @@ const OPTIONS: Array<{ method: PaymentMethod; title: string; description: string
   },
   {
     method: "BANK_TRANSFER",
-    title: "Chuyển khoản ngân hàng",
-    description: "Thanh toán trước bằng chuyển khoản.",
+    title: "Chuyển khoản bằng mã QR",
+    description: "Quét mã QR bằng ứng dụng ngân hàng để thanh toán ngay sau khi đặt hàng.",
     icon: Landmark,
   },
   {
@@ -40,7 +40,9 @@ export function PaymentSection({ supported, selected, onSelect, disabled }: Paym
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0F3860] text-[11px] text-white">3</span>
           Phương thức thanh toán
         </h2>
-        <p className="mt-1 text-xs text-slate-500">Hiện tại hệ thống hỗ trợ thanh toán khi nhận hàng.</p>
+        <p className="mt-1 text-xs text-slate-500">
+          {supported.includes("BANK_TRANSFER") ? "Chọn thanh toán khi nhận hàng hoặc chuyển khoản bằng mã QR." : "Hiện tại hệ thống hỗ trợ thanh toán khi nhận hàng."}
+        </p>
       </div>
 
       <fieldset className="space-y-2" disabled={disabled}>

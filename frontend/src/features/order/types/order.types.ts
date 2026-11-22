@@ -3,7 +3,7 @@
 export type VendorOrderStatus = "PENDING" | "ACCEPTED" | "PREPARING" | "SHIPPING" | "COMPLETED" | "CANCELLED";
 export type OrderStatus = "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPING" | "COMPLETED" | "CANCELLED";
 export type PaymentMethod = "COD" | "BANK_TRANSFER" | "E_WALLET" | "CARD";
-export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "CANCELLED" | "EXPIRED";
 
 export interface OrderPayment {
   method: PaymentMethod;
@@ -77,6 +77,15 @@ export interface CustomerOrderSummary {
 export interface CustomerOrderList {
   items: CustomerOrderSummary[];
   pagination: Pagination;
+  /** How many orders the customer has in each status, whatever the filters of this request are. */
+  statusCounts: Record<OrderStatus, number>;
+}
+
+/** What "buy again" did to the cart. */
+export interface ReorderResult {
+  added: number;
+  skipped: number;
+  notices: string[];
 }
 
 export interface CustomerOrderDetail extends CustomerOrderSummary {
