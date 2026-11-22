@@ -16,6 +16,7 @@ import { AdminModule } from './module/admin/admin.module.js';
 import { OrderModule } from './module/order/order.module.js';
 import { PaymentModule } from './module/payment/payment.module.js';
 import { ChatModule } from './module/chat/chat.module.js';
+import { VisualSearchModule } from './module/visual-search/visual-search.module.js';
 import configuration from './config/configuration.js';
 import { validateEnv } from './config/env.validation.js';
 
@@ -40,6 +41,7 @@ import { validateEnv } from './config/env.validation.js';
     OrderModule,
     PaymentModule,
     ChatModule,
+    VisualSearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],

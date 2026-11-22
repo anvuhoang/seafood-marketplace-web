@@ -39,7 +39,7 @@ const NAV_LINKS = [
   { name: "Nghêu, sò, ốc", href: "/categories/ngheu-so-oc" },
   { name: "Đặc sản", href: "/categories/hai-san-dac-san" },
   { name: "Vựa hải sản", href: "/#trusted-vendors" },
-  { name: "Tìm bằng ảnh", href: "/#visual-search" },
+  { name: "Tìm bằng ảnh", href: "/visual-search" },
 ];
 
 function isActiveLink(pathname: string | null, href: string): boolean {
@@ -238,7 +238,7 @@ export function CustomerHeader() {
                 className="w-full bg-transparent px-2.5 py-1.5 text-sm text-slate-800 placeholder-slate-400 outline-none"
               />
               <Link
-                href="/#visual-search"
+                href="/visual-search"
                 title="Tìm hải sản bằng hình ảnh"
                 aria-label="Tìm hải sản bằng hình ảnh"
                 className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#0F3860]"
@@ -480,7 +480,7 @@ export function CustomerHeader() {
               className="w-full bg-transparent px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 outline-none"
             />
             <Link
-              href="/#visual-search"
+              href="/visual-search"
               aria-label="Tìm hải sản bằng hình ảnh"
               className="p-1.5 text-slate-500 hover:text-[#0F3860]"
             >
