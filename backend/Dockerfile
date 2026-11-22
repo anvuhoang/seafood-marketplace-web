@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- install every dependency (the build and the migrations need the dev ones too) -------------------------------
-FROM node:24-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 # --ignore-scripts: the postinstall only syncs agent skills. The Prisma client is generated explicitly below.
@@ -16,7 +16,7 @@ RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" npx prisma gene
 
 # ---- what runs ---------------------------------------------------------------------------------------------------
 # node_modules is kept whole (not pruned): `prisma migrate deploy` and the seed run from this same image.
-FROM node:24-alpine AS runtime
+FROM node:26-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=5000
