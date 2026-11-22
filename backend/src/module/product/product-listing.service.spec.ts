@@ -225,6 +225,23 @@ describe('ProductListingService', () => {
     expect(normal.items.map((i) => i.id).sort()).toEqual(['tom-cm', 'tom-pq']);
   });
 
+  it('narrows to the requested species for server-side callers', async () => {
+    prisma.product.findMany.mockResolvedValue(
+      PRODUCTS.map((row) => ({
+        ...row,
+        species: { commonName: row.species.commonName, slug: row.id.startsWith('tom') ? 'tom-su' : 'cua-bun' },
+      })),
+    );
+
+    const result = await service.listProducts({ sort: 'price-asc' }, { speciesSlugs: ['tom-su'] });
+
+    expect(result.items.map((i) => i.id)).toEqual(['tom-cm', 'tom-pq']);
+    expect(result.pagination.totalItems).toBe(2);
+    // Marketplace-wide total is unchanged by the scope.
+    expect(result.totalProducts).toBe(3);
+    expect((await service.listProducts({}, { speciesSlugs: ['muc-ong'] })).items).toEqual([]);
+  });
+
   describe('query validation', () => {
     const errorsFor = async (query: Record<string, string>) =>
       (await validate(plainToInstance(ProductListingQueryDto, query))).map((e) => e.property);
