@@ -1,7 +1,7 @@
 import { ApiError, handleResponse } from "@/features/auth/api/auth.api";
 import type { ChatConversation, ChatFeedback, ChatStreamEvent, HandoffInput } from "../types/chat.types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 const CHAT = `${API_BASE_URL}/chat`;
 const SESSION_KEY = "haisan_chat_session";
 

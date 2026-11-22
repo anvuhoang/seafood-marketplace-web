@@ -9,7 +9,7 @@ import type {
   KnowledgeSyncResult,
 } from "../types/admin-chat.types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 const BASE = `${API_BASE_URL}/admin/chat`;
 
 const noStore: RequestInit = { cache: "no-store" };

@@ -5,8 +5,7 @@ import type {
   VendorRegistrationState,
 } from "../types/vendor-registration.types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 
 /** The signed-in account's store application (status NONE when nothing was sent). */
 export function getMyRegistration(token: string): Promise<VendorRegistrationState> {

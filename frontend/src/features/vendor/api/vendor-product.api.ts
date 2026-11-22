@@ -12,7 +12,7 @@ import type {
 } from "../types/vendor-product.types";
 import { uploadSignedImage } from "./vendor-store.api";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 const ME = `${API_BASE_URL}/vendors/me`;
 
 function queryString(params: Record<string, string | number | undefined>): string {

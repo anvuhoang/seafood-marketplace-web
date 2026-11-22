@@ -1,7 +1,7 @@
 import { authenticatedRequest } from "@/features/auth/api/auth.api";
 import type { SmartImportDraft } from "../types/vendor-smart-import.types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 const BASE = `${API_BASE_URL}/vendors/me/smart-import`;
 
 /** Longest description the API accepts. */

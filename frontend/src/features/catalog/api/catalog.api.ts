@@ -1,8 +1,7 @@
 import { ProductListing, RegionSummary } from "../types/catalog.types";
 import { CatalogQuery, toApiSearchParams } from "../utils/catalog-query";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 
 export const CATALOG_PAGE_SIZE = 12;
 
