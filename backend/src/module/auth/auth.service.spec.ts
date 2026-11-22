@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { LoginAttemptLimiter } from './login-attempt.limiter.js';
+import { LoginAttemptLimiter } from './security/login-attempt.limiter.js';
 
 describe('AuthService', () => {
   let authService: AuthService;

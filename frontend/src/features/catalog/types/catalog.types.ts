@@ -6,6 +6,8 @@ export interface ProductListingItem {
   speciesName: string | null;
   imageUrl: string | null;
   isFeatured: boolean;
+  /** The offer behind the price, stock and vendor shown; this is what the cart adds. */
+  offerId: string;
   inStock: boolean;
   stock: number;
   price: number;

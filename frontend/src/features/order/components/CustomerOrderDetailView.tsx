@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Ban, CheckCircle2, CreditCard, ImageIcon, Loader2, MapPin, Star, Store, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Ban, CheckCircle2, Footprints, Loader2, Package, Phone, ShieldCheck, TriangleAlert, XCircle } from "lucide-react";
 import { ApiError } from "@/features/auth/api/auth.api";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { VendorDialog, dialogButton } from "@/features/vendor/components/VendorDialog";
+import { SUPPORT_HOTLINE } from "@/lib/constants/contact";
 import { cn } from "@/lib/utils";
 import { cancelMyOrder, getMyOrder } from "../api/customer-order.api";
-import { ORDER_STATUS, PAYMENT_METHOD, VENDOR_ORDER_STATUS, paymentStyle } from "../constants/order-status";
-import type { CustomerOrderDetail, CustomerVendorOrder } from "../types/order.types";
-import { errorMessage, formatDateTime, formatQuantity, formatVnd, fullAddress } from "../utils/order-format";
-import { StatusBadge } from "./StatusBadge";
+import { ORDER_STATUS } from "../constants/order-status";
+import type { CustomerOrderDetail } from "../types/order.types";
+import { errorMessage, formatDateTime } from "../utils/order-format";
+import { orderProgress } from "../utils/order-progress";
+import { OrderProgress } from "./OrderProgress";
+import { PaymentCard, RecipientCard, SupportCard } from "./OrderSidePanels";
+import { OrderVendorCard } from "./OrderVendorCard";
 
 type State = { kind: "loading" } | { kind: "error"; message: string; notFound: boolean } | { kind: "ready"; order: CustomerOrderDetail };
 
@@ -60,17 +64,32 @@ export function CustomerOrderDetailView({ orderNumber }: { orderNumber: string }
     }
   }
 
-  const back = (
-    <Link href="/customer/orders" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-[#0F3860]">
-      <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-      Đơn mua của tôi
-    </Link>
+  const bar = (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
+        <Link href="/customer/orders" className="inline-flex items-center gap-1.5 font-semibold text-slate-700 hover:text-[#0F3860]">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Trở về danh sách đơn hàng
+        </Link>
+        <span className="text-slate-300" aria-hidden="true">
+          /
+        </span>
+        <span className="font-bold break-all text-slate-900">Mã đơn: #{orderNumber}</span>
+      </div>
+      <a
+        href={`tel:${SUPPORT_HOTLINE.tel}`}
+        className="inline-flex items-center gap-2 rounded-lg bg-[#0F3860] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#0A2744]"
+      >
+        <Phone className="h-4 w-4" aria-hidden="true" />
+        Liên hệ hỗ trợ đơn hàng
+      </a>
+    </div>
   );
 
   if (state.kind === "loading") {
     return (
       <>
-        {back}
+        {bar}
         <p className="flex min-h-48 items-center justify-center gap-2 text-sm text-slate-500" role="status">
           <Loader2 className="h-5 w-5 animate-spin text-[#0F3860] motion-reduce:animate-none" aria-hidden="true" />
           Đang tải đơn hàng...
@@ -81,7 +100,7 @@ export function CustomerOrderDetailView({ orderNumber }: { orderNumber: string }
   if (state.kind === "error") {
     return (
       <>
-        {back}
+        {bar}
         <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">
           <p className="font-semibold">{state.notFound ? "Không tìm thấy đơn hàng" : "Không thể tải đơn hàng"}</p>
           <p className="mt-1">{state.message}</p>
@@ -97,31 +116,11 @@ export function CustomerOrderDetailView({ orderNumber }: { orderNumber: string }
 
   const { order } = state;
   const paid = order.payment?.status === "PAID";
+  const steps = orderProgress(order);
 
   return (
     <>
-      {back}
-      <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold break-all text-slate-900">Đơn #{order.orderNumber}</h1>
-          <p className="mt-1 text-xs text-slate-500">
-            Đặt lúc <time dateTime={order.createdAt}>{formatDateTime(order.createdAt)}</time>
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge style={ORDER_STATUS[order.status]} className="text-sm" />
-          {order.canCancel && (
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-50"
-            >
-              <Ban className="h-4 w-4" aria-hidden="true" />
-              Hủy đơn
-            </button>
-          )}
-        </div>
-      </header>
+      {bar}
 
       {notice && (
         <p
@@ -140,54 +139,100 @@ export function CustomerOrderDetailView({ orderNumber }: { orderNumber: string }
         </p>
       )}
 
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="min-w-0 space-y-4">
-          {order.vendorOrders.map((vendorOrder) => (
-            <VendorPart key={vendorOrder.id} part={vendorOrder} />
-          ))}
+      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-5">
+          <section className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-xs sm:p-5">
+            <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl bg-[#EAF2FB] px-4 py-3">
+              <div className="min-w-0">
+                <p className="flex items-center gap-1.5 text-[11px] font-bold tracking-wide text-[#E63946] uppercase">
+                  <span className="h-2 w-2 rounded-full bg-[#E63946]" aria-hidden="true" />
+                  Tiến độ đơn hàng
+                </p>
+                <h1 className="mt-1 text-xl font-bold text-slate-900">Trạng thái: {ORDER_STATUS[order.status].label}</h1>
+              </div>
+              <p className="text-sm text-slate-600">
+                Đặt lúc <time dateTime={order.createdAt} className="font-semibold text-slate-900">{formatDateTime(order.createdAt)}</time>
+              </p>
+            </div>
+
+            {steps ? (
+              <div className="mt-6">
+                <OrderProgress steps={steps} />
+              </div>
+            ) : (
+              <div role="status" className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" aria-hidden="true" />
+                <p>
+                  Đơn hàng này đã được hủy.
+                  {order.payment?.status === "REFUNDED" && " Số tiền bạn đã thanh toán được hoàn lại."}
+                </p>
+              </div>
+            )}
+
+            <p className="mt-5 flex items-start gap-3 rounded-xl bg-[#EAF2FB] p-3.5 text-sm text-slate-700">
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#0F3860]" aria-hidden="true" />
+              <span>
+                <strong className="text-slate-900">Cam kết độ tươi sống:</strong> hải sản tươi sống được vựa kiểm tra sức khỏe tại hồ oxy trước khi đóng thùng chuyên dụng để đảm bảo độ bơi sống tối đa khi đến tay bạn.
+              </span>
+            </p>
+          </section>
+
+          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            <Package className="h-5 w-5 text-[#0F3860]" aria-hidden="true" />
+            Kiện hàng hải sản theo vựa ({order.vendorOrders.length} kiện)
+          </h2>
+          <div className="space-y-4">
+            {order.vendorOrders.map((part) => (
+              <OrderVendorCard key={part.id} part={part} showReview />
+            ))}
+          </div>
+
+          <section className="flex items-start gap-4 rounded-2xl bg-[#EAF2FB] p-5">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#0F3860] text-white">
+              <Footprints className="h-6 w-6" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-slate-900">Quy trình nhận hàng thùng oxy &amp; túi khí lạnh</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Các mặt hàng tôm, cua ghẹ sống được vận chuyển độc lập bằng thùng sục oxy chuyên dụng. Khi nhận hàng, quý khách vui lòng mở nắp thùng kiểm tra tình trạng bơi sống của hải sản trước khi ký nhận.
+              </p>
+            </div>
+          </section>
         </div>
 
         <aside className="min-w-0 space-y-4">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5">
-            <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900">
-              <MapPin className="h-4 w-4 text-[#0F3860]" aria-hidden="true" />
-              Người nhận
+          <RecipientCard order={order} />
+          <PaymentCard order={order} />
+
+          <section className="min-w-0 rounded-2xl border border-slate-200/70 bg-white p-5 shadow-xs">
+            <h2 className="flex items-center gap-2 text-sm font-bold tracking-wide text-slate-900 uppercase">
+              <Ban className="h-4 w-4 text-slate-500" aria-hidden="true" />
+              Quản lý đơn hàng
             </h2>
-            <p className="font-semibold break-words text-slate-900">{order.recipient.name}</p>
-            <p className="text-sm text-slate-600">{order.recipient.phone}</p>
-            <p className="mt-1 text-sm break-words text-slate-600">{fullAddress(order.recipient)}</p>
-            {order.customerNote && (
-              <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm break-words text-slate-700">
-                <span className="font-semibold">Ghi chú:</span> {order.customerNote}
+            {order.canCancel ? (
+              <>
+                <p className="mt-2 text-sm text-slate-600">
+                  Chưa vựa nào nhận đơn nên bạn vẫn có thể hủy toàn bộ đơn hàng. Sau khi một vựa đã nhận đơn, bạn không thể tự hủy nữa.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setConfirming(true)}
+                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50/50 px-4 py-2.5 text-sm font-bold text-rose-700 transition-colors hover:bg-rose-50"
+                >
+                  <Ban className="h-4 w-4" aria-hidden="true" />
+                  Yêu cầu hủy đơn hàng này
+                </button>
+              </>
+            ) : (
+              <p className="mt-2 text-sm text-slate-600">
+                {order.status === "CANCELLED"
+                  ? "Đơn hàng đã được hủy."
+                  : "Đơn hàng đã được vựa tiếp nhận nên không thể tự hủy. Cần thay đổi, vui lòng liên hệ hỗ trợ."}
               </p>
             )}
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-900">
-              <CreditCard className="h-4 w-4 text-[#0F3860]" aria-hidden="true" />
-              Thanh toán
-            </h2>
-            <dl className="space-y-2 text-sm">
-              {order.payment && (
-                <>
-                  <Row label="Phương thức" value={PAYMENT_METHOD[order.payment.method]} />
-                  <div className="flex items-center justify-between gap-3">
-                    <dt className="text-slate-500">Trạng thái</dt>
-                    <dd>
-                      <StatusBadge style={paymentStyle(order.payment)} />
-                    </dd>
-                  </div>
-                </>
-              )}
-              <Row label="Tạm tính" value={formatVnd(order.subtotal)} />
-              <Row label="Phí giao hàng" value={formatVnd(order.shippingTotal)} />
-              <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2 text-base">
-                <dt className="font-bold text-slate-900">Tổng cộng</dt>
-                <dd className="font-bold tabular-nums text-[#E63946]">{formatVnd(order.grandTotal)}</dd>
-              </div>
-            </dl>
-          </section>
+          <SupportCard />
         </aside>
       </div>
 
@@ -217,91 +262,5 @@ export function CustomerOrderDetailView({ orderNumber }: { orderNumber: string }
         </VendorDialog>
       )}
     </>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className="text-right font-semibold tabular-nums text-slate-900">{value}</dd>
-    </div>
-  );
-}
-
-function VendorPart({ part }: { part: CustomerVendorOrder }) {
-  const delivered = part.status === "COMPLETED";
-  return (
-    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex min-w-0 items-center gap-2 text-sm font-bold text-slate-900">
-          <Store className="h-4 w-4 shrink-0 text-[#0F3860]" aria-hidden="true" />
-          <Link href={`/vendor/${part.vendor.slug}`} className="break-words hover:underline">
-            {part.vendor.name}
-          </Link>
-        </h2>
-        <StatusBadge style={VENDOR_ORDER_STATUS[part.status]} />
-      </div>
-
-      {(part.shipment?.shippedAt || part.shipment?.deliveredAt) && (
-        <p className="mb-3 text-xs text-slate-500">
-          {part.shipment.shippedAt && <>Bàn giao vận chuyển: {formatDateTime(part.shipment.shippedAt)}</>}
-          {part.shipment.shippedAt && part.shipment.deliveredAt && " · "}
-          {part.shipment.deliveredAt && <>Đã giao: {formatDateTime(part.shipment.deliveredAt)}</>}
-        </p>
-      )}
-      {part.vendorNote && (
-        <p className="mb-3 rounded-lg bg-slate-50 p-3 text-sm break-words text-slate-700">
-          <span className="font-semibold">{part.status === "CANCELLED" ? "Lý do từ vựa:" : "Ghi chú từ vựa:"}</span> {part.vendorNote}
-        </p>
-      )}
-
-      <ul className="divide-y divide-slate-100">
-        {part.items.map((item) => (
-          <li key={item.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
-            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-              {item.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center text-slate-300">
-                  <ImageIcon className="h-5 w-5" aria-hidden="true" />
-                </span>
-              )}
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4">
-              <div className="min-w-0">
-                <Link href={`/products/${item.productSlug}`} className="font-semibold break-words text-slate-900 hover:underline">
-                  {item.productName}
-                </Link>
-                <p className="text-xs break-words text-slate-500">{item.variantName}</p>
-                <p className="mt-1 text-sm text-slate-700">
-                  <span className="font-semibold tabular-nums">
-                    {formatQuantity(item.quantity)} {item.unit}
-                  </span>{" "}
-                  × {formatVnd(item.unitPrice)}/{item.unit}
-                </p>
-                {delivered &&
-                  (item.reviewed ? (
-                    <p className="mt-1 text-xs font-semibold text-emerald-700">Đã đánh giá</p>
-                  ) : (
-                    <Link
-                      href="/customer/reviews"
-                      className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#0F3860] hover:underline"
-                    >
-                      <Star className="h-3.5 w-3.5" aria-hidden="true" />
-                      Viết đánh giá
-                    </Link>
-                  ))}
-              </div>
-              <p className="shrink-0 font-semibold tabular-nums text-slate-900 sm:text-right">{formatVnd(item.lineTotal)}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-3 border-t border-slate-100 pt-3 text-right text-sm text-slate-600">
-        Tổng của vựa: <span className="font-semibold tabular-nums text-slate-900">{formatVnd(part.grandTotal)}</span>
-      </p>
-    </section>
   );
 }

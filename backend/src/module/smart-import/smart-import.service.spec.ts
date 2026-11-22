@@ -8,7 +8,7 @@ import {
   AUDIO_TOO_LARGE,
   detectAudioFormat,
   validateAudio,
-} from './audio-validation.js';
+} from './validation/audio-validation.js';
 import {
   SMART_IMPORT_MAX_CALLS,
   SMART_IMPORT_WINDOW_MS,
@@ -23,7 +23,7 @@ import {
   SmartImportService,
 } from './smart-import.service.js';
 import { AiProviderError } from './smart-import.types.js';
-import { VENDOR_NOT_FOUND, VENDOR_READ_ONLY } from '../vendor/vendor-access.js';
+import { VENDOR_NOT_FOUND, VENDOR_READ_ONLY } from '../vendor/shared/vendor-access.js';
 
 const CATEGORY = '11111111-1111-4111-8111-111111111111';
 

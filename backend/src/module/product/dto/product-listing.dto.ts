@@ -109,6 +109,11 @@ export class ProductListingItemDto {
   speciesName: string | null;
   imageUrl: string | null;
   isFeatured: boolean;
+  /**
+   * The offer whose price, stock and vendor are shown; this is what the cart adds.
+   * @example "3d4e5f60-7182-4c9d-8e0f-2a3b4c5d6e7f"
+   */
+  offerId: string;
   inStock: boolean;
   /**
    * Stock of the displayed offer.

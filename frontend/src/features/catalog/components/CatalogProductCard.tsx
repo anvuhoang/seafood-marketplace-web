@@ -23,18 +23,8 @@ export function CatalogProductCard({ product, view }: CatalogProductCardProps) {
   const image = product.imageUrl ?? FALLBACK_PRODUCT_IMAGE;
   const subtitle = product.speciesName ?? product.description;
 
-  const handleAddToCart = () => {
-    const result = addToCart({
-      productId: product.id,
-      productName: product.name,
-      productImage: image,
-      price: product.price,
-      quantity: 1,
-      unit: product.unit,
-      preparationOption: "Bơi sống (bao oxy)",
-      vendorName: product.vendor.name,
-      availableStock: product.stock,
-    });
+  const handleAddToCart = async () => {
+    const result = await addToCart({ offerId: product.offerId, quantity: 1 });
 
     if (result.success) {
       setJustAdded(true);

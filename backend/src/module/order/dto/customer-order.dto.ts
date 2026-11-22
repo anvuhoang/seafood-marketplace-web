@@ -1,13 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { OrderStatus, VendorOrderStatus } from '@prisma/client';
+import type { OrderStatus, PaymentStatus, VendorOrderStatus } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { ArrayMaxSize, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { PaginationDto } from '../../../common/dto/pagination.dto.js';
 import { ORDER_STATUSES, VENDOR_ORDER_STATUSES } from '../order-status.js';
 import {
   OrderItemDto,
   OrderPaymentDto,
   OrderShipmentDto,
+  PAYMENT_STATUSES,
 } from './order-common.dto.js';
 
 export const CUSTOMER_ORDER_DEFAULT_PAGE_SIZE = 10;
@@ -19,13 +20,41 @@ const trimOrUndefined = ({ value }: { value: unknown }) => {
   return trimmed === '' ? undefined : trimmed;
 };
 
+/** "CONFIRMED,PROCESSING" becomes ["CONFIRMED", "PROCESSING"]; empty becomes undefined. */
+const toList = ({ value }: { value: unknown }) => {
+  if (typeof value !== 'string') return value;
+  const list = value
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return list.length === 0 ? undefined : list;
+};
+
+export const CUSTOMER_ORDER_SEARCH_MAX = 100;
+
 export class CustomerOrderQueryDto {
-  /** The order's overall status. */
-  @ApiPropertyOptional({ enum: ORDER_STATUSES })
+  /** The order's overall status. Several can be given, separated by commas (an order matches any of them). */
+  @ApiPropertyOptional({ enum: ORDER_STATUSES, isArray: true, example: 'CONFIRMED,PROCESSING' })
+  @IsOptional()
+  @Transform(toList)
+  @ArrayMaxSize(ORDER_STATUSES.length, { message: 'Trạng thái đơn hàng không hợp lệ.' })
+  @IsIn(ORDER_STATUSES, { each: true, message: 'Trạng thái đơn hàng không hợp lệ.' })
+  status?: OrderStatus[];
+
+  /** Finds orders by their order number or by the name of a product in them. */
+  @ApiPropertyOptional({ maxLength: CUSTOMER_ORDER_SEARCH_MAX, example: 'tôm sú' })
   @IsOptional()
   @Transform(trimOrUndefined)
-  @IsIn(ORDER_STATUSES, { message: 'Trạng thái đơn hàng không hợp lệ.' })
-  status?: OrderStatus;
+  @IsString({ message: 'Từ khóa tìm kiếm không hợp lệ.' })
+  @MaxLength(CUSTOMER_ORDER_SEARCH_MAX, { message: `Từ khóa tìm kiếm tối đa ${CUSTOMER_ORDER_SEARCH_MAX} ký tự.` })
+  q?: string;
+
+  /** The payment's status, which is kept apart from the order's status. */
+  @ApiPropertyOptional({ enum: PAYMENT_STATUSES })
+  @IsOptional()
+  @Transform(trimOrUndefined)
+  @IsIn(PAYMENT_STATUSES, { message: 'Trạng thái thanh toán không hợp lệ.' })
+  paymentStatus?: PaymentStatus;
 
   /** @example 1 */
   @ApiPropertyOptional({ minimum: 1, default: 1 })
@@ -101,6 +130,26 @@ export class CustomerOrderListDto {
   @ApiProperty({ type: CustomerOrderSummaryDto, isArray: true })
   items: CustomerOrderSummaryDto[];
   pagination: PaginationDto;
+  /**
+   * How many orders the customer has in each status, ignoring the filters of this request (for the tab
+   * counters). Every status is present, with 0 when there is none.
+   */
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'number' },
+    example: { PENDING: 1, CONFIRMED: 0, PROCESSING: 0, SHIPPING: 1, COMPLETED: 3, CANCELLED: 1 },
+  })
+  statusCounts: Record<OrderStatus, number>;
+}
+
+/** The answer of "buy again": what went into the cart and what had to be left out or lowered. */
+export class ReorderResultDto {
+  /** Lines of the order that are now in the cart. @example 2 */
+  added: number;
+  /** Lines that could not be added (no longer sold, out of stock). @example 1 */
+  skipped: number;
+  /** Short Vietnamese notes about what was left out or lowered. */
+  notices: string[];
 }
 
 export class CustomerOrderRecipientDto {

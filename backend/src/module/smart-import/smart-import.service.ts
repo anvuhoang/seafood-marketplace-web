@@ -10,9 +10,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { findWritableVendor } from '../vendor/vendor-access.js';
-import { validateAudio } from './audio-validation.js';
-import { normalizeDraft, type NormalizedDraft } from './normalize-draft.js';
+import { findWritableVendor } from '../vendor/shared/vendor-access.js';
+import { validateAudio } from './validation/audio-validation.js';
+import { normalizeDraft, type NormalizedDraft } from './validation/normalize-draft.js';
 import { SmartImportLimiter } from './smart-import.limiter.js';
 import {
   AiProviderError,

@@ -19,7 +19,7 @@ const vendors = {
 const product = (
   id: string,
   categoryId: string,
-  offers: Array<{ price: number; stock: number; vendor: (typeof vendors)['pq'] }>,
+  offers: Array<{ id?: string; price: number; stock: number; vendor: (typeof vendors)['pq'] }>,
   extra: Partial<{ isFeatured: boolean; createdAt: Date }> = {},
 ) => ({
   id,
@@ -136,14 +136,14 @@ describe('ProductListingService', () => {
   it('prefers the cheapest in-stock offer over a cheaper sold-out one', async () => {
     prisma.product.findMany.mockResolvedValue([
       product('mixed', 'c-tom', [
-        { price: 300000, stock: 0, vendor: vendors.cm },
-        { price: 450000, stock: 8, vendor: vendors.pq },
+        { id: 'sold-out-offer', price: 300000, stock: 0, vendor: vendors.cm },
+        { id: 'in-stock-offer', price: 450000, stock: 8, vendor: vendors.pq },
       ]),
     ]);
 
     const [item] = (await service.listProducts({})).items;
 
-    expect(item).toMatchObject({ price: 450000, stock: 8, inStock: true });
+    expect(item).toMatchObject({ offerId: 'in-stock-offer', price: 450000, stock: 8, inStock: true });
     expect(item.vendor.slug).toBe('vua-pq');
   });
 

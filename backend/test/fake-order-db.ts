@@ -44,6 +44,8 @@ export interface FakePayment {
   method: PaymentMethod;
   status: PaymentStatus;
   paidAt: Date | null;
+  /** The PayOS order code of a QR payment. */
+  orderCode?: bigint | null;
 }
 export interface FakeVendorOrder {
   id: string;
@@ -209,11 +211,31 @@ export function createFakeOrderDb(initial: FakeState) {
     if (where.createdAt?.lt && vo.createdAt >= where.createdAt.lt) return false;
     return true;
   };
+  const hasProductNamed = (order: FakeOrder, text: string) =>
+    state.vendorOrders
+      .filter((vo) => vo.orderId === order.id)
+      .some((vo) =>
+        state.items.some(
+          (item) => item.vendorOrderId === vo.id && item.productNameSnapshot.toLowerCase().includes(text.toLowerCase()),
+        ),
+      );
+  const matchOrderStatus = (order: FakeOrder, status: unknown) =>
+    status === undefined ||
+    (typeof status === 'string' ? order.status === status : (status as { in: string[] }).in.includes(order.status));
+  const matchSearch = (order: FakeOrder, or: Array<Record<string, any>> | undefined) =>
+    or === undefined ||
+    or.some((clause) =>
+      clause.orderNumber
+        ? order.orderNumber.toLowerCase().includes(clause.orderNumber.contains.toLowerCase())
+        : hasProductNamed(order, clause.vendorOrders.some.items.some.productNameSnapshot.contains),
+    );
   const matchOrder = (order: FakeOrder, where: Where = {}) =>
     (where.id === undefined || order.id === where.id) &&
     (where.orderNumber === undefined || order.orderNumber === where.orderNumber) &&
     (where.userId === undefined || order.userId === where.userId) &&
-    (where.status === undefined || order.status === where.status);
+    matchOrderStatus(order, where.status) &&
+    matchSearch(order, where.OR) &&
+    (where.payment?.status === undefined || paymentOf(order.id)?.status === where.payment.status);
   const newestFirst = <T extends { createdAt: Date; id: string }>(rows: T[]) =>
     [...rows].sort(
       (a, b) => b.createdAt.getTime() - a.createdAt.getTime() || a.id.localeCompare(b.id),
@@ -277,6 +299,13 @@ export function createFakeOrderDb(initial: FakeState) {
       count: vi.fn(async ({ where }: { where: Where }) =>
         state.orders.filter((row) => matchOrder(row, where)).length,
       ),
+      groupBy: vi.fn(async ({ where }: { where: Where }) => {
+        const counts = new Map<string, number>();
+        for (const row of state.orders.filter((order) => matchOrder(order, where))) {
+          counts.set(row.status, (counts.get(row.status) ?? 0) + 1);
+        }
+        return [...counts].map(([status, all]) => ({ status, _count: { _all: all } }));
+      }),
       update: vi.fn(async ({ where, data }: { where: Where; data: Partial<FakeOrder> }) => {
         const order = state.orders.find((row) => row.id === where.id)!;
         Object.assign(order, data);
@@ -359,6 +388,7 @@ export function createFakeOrderDb(initial: FakeState) {
       findFirst: db.order.findFirst,
       findMany: db.order.findMany,
       count: db.order.count,
+      groupBy: db.order.groupBy,
     },
     orderItem: { findMany: db.orderItem.findMany },
     $transaction: vi.fn(async (fn: (tx: typeof db) => Promise<unknown>) => {

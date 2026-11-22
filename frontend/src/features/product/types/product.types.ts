@@ -88,14 +88,3 @@ export interface ProductDetail {
   reviewsSummary: ReviewsSummary;
 }
 
-export interface CartItem {
-  id: string;
-  productId: string;
-  productName: string;
-  productImage: string;
-  price: number;
-  quantity: number;
-  unit: string;
-  preparationOption: string;
-  vendorName: string;
-}

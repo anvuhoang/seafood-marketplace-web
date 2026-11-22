@@ -3,7 +3,7 @@ import { Prisma, VendorOrderStatus } from '@prisma/client';
 import type { Vendor } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CLOUDINARY_FOLDER_ROOT, CloudinaryService } from '../../common/cloudinary/cloudinary.service.js';
-import { LOW_STOCK_THRESHOLD } from './vendor-offer.service.js';
+import { LOW_STOCK_THRESHOLD } from './offers/vendor-offer.service.js';
 import type { UpdateVendorStoreDto, VendorStoreDto, VendorStoreUploadSignatureDto } from './dto/vendor-store.dto.js';
 import type {
   FollowStateDto,
@@ -471,7 +471,8 @@ export class VendorService {
 
   /**
    * Products the vendor currently sells: active offers on active variants of
-   * active products. One entry per product, priced at the lowest active offer.
+   * active products. One entry per product, priced at the lowest offer that is in stock
+   * (the lowest of all when none is), and `offerId` is that offer.
    */
   private async findActiveProducts(
     vendorId: string,
@@ -506,7 +507,16 @@ export class VendorService {
       const existing = byProductId.get(product.id);
 
       if (existing) {
-        existing.price = Math.min(existing.price, price);
+        // The card shows the cheapest offer that can be bought, so its id, unit and price go together.
+        const cheaper = price < existing.price && stock > 0;
+        const firstSellable = !existing.inStock && stock > 0;
+        if (cheaper || firstSellable) {
+          existing.offerId = offer.id;
+          existing.unit = unit;
+          existing.price = price;
+        } else if (!existing.inStock) {
+          existing.price = Math.min(existing.price, price);
+        }
         existing.stock += stock;
         existing.inStock = existing.stock > 0;
         continue;
@@ -519,6 +529,7 @@ export class VendorService {
         id: product.id,
         name: product.name,
         slug: product.slug,
+        offerId: offer.id,
         unit,
         price,
         stock,

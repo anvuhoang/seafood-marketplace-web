@@ -5,9 +5,23 @@ model Payment {
   status      PaymentStatus @default(PENDING)
   amount      Decimal       @db.Decimal(14, 2)
   provider    String?       @db.VarChar(100)
+  /// The provider's bank transaction reference, known once the payment is PAID.
   reference   String?       @map("reference") @db.VarChar(255)
+  /// The number sent to PayOS to identify the current payment attempt. A retry gets a new one, so a webhook always finds the right attempt.
+  orderCode   BigInt?       @unique @map("order_code")
+  /// The id PayOS returns for the payment link of the current attempt.
+  paymentLinkId String?     @map("payment_link_id") @db.VarChar(100)
+  /// The QR content PayOS returned when the link was created. Stored so reading the status never calls PayOS.
+  qrCode      String?       @map("qr_code") @db.Text
+  /// The PayOS hosted checkout page of the current attempt.
+  checkoutUrl String?       @map("checkout_url") @db.VarChar(500)
+  /// When the QR of the current attempt stops working. A PENDING payment past this moment is EXPIRED.
+  expiresAt   DateTime?     @map("expires_at") @db.Timestamptz(6)
+  /// Why the payment failed, cancelled or expired. For support and debugging, not shown to customers.
+  failureReason String?     @map("failure_reason") @db.VarChar(255)
   paidAt      DateTime?     @map("paid_at") @db.Timestamptz(6)
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
 

@@ -26,34 +26,3 @@ export async function getProductDetail(
 
   return res.json();
 }
-
-/**
- * Send Add To Cart payload to backend API.
- */
-export async function addToCartBackendApi(data: {
-  offerId: string;
-  quantity: number;
-  preparationOption?: string;
-}) {
-  try {
-    const res = await fetch(`${API_BASE_URL}/cart/items`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-
-    const body = await res.json().catch(() => null);
-    if (!res.ok) {
-      const errorMsg =
-        (Array.isArray(body?.message) ? body?.message.join(", ") : body?.message) ||
-        "Không thể thêm sản phẩm vào giỏ hàng.";
-      return { success: false, message: errorMsg };
-    }
-
-    return { success: true, message: body?.message || "Đã thêm vào giỏ hàng" };
-  } catch {
-    return { success: false, message: "Lỗi kết nối tới máy chủ" };
-  }
-}

@@ -1,12 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import type { OrderStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { CartService } from '../cart/cart.service.js';
 import {
   CUSTOMER_ORDER_DEFAULT_PAGE_SIZE,
   type CustomerOrderDetailDto,
   type CustomerOrderListDto,
   type CustomerOrderQueryDto,
   type CustomerOrderSummaryDto,
+  type ReorderResultDto,
 } from './dto/customer-order.dto.js';
 import {
   ORDER_NOT_FOUND,
@@ -20,7 +22,9 @@ import {
   toPaymentDto,
   toShipmentDto,
 } from './order-mapping.js';
-import { canCustomerCancel } from './order-status.js';
+import { ORDER_STATUSES, canCustomerCancel } from './order-status.js';
+
+export const ORDER_NOTHING_TO_BUY = 'Đơn hàng này không có sản phẩm để mua lại.';
 
 const summarySelect = {
   orderNumber: true,
@@ -111,15 +115,32 @@ export class CustomerOrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly lifecycle: OrderLifecycleService,
+    private readonly cart: CartService,
   ) {}
 
   async listOrders(
     userId: string,
     query: CustomerOrderQueryDto,
   ): Promise<CustomerOrderListDto> {
+    const search = query.q?.trim();
     const where: Prisma.OrderWhereInput = {
       userId,
-      ...(query.status && { status: query.status }),
+      ...(query.status?.length && { status: { in: query.status } }),
+      ...(query.paymentStatus && { payment: { status: query.paymentStatus } }),
+      ...(search && {
+        OR: [
+          { orderNumber: { contains: search, mode: 'insensitive' } },
+          {
+            vendorOrders: {
+              some: {
+                items: {
+                  some: { productNameSnapshot: { contains: search, mode: 'insensitive' } },
+                },
+              },
+            },
+          },
+        ],
+      }),
     };
     const pageSize = query.pageSize ?? CUSTOMER_ORDER_DEFAULT_PAGE_SIZE;
     const totalItems = await this.prisma.order.count({ where });
@@ -136,7 +157,40 @@ export class CustomerOrderService {
     return {
       items: rows.map(toSummary),
       pagination: { page, limit: pageSize, totalItems, totalPages },
+      statusCounts: await this.countByStatus(userId),
     };
+  }
+
+  /** The customer's orders per status, whatever the filters of the list are. */
+  private async countByStatus(userId: string): Promise<Record<OrderStatus, number>> {
+    const groups = await this.prisma.order.groupBy({
+      by: ['status'],
+      where: { userId },
+      _count: { _all: true },
+    });
+    const counts = Object.fromEntries(ORDER_STATUSES.map((status) => [status, 0])) as Record<OrderStatus, number>;
+    for (const group of groups) counts[group.status] = group._count._all;
+    return counts;
+  }
+
+  /**
+   * "Buy again": puts the lines of one of my orders into my cart. Lines that are no longer sold are left
+   * out and quantities above the stock are lowered, and each is reported. 404 for someone else's order.
+   */
+  async reorder(userId: string, orderNumber: string): Promise<ReorderResultDto> {
+    const row = await this.prisma.order.findFirst({
+      where: { orderNumber, userId },
+      select: { vendorOrders: { select: { items: { select: { offerId: true, quantity: true } } } } },
+    });
+    if (!row) throw new NotFoundException(ORDER_NOT_FOUND);
+    const lines = row.vendorOrders.flatMap((part) =>
+      part.items.map((item) => ({ offerId: item.offerId, quantity: item.quantity.toNumber() })),
+    );
+    if (lines.length === 0) throw new BadRequestException(ORDER_NOTHING_TO_BUY);
+
+    const { cart, notices } = await this.cart.merge(userId, { items: lines });
+    const added = new Set(lines.filter((line) => cart.items.some((item) => item.offerId === line.offerId)).map((line) => line.offerId)).size;
+    return { added, skipped: new Set(lines.map((line) => line.offerId)).size - added, notices };
   }
 
   /** 404 for someone else's order too, so order numbers reveal nothing. */

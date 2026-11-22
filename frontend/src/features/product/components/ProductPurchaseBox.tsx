@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProductDetail } from "../types/product.types";
 import { useCart } from "@/features/cart/context/CartContext";
-import { addToCartBackendApi } from "../api/product.api";
 import { formatPrice } from "@/lib/utils";
 import {
   Star,
@@ -55,13 +54,14 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
     }
   };
 
-  const handleAddToCart = async () => {
-    if (!isAvailable || price === null) {
+  /** Returns true when the API accepted the line, so "buy now" only goes to the cart then. */
+  const handleAddToCart = async (): Promise<boolean> => {
+    if (!isAvailable || price === null || product.offerId === null) {
       setActionFeedback({
         type: "error",
         text: "Sản phẩm hiện không khả dụng để thêm vào giỏ hàng.",
       });
-      return;
+      return false;
     }
 
     if (quantity > maxStock) {
@@ -69,51 +69,28 @@ export function ProductPurchaseBox({ product }: ProductPurchaseBoxProps) {
         type: "error",
         text: `Số lượng vượt quá số lượng còn lại trong kho (${maxStock} ${product.unit}).`,
       });
-      return;
+      return false;
     }
 
     setIsSubmitting(true);
-    // 1. Call context to update client-side cart
-    const contextResult = addToCart({
-      productId: product.id,
-      productName: product.name,
-      productImage: product.images[0]?.imageUrl || "",
-      price,
-      quantity,
-      unit: product.unit,
-      preparationOption: selectedPrep,
-      vendorName: vendor?.name ?? "",
-      availableStock: maxStock,
-      isDiscontinued: product.isDiscontinued,
-    });
-
-    // 2. Call backend API asynchronously with the offer being sold
-    if (product.offerId) {
-      await addToCartBackendApi({
-        offerId: product.offerId,
-        quantity,
-        preparationOption: selectedPrep,
-      });
-    }
-
+    // The server checks the offer and the stock and answers with the cart; nothing is assumed here.
+    const result = await addToCart({ offerId: product.offerId, quantity });
     setIsSubmitting(false);
-    if (contextResult.success) {
+
+    if (result.success) {
       setActionFeedback({
         type: "success",
         text: `Đã thêm ${quantity} ${product.unit} vào giỏ hàng thành công!`,
       });
       setTimeout(() => setActionFeedback(null), 4000);
     } else {
-      setActionFeedback({
-        type: "error",
-        text: contextResult.message,
-      });
+      setActionFeedback({ type: "error", text: result.message });
     }
+    return result.success;
   };
 
   const handleBuyNow = async () => {
-    await handleAddToCart();
-    router.push("/customer/cart");
+    if (await handleAddToCart()) router.push("/customer/cart");
   };
 
   const calculatedTotal = price === null ? null : price * quantity;

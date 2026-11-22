@@ -25,6 +25,7 @@ import {
   CustomerOrderDetailDto,
   CustomerOrderListDto,
   CustomerOrderQueryDto,
+  ReorderResultDto,
 } from './dto/customer-order.dto.js';
 import { ORDER_NOT_FOUND } from './order-lifecycle.service.js';
 
@@ -95,6 +96,31 @@ export class CustomerOrderController {
     @Param('orderNumber', orderNumberPipe) orderNumber: string,
   ): Promise<CustomerOrderDetailDto> {
     return this.orders.getOrder(userId, orderNumber);
+  }
+
+  @Post(':orderNumber/reorder')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Buy an order again',
+    description:
+      'Puts the lines of this order into my cart. Lines that are no longer sold are left out and quantities above the stock are lowered; each is listed in `notices`.',
+  })
+  @ApiParam({ name: 'orderNumber', example: 'HSE-90001' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cart updated',
+    type: ReorderResultDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No such order of mine',
+    type: ErrorResponseDto,
+  })
+  async reorder(
+    @CurrentUser('sub') userId: string,
+    @Param('orderNumber', orderNumberPipe) orderNumber: string,
+  ): Promise<ReorderResultDto> {
+    return this.orders.reorder(userId, orderNumber);
   }
 
   @Post(':orderNumber/cancel')

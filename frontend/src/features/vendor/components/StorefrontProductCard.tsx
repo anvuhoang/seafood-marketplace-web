@@ -11,13 +11,12 @@ import { VendorStorefrontProduct } from "../types/vendor.types";
 
 interface StorefrontProductCardProps {
   product: VendorStorefrontProduct;
-  vendorName: string;
   /** Slug of the storefront this card is on, to tell the owner apart from visitors. */
   vendorSlug: string;
   originLabel: string;
 }
 
-export function StorefrontProductCard({ product, vendorName, vendorSlug, originLabel }: StorefrontProductCardProps) {
+export function StorefrontProductCard({ product, vendorSlug, originLabel }: StorefrontProductCardProps) {
   const { addToCart } = useCart();
   // An owner looking at their own store cannot buy from it; see HideForStoreOwner.
   const isOwnProduct = useMyStoreSlug() === vendorSlug;
@@ -27,18 +26,8 @@ export function StorefrontProductCard({ product, vendorName, vendorSlug, originL
   const image = product.imageUrl ?? FALLBACK_PRODUCT_IMAGE;
   const category = product.categories[0]?.name;
 
-  const handleAddToCart = () => {
-    const result = addToCart({
-      productId: product.id,
-      productName: product.name,
-      productImage: image,
-      price: product.price,
-      quantity: 1,
-      unit: product.unit,
-      preparationOption: "Bơi sống (bao oxy)",
-      vendorName,
-      availableStock: product.stock,
-    });
+  const handleAddToCart = async () => {
+    const result = await addToCart({ offerId: product.offerId, quantity: 1 });
 
     if (result.success) {
       setJustAdded(true);

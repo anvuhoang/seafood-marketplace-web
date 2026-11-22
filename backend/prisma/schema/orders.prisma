@@ -14,6 +14,8 @@ model Order {
   shippingDistrict String     @map("shipping_district") @db.VarChar(100)
   shippingWard   String?      @map("shipping_ward") @db.VarChar(100)
   customerNote   String?      @map("customer_note") @db.Text
+  /// Sent by the browser with the order, so a repeated request returns this order instead of creating another.
+  idempotencyKey String?      @map("idempotency_key") @db.VarChar(100)
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -22,6 +24,8 @@ model Order {
   vendorOrders VendorOrder[]
   payment      Payment?
 
+  /// A customer can reuse a key only for the same order; orders without a key (older ones) do not clash.
+  @@unique([userId, idempotencyKey])
   @@index([userId, createdAt])
   @@index([status, createdAt])
   @@map("orders")
