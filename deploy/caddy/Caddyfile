@@ -1,0 +1,23 @@
+# HTTPS for the shop. Caddy asks Let's Encrypt for a certificate for {$DOMAIN} the first time it is reached on
+# ports 80 and 443 (so the DNS name must already point at this server) and renews it by itself.
+#
+#   visitor ──https──> Caddy ──http──> nginx ──> website / API processes
+#
+# Caddy adds the visitor's address to X-Forwarded-For; nginx trusts it from the Docker network (see
+# deploy/nginx/default.conf) so the API's limits count each visitor, not Caddy.
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# The chatbot answers as a stream: send each piece at once instead of waiting for a full buffer.
+	reverse_proxy nginx:80 {
+		flush_interval -1
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

@@ -1,0 +1,34 @@
+model Review {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  productId String       @map("product_id") @db.Uuid
+  orderItemId String?    @unique @map("order_item_id") @db.Uuid
+  rating    Int
+  content   String?      @db.Text
+  /// Quick-pick highlight keys chosen by the reviewer, e.g. "on-time".
+  highlights  String[]   @default([])
+  isAnonymous Boolean    @default(false) @map("is_anonymous")
+  status    ReviewStatus @default(PUBLISHED)
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  orderItem OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  images    ReviewImage[]
+
+  @@index([productId, status, createdAt])
+  @@map("reviews")
+}
+
+/// Photos attached to a review, hosted on Cloudinary.
+model ReviewImage {
+  id        String @id @default(uuid()) @db.Uuid
+  reviewId  String @map("review_id") @db.Uuid
+  imageUrl  String @map("image_url") @db.VarChar(500)
+  sortOrder Int    @default(0) @map("sort_order")
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId, sortOrder])
+  @@map("review_images")
+}

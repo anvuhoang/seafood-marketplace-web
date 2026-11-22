@@ -1,0 +1,55 @@
+# The shop on a server: the same stack as docker-compose.yml, with two differences.
+#
+#   1. The images are not built on the server. GitHub builds them (see .github/workflows/docker-publish.yml) and the
+#      server only pulls them, so a small machine does not have to compile Next.js and NestJS.
+#   2. Caddy sits in front of nginx and gets the HTTPS certificate by itself.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
+#
+# deploy/deploy.sh does exactly that, with a health check and a way back. The settings live in .env on the server
+# (copy deploy/prod.env.example). More in docs/deployment.md.
+
+services:
+  api:
+    image: ${API_IMAGE:?set API_IMAGE in .env, for example ghcr.io/owner/repo-api:latest}
+    pull_policy: always
+    # Small server: each API process keeps to this much memory (and is restarted if it leaks past it).
+    mem_limit: 512m
+
+  migrate:
+    image: ${API_IMAGE}
+    pull_policy: always
+
+  seed:
+    image: ${API_IMAGE}
+
+  web:
+    image: ${WEB_IMAGE:?set WEB_IMAGE in .env, for example ghcr.io/owner/repo-web:latest}
+    pull_policy: always
+    mem_limit: 384m
+
+  # nginx is reached through Caddy only: it is not published on the server's own address.
+  nginx:
+    ports: !override []
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env, for example haisan.eastasia.cloudapp.azure.com}
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # The certificate and the account key: keep them between restarts, or Let's Encrypt limits are hit.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - nginx
+
+volumes:
+  caddy_data:
+  caddy_config:

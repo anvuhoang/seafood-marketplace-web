@@ -1,0 +1,75 @@
+model User {
+  id                String       @id @default(uuid()) @db.Uuid
+  email             String       @unique @db.VarChar(255)
+  passwordHash      String       @map("password_hash") @db.VarChar(255)
+  fullName          String       @map("full_name") @db.VarChar(150)
+  phone             String?      @unique @db.VarChar(30)
+  avatarUrl         String?      @map("avatar_url") @db.VarChar(1000)
+  gender            Gender?
+  birthDate         DateTime?    @map("birth_date") @db.Date
+  /// Category slugs the customer is interested in.
+  interests         String[]     @default([])
+  passwordChangedAt DateTime?    @map("password_changed_at") @db.Timestamptz(6)
+  /// Set once the customer has shown they own the address: by signing in with Google or by finishing a password reset.
+  emailVerifiedAt   DateTime?    @map("email_verified_at") @db.Timestamptz(6)
+  /// The Google account linked to this user (the "sub" of its ID token).
+  googleId          String?      @unique @map("google_id") @db.VarChar(64)
+  role              UserRoleType @default(CUSTOMER)
+  status            UserStatus   @default(ACTIVE)
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  addresses UserAddress[]
+  vendor    Vendor?       @relation("VendorOwner")
+  carts     Cart[]
+  orders    Order[]
+  reviews   Review[]
+  vendorFollows VendorFollow[]
+  vendorDecisions VendorDecision[] @relation("VendorDecisionAdmin")
+  chatConversations ChatConversation[]
+  chatMemory        ChatMemory?
+  passwordResetTokens PasswordResetToken[]
+
+  @@index([role, status])
+  @@map("users")
+}
+
+model UserAddress {
+  id             String       @id @default(uuid()) @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
+  recipientName  String       @map("recipient_name") @db.VarChar(150)
+  recipientPhone String       @map("recipient_phone") @db.VarChar(30)
+  province       String       @db.VarChar(100)
+  district       String       @db.VarChar(100)
+  ward           String?      @db.VarChar(100)
+  streetAddress  String       @map("street_address") @db.VarChar(255)
+  label          AddressLabel @default(HOME)
+  /// Delivery instructions, e.g. "gọi trước 15 phút".
+  note           String?      @db.VarChar(500)
+  isDefault      Boolean      @default(false) @map("is_default")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@index([userId])
+  @@map("user_addresses")
+}
+
+/// A link sent by email to choose a new password. Only the hash of the token is stored, so a copy of the database
+/// cannot be used to reset anyone's password. A token works once and for a short time.
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  /// SHA-256 of the token that is in the link.
+  tokenHash String    @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}

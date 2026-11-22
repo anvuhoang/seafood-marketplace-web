@@ -1,0 +1,64 @@
+model Vendor {
+  id            String       @id @default(uuid()) @db.Uuid
+  ownerId        String       @unique @map("owner_id") @db.Uuid
+  name           String       @db.VarChar(180)
+  slug           String       @unique @db.VarChar(200)
+  description    String?      @db.Text
+  logoUrl        String?      @map("logo_url") @db.VarChar(1000)
+  coverUrl       String?      @map("cover_url") @db.VarChar(1000)
+  phone          String?      @db.VarChar(30)
+  email          String?      @db.VarChar(255)
+  province       String       @db.VarChar(100)
+  district       String       @db.VarChar(100)
+  ward           String?      @db.VarChar(100)
+  streetAddress  String       @map("street_address") @db.VarChar(255)
+  status         VendorStatus @default(PENDING)
+  ratingAverage  Decimal      @default(0) @map("rating_average") @db.Decimal(3, 2)
+  ratingCount    Int          @default(0) @map("rating_count")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  owner  User         @relation("VendorOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  offers VendorOffer[]
+  orders VendorOrder[]
+  follows VendorFollow[]
+  decisions VendorDecision[]
+  proposedProducts Product[] @relation("VendorProposedProducts")
+
+  @@index([status])
+  @@map("vendors")
+}
+
+/// A customer following a vendor's storefront.
+model VendorFollow {
+  userId    String   @map("user_id") @db.Uuid
+  vendorId  String   @map("vendor_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@id([userId, vendorId])
+  @@index([vendorId])
+  @@map("vendor_follows")
+}
+
+/// Audit trail: one row per admin decision about a vendor, kept forever.
+model VendorDecision {
+  id         String               @id @default(uuid()) @db.Uuid
+  vendorId   String               @map("vendor_id") @db.Uuid
+  adminId    String               @map("admin_id") @db.Uuid
+  action     VendorDecisionAction
+  fromStatus VendorStatus         @map("from_status")
+  toStatus   VendorStatus         @map("to_status")
+  /// Required when rejecting or suspending.
+  reason     String?              @db.VarChar(500)
+  createdAt  DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  admin  User   @relation("VendorDecisionAdmin", fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([vendorId, createdAt])
+  @@index([adminId])
+  @@map("vendor_decisions")
+}

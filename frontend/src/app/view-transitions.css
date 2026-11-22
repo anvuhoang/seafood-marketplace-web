@@ -1,0 +1,45 @@
+/*
+ * Page transitions (React <ViewTransition> + the browser View Transitions API).
+ *
+ * A plain dissolve: the old page stays fully opaque underneath while the new
+ * one fades in on top, so the screen never goes blank between the two. (An
+ * earlier version faded the old page out first and delayed the new one, which
+ * left a gap where only the white background showed: a visible flash on every
+ * navigation.) No movement or blur, so it reads as calm rather than busy.
+ *
+ * Every page change uses this same dissolve. The shop header is not given a
+ * special name: pages that share it dissolve into an identical header (which
+ * looks still), and pages without it (sign-in, admin, vendor console) simply
+ * dissolve like everything else instead of the header vanishing at once.
+ */
+
+::view-transition {
+  /* Clicks during the short animation still reach the live page. */
+  pointer-events: none;
+}
+
+::view-transition-old(.page) {
+  animation: none;
+  /* The browser default adds the two images together, which brightens the overlap. */
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(.page) {
+  animation: 180ms ease-out both vt-fade-in;
+  mix-blend-mode: normal;
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
