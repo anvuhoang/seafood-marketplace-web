@@ -59,6 +59,7 @@ interface ListingProduct {
   slug: string;
   description: string | null;
   speciesName: string | null;
+  speciesSlug: string | null;
   imageUrl: string | null;
   isFeatured: boolean;
   createdAt: Date;
@@ -82,6 +83,15 @@ interface ListingFilters {
 type FacetKey = 'category' | 'region' | 'vendor';
 
 /**
+ * Server-side narrowing that is not part of the public query, e.g. Visual
+ * Search asking for the products of one recognised species.
+ */
+export interface ListingScope {
+  /** Only products whose species has one of these slugs. */
+  speciesSlugs?: string[];
+}
+
+/**
  * Public product listing with filters, facet counts, sorting and pagination.
  *
  * Filtering runs in memory over all sellable products, which keeps facet
@@ -95,9 +105,16 @@ export class ProductListingService {
     private readonly categoryService: CategoryService,
   ) {}
 
-  async listProducts(query: ProductListingQueryDto): Promise<ProductListingDto> {
+  async listProducts(
+    query: ProductListingQueryDto,
+    scope: ListingScope = {},
+  ): Promise<ProductListingDto> {
     const visibleCategories = await this.categoryService.findVisibleCategories();
     const products = await this.loadProducts(visibleCategories);
+    const speciesSlugs = scope.speciesSlugs;
+    const scoped = speciesSlugs
+      ? products.filter((product) => product.speciesSlug !== null && speciesSlugs.includes(product.speciesSlug))
+      : products;
 
     // A reversed price range is treated as the same range, not an error.
     const [minPrice, maxPrice] =
@@ -115,7 +132,7 @@ export class ProductListingService {
       inStock: query.inStock === 'true',
     };
 
-    const matched = products
+    const matched = scoped
       .map((product) => ({ product, offers: this.matchingOffers(product, filters) }))
       .filter(({ offers }) => offers.length > 0);
 
@@ -130,7 +147,7 @@ export class ProductListingService {
       items: items.slice((page - 1) * limit, page * limit),
       pagination: { page, limit, totalItems: items.length, totalPages },
       totalProducts: products.length,
-      facets: this.buildFacets(products, filters, visibleCategories),
+      facets: this.buildFacets(scoped, filters, visibleCategories),
     };
   }
 
@@ -192,7 +209,7 @@ export class ProductListingService {
         description: true,
         isFeatured: true,
         createdAt: true,
-        species: { select: { commonName: true, scientificName: true } },
+        species: { select: { commonName: true, scientificName: true, slug: true } },
         images: { select: { imageUrl: true, isPrimary: true }, orderBy: { sortOrder: 'asc' } },
         categories: { select: { categoryId: true } },
         variants: {
@@ -243,6 +260,7 @@ export class ProductListingService {
         slug: row.slug,
         description: row.description,
         speciesName: row.species?.commonName ?? null,
+        speciesSlug: row.species?.slug ?? null,
         imageUrl: primaryImage?.imageUrl ?? null,
         isFeatured: row.isFeatured,
         createdAt: row.createdAt,

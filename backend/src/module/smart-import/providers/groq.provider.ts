@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { groqPost, parseChatJson } from '../../../common/ai/groq-client.js';
 import {
   AiProviderError,
   type DraftExtractor,
   type ExtractionContext,
   type SpeechToText,
 } from '../smart-import.types.js';
-
-const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 
 /** Words the recogniser should spell correctly; passed to Whisper as a hint. */
 const TRANSCRIBE_HINT =
@@ -108,57 +107,16 @@ export class GroqProvider implements SpeechToText, DraftExtractor {
       { 'Content-Type': 'application/json' },
     );
 
-    const content = (
-      body as { choices?: { message?: { content?: unknown } }[] }
-    )?.choices?.[0]?.message?.content;
-    if (typeof content !== 'string' || content.trim() === '') {
-      throw new AiProviderError('bad_response', 'Empty model answer.');
-    }
-    try {
-      return JSON.parse(content) as unknown;
-    } catch {
-      throw new AiProviderError('bad_response', 'The answer is not JSON.');
-    }
+    return parseChatJson(body);
   }
 
   /** One authenticated call. Errors never include the key or the vendor's text. */
-  private async post(
+  private post(
     settings: GroqSettings,
     path: string,
     body: BodyInit,
     headers: Record<string, string> = {},
   ): Promise<unknown> {
-    let response: Response;
-    try {
-      response = await fetch(`${GROQ_BASE_URL}${path}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${settings.groqApiKey}`, ...headers },
-        body,
-        signal: AbortSignal.timeout(settings.timeoutMs),
-      });
-    } catch (error) {
-      const timedOut =
-        error instanceof Error &&
-        (error.name === 'TimeoutError' || error.name === 'AbortError');
-      throw new AiProviderError(
-        timedOut ? 'timeout' : 'unavailable',
-        timedOut ? 'The AI service did not answer in time.' : 'The AI service is unreachable.',
-      );
-    }
-
-    if (response.status === 429) {
-      throw new AiProviderError('rate_limited', 'The AI quota is used up for now.');
-    }
-    if (!response.ok) {
-      throw new AiProviderError(
-        'unavailable',
-        `The AI service answered with status ${response.status}.`,
-      );
-    }
-    try {
-      return (await response.json()) as unknown;
-    } catch {
-      throw new AiProviderError('bad_response', 'The answer is not JSON.');
-    }
+    return groqPost(settings.groqApiKey, settings.timeoutMs, path, body, headers);
   }
 }

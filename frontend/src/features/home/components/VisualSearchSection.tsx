@@ -1,77 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Camera, ImageUp, Loader2, ScanSearch, Search, X } from "lucide-react";
+import { ArrowRight, Loader2, ScanSearch, Search } from "lucide-react";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { CatalogProductCard } from "@/features/catalog/components/CatalogProductCard";
+import { ImagePicker } from "@/features/visual-search/components/ImagePicker";
+import { KeywordSearchForm } from "@/features/visual-search/components/KeywordSearchForm";
 import {
-  VISUAL_SEARCH_ACCEPTED_TYPES,
-  VISUAL_SEARCH_MAX_BYTES,
-  searchByImage,
-} from "@/features/visual-search/api/visual-search.api";
-import { VisualSearchResult } from "@/features/visual-search/types/visual-search.types";
+  ConfidenceBadge,
+  Disclaimer,
+  ErrorNotice,
+  SearchingState,
+  predictionSentence,
+} from "@/features/visual-search/components/VisualSearchResultParts";
+import { useVisualSearch } from "@/features/visual-search/hooks/useVisualSearch";
+import type { VisualSearchResult } from "@/features/visual-search/types/visual-search.types";
+import { IMAGE_QUALITY_NOTES, MATCHED_BY_NOTES, productsHref } from "@/features/visual-search/utils/presentation";
 
 const STEPS = [
   "Chụp hoặc tải lên ảnh hải sản bạn muốn mua",
-  "Hệ thống nhận diện loài và kích cỡ phổ biến",
+  "Hệ thống gợi ý loài hải sản có trong ảnh",
   "Chọn vựa đang bán với giá phù hợp",
 ];
 
-type Status =
-  | { kind: "idle" }
-  | { kind: "searching" }
-  | { kind: "done"; result: VisualSearchResult }
-  | { kind: "error"; message: string };
-
+/** Compact visual search on the home page; "Xem chi tiết" opens /visual-search with the same result. */
 export function VisualSearchSection() {
-  const [image, setImage] = useState<{ file: File; url: string } | null>(null);
-  const [status, setStatus] = useState<Status>({ kind: "idle" });
-  const [inputError, setInputError] = useState<string | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-
-  // Release the preview URL when the image changes or the section unmounts.
-  useEffect(() => {
-    return () => {
-      if (image) URL.revokeObjectURL(image.url);
-    };
-  }, [image]);
-
-  const selectFile = (file: File | undefined) => {
-    if (!file) return;
-    if (!VISUAL_SEARCH_ACCEPTED_TYPES.includes(file.type)) {
-      setInputError("Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.");
-      return;
-    }
-    if (file.size > VISUAL_SEARCH_MAX_BYTES) {
-      setInputError("Ảnh tối đa 10MB.");
-      return;
-    }
-    setInputError(null);
-    setStatus({ kind: "idle" });
-    setImage({ file, url: URL.createObjectURL(file) });
-  };
-
-  const clearImage = () => {
-    setImage(null);
-    setStatus({ kind: "idle" });
-  };
-
-  const handleSearch = async () => {
-    if (!image) return;
-    setStatus({ kind: "searching" });
-    try {
-      setStatus({ kind: "done", result: await searchByImage(image.file) });
-    } catch (error) {
-      setStatus({
-        kind: "error",
-        message: error instanceof Error ? error.message : "Không nhận diện được ảnh. Vui lòng thử ảnh khác.",
-      });
-    }
-  };
+  const { image, status, inputError, enabled, selectFile, clearImage, search } = useVisualSearch();
 
   return (
     <section id="visual-search" className="scroll-mt-32 bg-white py-14 sm:py-20">
@@ -79,156 +34,128 @@ export function VisualSearchSection() {
         <SectionHeading
           eyebrow="Tìm kiếm bằng AI"
           title="Tìm hải sản bằng hình ảnh"
-          description="Tải ảnh loại hải sản bạn muốn mua, hệ thống nhận diện và gợi ý các vựa đang bán để bạn so sánh."
+          description="Tải ảnh loại hải sản bạn muốn mua, hệ thống gợi ý loài có trong ảnh và các vựa đang bán để bạn so sánh."
+          actionHref="/visual-search"
+          actionLabel="Mở trang tìm bằng ảnh"
         />
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Upload */}
           <ScrollReveal>
-            {image ? (
-              <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image.url} alt="Ảnh đã chọn" className="aspect-4/3 w-full object-contain" />
-                <button
-                  type="button"
-                  onClick={clearImage}
-                  aria-label="Bỏ ảnh đã chọn"
-                  className="absolute top-3 right-3 rounded-full bg-white/90 p-1.5 text-slate-700 shadow-sm hover:text-[#E63946]"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragging(true);
-                }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragging(false);
-                  selectFile(e.dataTransfer.files[0]);
-                }}
-                className={`flex aspect-4/3 flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 text-center transition-colors ${
-                  dragging ? "border-[#0F3860] bg-sky-50" : "border-slate-300 bg-slate-50"
-                }`}
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-[#0F3860] shadow-sm">
-                  <ImageUp className="h-6 w-6" />
-                </span>
-                <p className="mt-4 font-semibold text-slate-900">Kéo thả ảnh vào đây</p>
-                <p className="mt-1 text-sm text-slate-500">hoặc chọn từ máy, chụp bằng điện thoại</p>
-                <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#0F3860] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0A2744]"
-                  >
-                    <ImageUp className="h-4 w-4" /> Chọn ảnh
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => cameraInputRef.current?.click()}
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400"
-                  >
-                    <Camera className="h-4 w-4" /> Chụp ảnh
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={VISUAL_SEARCH_ACCEPTED_TYPES.join(",")}
-              className="hidden"
-              onChange={(e) => {
-                selectFile(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => {
-                selectFile(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
-
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <p className={`text-xs ${inputError ? "text-[#C62835]" : "text-slate-500"}`}>
-                {inputError ?? "JPG, PNG hoặc WebP, tối đa 10MB"}
-              </p>
+            <ImagePicker image={image} inputError={inputError} onSelect={selectFile} onClear={clearImage} />
+            <div className="mt-3 flex justify-end">
               <button
                 type="button"
-                onClick={() => void handleSearch()}
-                disabled={!image || status.kind === "searching"}
+                onClick={() => void search()}
+                disabled={!image || status.kind === "searching" || enabled === false}
+                aria-label="Tìm hải sản theo ảnh đã chọn"
                 className="inline-flex items-center gap-2 rounded-lg bg-[#E63946] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#D62839] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {status.kind === "searching" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                 ) : (
-                  <Search className="h-4 w-4" />
+                  <Search className="h-4 w-4" aria-hidden="true" />
                 )}
                 Tìm hải sản
               </button>
             </div>
           </ScrollReveal>
 
-          {/* Result */}
           <ScrollReveal delay={120} className="rounded-2xl border border-slate-200 p-6 sm:p-8">
-            <h3 className="flex items-center gap-2 font-semibold text-slate-900">
-              <ScanSearch className="h-5 w-5 text-[#0F3860]" /> Kết quả nhận diện
-            </h3>
+            <div aria-live="polite" aria-busy={status.kind === "searching"}>
+              <h3 className="flex items-center gap-2 font-semibold text-slate-900">
+                <ScanSearch className="h-5 w-5 text-[#0F3860]" aria-hidden="true" /> Kết quả nhận diện
+              </h3>
 
-            {status.kind === "searching" ? (
-              <div className="flex flex-col items-center py-16 text-sm text-slate-500">
-                <Loader2 className="h-6 w-6 animate-spin text-[#0F3860]" />
-                <p className="mt-3">Đang phân tích ảnh...</p>
-              </div>
-            ) : status.kind === "error" ? (
-              <div className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
-                <p>{status.message}</p>
-                <Link href="/products" className="mt-2 inline-block font-semibold underline underline-offset-4">
-                  Tìm bằng từ khóa
-                </Link>
-              </div>
-            ) : status.kind === "done" ? (
-              <div className="mt-5">
-                <p className="text-sm text-slate-600">
-                  Có vẻ đây là <span className="font-semibold text-slate-900">{status.result.label}</span>
-                  <span className="text-slate-400"> · độ tin cậy {Math.round(status.result.confidence * 100)}%</span>
-                </p>
-                {status.result.products.length > 0 ? (
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    {status.result.products.slice(0, 4).map((product) => (
-                      <CatalogProductCard key={product.id} product={product} view="grid" />
-                    ))}
+              {enabled === false && status.kind !== "done" ? (
+                <div className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-950">
+                  <p className="font-semibold">Tính năng tìm bằng hình ảnh tạm chưa sẵn sàng.</p>
+                  <div className="mt-3">
+                    <KeywordSearchForm label="Tìm bằng từ khóa" />
                   </div>
-                ) : (
-                  <p className="mt-4 text-sm text-slate-500">Hiện chưa có vựa nào bán loại này.</p>
-                )}
-              </div>
-            ) : (
-              <ol className="mt-6 space-y-5">
-                {STEPS.map((step, index) => (
-                  <li key={step} className="flex gap-4">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sm font-semibold text-[#0F3860] tabular-nums">
-                      {index + 1}
-                    </span>
-                    <p className="pt-1 text-sm leading-relaxed text-slate-600">{step}</p>
-                  </li>
-                ))}
-              </ol>
-            )}
+                </div>
+              ) : status.kind === "searching" ? (
+                <SearchingState />
+              ) : status.kind === "error" ? (
+                <ErrorNotice message={status.message} statusCode={status.statusCode} onRetry={() => void search()} />
+              ) : status.kind === "done" ? (
+                <CompactResult result={status.result} />
+              ) : (
+                <ol className="mt-6 space-y-5">
+                  {STEPS.map((step, index) => (
+                    <li key={step} className="flex gap-4">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sm font-semibold text-[#0F3860] tabular-nums">
+                        {index + 1}
+                      </span>
+                      <p className="pt-1 text-sm leading-relaxed text-slate-600">{step}</p>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
           </ScrollReveal>
         </div>
       </div>
     </section>
+  );
+}
+
+function CompactResult({ result }: { result: VisualSearchResult }) {
+  const prediction = result.prediction;
+  const details = (
+    <Link
+      href="/visual-search"
+      className="group inline-flex items-center gap-1.5 text-sm font-semibold text-[#0F3860] underline-offset-4 hover:underline"
+    >
+      Xem chi tiết
+      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
+    </Link>
+  );
+
+  if (result.outcome === "not_seafood" || !prediction) {
+    return (
+      <div className="mt-5 space-y-3 text-sm">
+        <p className="font-semibold text-slate-900">Ảnh này có vẻ không phải hải sản.</p>
+        <p className="text-slate-600">Hãy chọn ảnh chụp rõ con hải sản bạn muốn mua, hoặc nhập tên để tìm.</p>
+        <KeywordSearchForm />
+      </div>
+    );
+  }
+
+  const quality = result.imageQuality === "good" ? null : IMAGE_QUALITY_NOTES[result.imageQuality];
+  const note = result.matchedBy ? MATCHED_BY_NOTES[result.matchedBy] : undefined;
+
+  return (
+    <div className="mt-5 space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm text-slate-700">{predictionSentence(prediction.label, prediction.confidenceLevel)}</p>
+        <ConfidenceBadge level={prediction.confidenceLevel} confidence={prediction.confidence} />
+      </div>
+      {quality && <p className="text-sm text-amber-900">{quality}</p>}
+      <Disclaimer text={result.disclaimer} />
+
+      {result.outcome === "matched" ? (
+        <>
+          {note && <p className="text-sm text-amber-900">{note}</p>}
+          <div className="grid grid-cols-2 gap-3">
+            {result.products.slice(0, 4).map((product) => (
+              <CatalogProductCard key={product.id} product={product} view="grid" />
+            ))}
+          </div>
+        </>
+      ) : result.outcome === "no_products" ? (
+        <p className="text-sm text-slate-600">
+          Chưa có vựa nào đang bán {prediction.label ?? "loại này"}.{" "}
+          <Link href={productsHref(result.searchQuery)} className="font-semibold text-[#0F3860] underline underline-offset-4">
+            Tìm bằng từ khóa
+          </Link>
+        </p>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-slate-600">Chưa nhận diện chắc chắn. Hãy thử ảnh rõ hơn hoặc nhập tên.</p>
+          <KeywordSearchForm defaultValue={result.searchQuery} />
+        </div>
+      )}
+      {details}
+    </div>
   );
 }
