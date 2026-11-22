@@ -22,6 +22,8 @@ model User {
   reviews   Review[]
   vendorFollows VendorFollow[]
   vendorDecisions VendorDecision[] @relation("VendorDecisionAdmin")
+  chatConversations ChatConversation[]
+  chatMemory        ChatMemory?
 
   @@index([role, status])
   @@map("users")
