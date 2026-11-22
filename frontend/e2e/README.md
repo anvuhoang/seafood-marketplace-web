@@ -34,6 +34,14 @@ A failing test leaves a screenshot and a trace in `test-results/` (`npx playwrig
 | `catalog.spec.ts` | home, search without accents and with a typo, empty result, product page, unknown product |
 | `checkout.spec.ts` | guest cart kept after sign-in, empty cart, checkout validation, two vendors → one order with two parts paid on delivery |
 | `orders.spec.ts` | order in the history, cancel a pending order, buy again from a completed order (the vendor completes it through the API) |
+| `permissions.spec.ts` | **permission matrix**: every protected API route against signed out, customer, vendor and admin (401, 403, 404, 200); forged tokens; a profile edit cannot change a role |
+| `routes.spec.ts` | **route matrix**: every page that is guarded, for the four kinds of visitor (opens, or where they are sent); the "go back after signing in" redirect |
+| `ownership.spec.ts` | one customer cannot read, pay, cancel or buy again another's order or use their address; one vendor cannot read or change another vendor's order part, price, stock or status |
+| `reviews.spec.ts` | review only after delivery, not by a stranger, validated, once per item |
+| `vendor-lifecycle.spec.ts` | apply for a store, approval opens the vendor API at once, suspension closes it at once, reactivation reopens it |
+| `vendor-ui.spec.ts` | a vendor signs in and lands on the dashboard, own products and orders, takes an order from pending to delivered, another vendor gets "not found" |
+| `admin-ui.spec.ts` | admin sign-in and pages; a customer, a vendor and a wrong password get the same refusal; the admin endpoint and the customer endpoint refuse each other's accounts |
+| `sessions.spec.ts` | a token issued before a password reset stops working; tampered and escalated tokens are refused |
 
 ## How they are written
 
@@ -46,5 +54,10 @@ A failing test leaves a screenshot and a trace in `test-results/` (`npx playwrig
   the tests cancel the orders they no longer need, so repeated runs never sell the product out.
 - **Mail.** Without an SMTP server the API writes mails into its log. The reset test reads the link from there
   (`support/mail-log.ts`), so it needs no mailbox. It is skipped when the API log cannot be read.
+- **The matrices are the specification.** `permissions.spec.ts` and `routes.spec.ts` are tables: a new protected route is
+  added as a row, and a route that answers differently from its row fails the test, whether it opened to someone who
+  must not be there or closed to someone who must.
+- **Tests clean up after themselves.** A test that needs a store creates one with a unique name and rejects or suspends it
+  at the end, even when the test fails.
 - Selectors are roles, labels, and visible text (the pages have no `data-testid`), which also checks that the pages
   are usable with a screen reader.

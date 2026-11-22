@@ -1,10 +1,12 @@
 import { expect, type Page } from "@playwright/test";
+import { waitForSignInSlot } from "./api";
 
 /** The sign-in form, as a visitor fills it. */
 export async function loginViaUi(page: Page, email: string, password: string): Promise<void> {
   await page.goto("/customer/login");
   await page.getByPlaceholder("Nhập số điện thoại hoặc email của bạn").fill(email);
   await page.getByPlaceholder("Nhập mật khẩu").fill(password);
+  await waitForSignInSlot();
   await page.getByRole("button", { name: /^Đăng nhập$/ }).click();
 }
 

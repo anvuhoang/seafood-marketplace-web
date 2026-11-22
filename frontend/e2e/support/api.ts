@@ -21,25 +21,32 @@ export interface Session {
 
 export const PASSWORD = "E2e@123456";
 
-let counter = 0;
-
-/** The shop allows 5 sign-ups a minute per address. The tests stay under that by waiting their turn. */
-const SIGN_UPS_PER_WINDOW = 4;
 const WINDOW_MS = 62_000;
-const signUps: number[] = [];
+const used = new Map<string, number[]>();
 
-/** Call before each sign-up (through the API or the form): waits until another one is allowed. */
-export async function waitForSignUpSlot(): Promise<void> {
+/**
+ * The shop limits sign-ups (5 a minute) and sign-ins (10 a minute) per address. The tests stay under the limits by
+ * waiting their turn instead of switching them off: call before each request of that kind, through the API or a form.
+ */
+async function waitForSlot(kind: string, perWindow: number): Promise<void> {
+  const times = used.get(kind) ?? [];
+  used.set(kind, times);
   for (;;) {
     const now = Date.now();
-    while (signUps.length > 0 && now - signUps[0] > WINDOW_MS) signUps.shift();
-    if (signUps.length < SIGN_UPS_PER_WINDOW) {
-      signUps.push(now);
+    while (times.length > 0 && now - times[0] > WINDOW_MS) times.shift();
+    if (times.length < perWindow) {
+      times.push(now);
       return;
     }
-    await new Promise((resolve) => setTimeout(resolve, signUps[0] + WINDOW_MS - now + 50));
+    await new Promise((resolve) => setTimeout(resolve, times[0] + WINDOW_MS - now + 50));
   }
 }
+
+export const waitForSignUpSlot = (): Promise<void> => waitForSlot("sign-up", 4);
+/** Sign-ins through the form, the customer endpoint and the admin endpoint, counted together to stay well under. */
+export const waitForSignInSlot = (): Promise<void> => waitForSlot("sign-in", 7);
+
+let counter = 0;
 
 /** An address nobody else has, so each run (and each test) works with its own customer. */
 export function uniqueEmail(prefix = "e2e"): string {
@@ -77,16 +84,76 @@ export async function registerViaApi(request: APIRequestContext, email = uniqueE
 }
 
 export async function loginViaApi(request: APIRequestContext, email: string, password: string): Promise<Session> {
+  await waitForSignInSlot();
   const result = await post<{ accessToken: string; user: ApiUser }>(request, "/auth/login", { emailOrPhone: email, password });
   return { ...result, password };
 }
 
-let vendorSession: Session | null = null;
+const staffSessions = new Map<string, Session>();
 
-/** The seeded vendor owner, signed in once and reused (sign-ins are limited to 10 a minute). */
-export async function vendorViaApi(request: APIRequestContext): Promise<Session> {
-  vendorSession ??= await loginViaApi(request, ACCOUNTS.vendor.email, ACCOUNTS.vendor.password);
-  return vendorSession;
+/** A seeded vendor owner, signed in once and reused (sign-ins are limited to 10 a minute). */
+export async function vendorViaApi(request: APIRequestContext, email: string = ACCOUNTS.vendor.email): Promise<Session> {
+  const known = staffSessions.get(email);
+  if (known) return known;
+  const session = await loginViaApi(request, email, ACCOUNTS.vendor.password);
+  staffSessions.set(email, session);
+  return session;
+}
+
+/** The seeded admin, signed in through the admin endpoint once and reused. */
+export async function adminViaApi(request: APIRequestContext): Promise<Session> {
+  const known = staffSessions.get(ACCOUNTS.admin.email);
+  if (known) return known;
+  await waitForSignInSlot();
+  const result = await post<{ accessToken: string; user: ApiUser }>(request, "/auth/admin/login", {
+    emailOrPhone: ACCOUNTS.admin.email,
+    password: ACCOUNTS.admin.password,
+  });
+  const session = { ...result, password: ACCOUNTS.admin.password };
+  staffSessions.set(ACCOUNTS.admin.email, session);
+  return session;
+}
+
+export const authHeaders = (session: Session) => ({ Authorization: `Bearer ${session.accessToken}` });
+
+/** The offer (a vendor's price and stock for a product) that the shop sells under this search. */
+export async function findOfferId(request: APIRequestContext, search: string): Promise<string> {
+  const response = await request.get(`${API_URL}/products?q=${encodeURIComponent(search)}`);
+  const { items } = (await response.json()) as { items: Array<{ name: string; offerId: string | null }> };
+  const found = items.find((item) => item.name.includes(search) && item.offerId);
+  if (!found?.offerId) throw new Error(`No offer for "${search}"`);
+  return found.offerId;
+}
+
+/**
+ * Buys one unit of each product, paying cash on delivery, through the API, and returns the order number. For the
+ * tests whose subject is something else than the checkout screens (permissions, reviews, the vendor's side).
+ */
+export async function placeOrderViaApi(request: APIRequestContext, customer: Session, searches: string[]): Promise<string> {
+  const headers = authHeaders(customer);
+  const offerIds: string[] = [];
+  for (const search of searches) {
+    const offerId = await findOfferId(request, search);
+    const added = await request.post(`${API_URL}/cart/items`, { data: { offerId, quantity: 1 }, headers });
+    if (!added.ok()) throw new Error(`Could not add "${search}" to the cart: ${added.status()} ${await added.text()}`);
+    offerIds.push(offerId);
+  }
+  const response = await request.post(`${API_URL}/checkout`, {
+    headers: { ...headers, "Idempotency-Key": `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 10)}` },
+    data: {
+      items: offerIds,
+      paymentMethod: "COD",
+      shipping: {
+        recipientName: "Nguyễn Văn E2E",
+        recipientPhone: "0912345678",
+        province: "Hồ Chí Minh",
+        district: "Quận 1",
+        streetAddress: "12 Đường Kiểm Thử",
+      },
+    },
+  });
+  if (!response.ok()) throw new Error(`Checkout answered ${response.status()}: ${await response.text()}`);
+  return ((await response.json()) as { order: { orderNumber: string } }).order.orderNumber;
 }
 
 /**

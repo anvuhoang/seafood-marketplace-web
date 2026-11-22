@@ -6,6 +6,8 @@ export const ACCOUNTS = {
   customer: { email: "nam.le@example.com", password: "Customer@123456", name: "Lê Hoàng Nam" },
   vendor: { email: "phuquocxanh@haisanexpress.vn", password: "Vendor@123456" },
   admin: { email: "admin@haisanexpress.vn", password: "Admin@123456" },
+  /** The owner of the crab vendor: a second vendor, to check that vendors cannot touch each other's data. */
+  otherVendor: { email: "duyenhaiphanthiet@haisanexpress.vn", password: "Vendor@123456" },
 } as const;
 
 /** Seed products the flows buy. They belong to two different vendors, so one order has two parts. */

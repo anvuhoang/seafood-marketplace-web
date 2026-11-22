@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS } from "./support/env";
-import { PASSWORD, registerViaApi, uniqueEmail, waitForSignUpSlot } from "./support/api";
+import { PASSWORD, registerViaApi, uniqueEmail, waitForSignInSlot, waitForSignUpSlot } from "./support/api";
 import { loginViaUi, registerViaForm } from "./support/ui";
 
 test.describe("Sign-in", () => {
@@ -46,6 +46,7 @@ test.describe("Protected pages", () => {
 
     await page.getByPlaceholder("Nhập số điện thoại hoặc email của bạn").fill(ACCOUNTS.customer.email);
     await page.getByPlaceholder("Nhập mật khẩu").fill(ACCOUNTS.customer.password);
+    await waitForSignInSlot();
     await page.getByRole("button", { name: /^Đăng nhập$/ }).click();
     await expect(page).toHaveURL("/customer/orders");
     await expect(page.getByRole("heading", { name: "Đơn hàng của tôi" })).toBeVisible();
