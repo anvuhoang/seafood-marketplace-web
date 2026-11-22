@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, LogOut, MapPin, Moon, Store, Sun, Tags, UserRound, Users } from "lucide-react";
+import { Bot, LayoutDashboard, LogOut, MapPin, Moon, Store, Sun, Tags, UserRound, Users } from "lucide-react";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getAdminVendors } from "../api/admin-vendor.api";
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: VENDORS_PATH, label: "Phê duyệt vựa", icon: Store },
   { href: "/admin/users", label: "Quản lý người dùng", icon: Users },
   { href: "/admin/categories", label: "Quản lý danh mục", icon: Tags },
+  { href: "/admin/chatbot", label: "Chatbot AI", icon: Bot },
 ];
 
 function isActive(pathname: string, href: string): boolean {

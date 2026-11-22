@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { ViewTransition } from "react";
+import { Suspense, ViewTransition } from "react";
 import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import "./view-transitions.css";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { CartProvider } from "@/features/cart/context/CartContext";
+import { ChatWidget } from "@/features/chat/components/ChatWidget";
 
 // Designed for Vietnamese diacritics. Weights stop at 700 on purpose, so the
 // heavier utility classes used across the UI render at bold rather than black.
@@ -33,6 +34,9 @@ export default function RootLayout({
           <CartProvider>
             {/* Navigations are transitions, so page content crossfades between routes. */}
             <ViewTransition default="page">{children}</ViewTransition>
+            <Suspense fallback={null}>
+              <ChatWidget />
+            </Suspense>
           </CartProvider>
         </AuthProvider>
       </body>

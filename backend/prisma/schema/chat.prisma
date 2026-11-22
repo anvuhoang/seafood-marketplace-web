@@ -1,0 +1,125 @@
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+enum ChatFeedback {
+  UP
+  DOWN
+}
+
+enum ChatHandoffStatus {
+  OPEN
+  RESOLVED
+}
+
+/// One chat between a visitor (or a signed-in customer) and the assistant.
+model ChatConversation {
+  id        String   @id @default(uuid()) @db.Uuid
+  /// Null for a guest. A guest is told apart by the browser-made sessionId.
+  userId    String?  @map("user_id") @db.Uuid
+  sessionId String   @map("session_id") @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user     User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages ChatMessage[]
+  handoffs ChatHandoff[]
+
+  @@index([userId, updatedAt])
+  @@index([sessionId])
+  @@index([updatedAt])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String        @id @default(uuid()) @db.Uuid
+  conversationId String        @map("conversation_id") @db.Uuid
+  role           ChatRole
+  content        String        @db.Text
+  /// Product and order cards shown under an assistant message (what the tools returned).
+  cards          Json?
+  /// Knowledge documents an assistant message relied on.
+  sources        Json?
+  /// Names of the tools the assistant called to answer.
+  toolsUsed      String[]      @default([]) @map("tools_used")
+  feedback       ChatFeedback?
+  /// How long the assistant took to answer, in milliseconds.
+  latencyMs      Int?          @map("latency_ms")
+  /// Tokens the model read and wrote for this answer, all rounds together (null for answers saved before this was counted).
+  inputTokens    Int?          @map("input_tokens")
+  outputTokens   Int?          @map("output_tokens")
+  /// How many times the model was called for this answer (one per round of tools).
+  modelCalls     Int?          @map("model_calls")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([feedback])
+  @@map("chat_messages")
+}
+
+/// A message a customer left for the support team when the assistant could not help.
+model ChatHandoff {
+  id             String            @id @default(uuid()) @db.Uuid
+  conversationId String            @map("conversation_id") @db.Uuid
+  contactName    String            @map("contact_name") @db.VarChar(150)
+  /// Phone number or email the team should answer to.
+  contact        String            @db.VarChar(255)
+  message        String            @db.Text
+  status         ChatHandoffStatus @default(OPEN)
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@map("chat_handoffs")
+}
+
+/// What the assistant remembers about a customer between chats (allergies, tastes, family size).
+model ChatMemory {
+  userId    String   @id @map("user_id") @db.Uuid
+  notes     String[] @default([])
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("chat_memories")
+}
+
+/// A passage of the help documents (backend/knowledge/*.md) with its embedding, searched by the assistant.
+/// The embedding is a plain number array: the corpus is small, so similarity is worked out in the API
+/// instead of needing the pgvector extension.
+model KnowledgeChunk {
+  id          String   @id @default(uuid()) @db.Uuid
+  /// File name of the document, e.g. "doi-tra-hoan-tien".
+  source      String   @db.VarChar(150)
+  title       String   @db.VarChar(255)
+  content     String   @db.Text
+  position    Int
+  /// Hash of the text that was embedded, so unchanged passages are not embedded again.
+  contentHash String   @map("content_hash") @db.VarChar(64)
+  embedding   Float[]
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([source, position])
+  @@map("knowledge_chunks")
+}
+
+/// Something that went wrong or was refused around the assistant (model quota, timeouts, limits, tool failures).
+/// Kept without a relation to the conversation, so a record outlives it.
+model ChatIncident {
+  id             String   @id @default(uuid()) @db.Uuid
+  /// MODEL_RATE_LIMITED, MODEL_TIMEOUT, MODEL_UNAVAILABLE, MODEL_BLOCKED, MODEL_BAD_RESPONSE, INTERNAL_ERROR,
+  /// TOOL_FAILED, USER_RATE_LIMITED, DAILY_BUDGET, INJECTION.
+  kind           String   @db.VarChar(40)
+  /// A short reason for the logs; never the customer's words.
+  detail         String?  @db.VarChar(300)
+  conversationId String?  @map("conversation_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([createdAt])
+  @@index([kind, createdAt])
+  @@map("chat_incidents")
+}

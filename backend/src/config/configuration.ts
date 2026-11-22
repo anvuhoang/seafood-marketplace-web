@@ -40,6 +40,32 @@ export default () => ({
     linkTtlMinutes: Number(process.env.PAYOS_LINK_TTL_MINUTES ?? 15),
   },
 
+  // Chatbot (shopping assistant). The key stays on the server.
+  // 'off' until GEMINI_API_KEY is set; 'mock' is a local stand-in that needs no key, for development and tests.
+  chat: {
+    enabled: process.env.CHATBOT_ENABLED !== 'false',
+    provider:
+      process.env.CHAT_PROVIDER ??
+      (process.env.GEMINI_API_KEY ? 'gemini' : 'off'),
+    geminiApiKey: process.env.GEMINI_API_KEY ?? '',
+    chatModel: process.env.GEMINI_CHAT_MODEL ?? 'gemini-2.5-flash',
+    embedModel: process.env.GEMINI_EMBED_MODEL ?? 'gemini-embedding-001',
+    embedDimensions: Number(process.env.GEMINI_EMBED_DIMENSIONS ?? 768),
+    timeoutMs: Number(process.env.CHAT_TIMEOUT_MS ?? 30000),
+    maxOutputTokens: Number(process.env.CHAT_MAX_OUTPUT_TOKENS ?? 1500),
+    // A message longer than this is refused, so one request cannot spend the whole quota.
+    maxMessageLength: Number(process.env.CHAT_MAX_MESSAGE_LENGTH ?? 500),
+    // Messages per person in the window below (signed-in customers by user id, guests by IP address).
+    rateLimitMessages: Number(process.env.CHAT_RATE_LIMIT_MESSAGES ?? 20),
+    rateLimitWindowMinutes: Number(process.env.CHAT_RATE_LIMIT_WINDOW_MINUTES ?? 10),
+    // Messages the whole shop may send in a day, so a script cannot spend the model quota.
+    rateLimitDailyBudget: Number(process.env.CHAT_DAILY_BUDGET ?? 2000),
+    // Messages of the conversation sent back to the model each turn.
+    historyMessages: Number(process.env.CHAT_HISTORY_MESSAGES ?? 12),
+    // How many times the model may call tools before it has to answer.
+    maxToolRounds: Number(process.env.CHAT_MAX_TOOL_ROUNDS ?? 4),
+  },
+
   // Smart Import (vendor product drafts from text or voice). The key stays on the server.
   // 'off' until GROQ_API_KEY is set; 'mock' is a local stand-in that needs no key.
   smartImport: {

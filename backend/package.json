@@ -24,7 +24,9 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",
-    "postinstall": "prisma skills sync || exit 0"
+    "postinstall": "prisma skills sync || exit 0",
+    "knowledge:ingest": "nest build && node dist/module/chat/knowledge/ingest.cli.js",
+    "chat:eval": "nest build && node dist/module/chat/eval/run-eval.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
