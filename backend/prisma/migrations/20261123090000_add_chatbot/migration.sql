@@ -8,6 +8,17 @@ CREATE TYPE "ChatFeedback" AS ENUM ('UP', 'DOWN');
 CREATE TYPE "ChatHandoffStatus" AS ENUM ('OPEN', 'RESOLVED');
 
 -- CreateTable
+CREATE TABLE "chat_conversations" (
+    "id" UUID NOT NULL,
+    "user_id" UUID,
+    "session_id" VARCHAR(64) NOT NULL,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "chat_conversations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "chat_messages" (
     "id" UUID NOT NULL,
     "conversation_id" UUID NOT NULL,
