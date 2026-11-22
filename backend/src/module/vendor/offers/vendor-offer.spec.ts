@@ -65,7 +65,7 @@ async function rejections(
     return [];
   } catch (error) {
     expect(error).toBeInstanceOf(BadRequestException);
-    return (error as BadRequestException).getResponse()['message'] as string[];
+    return ((error as BadRequestException).getResponse() as { message: string[] }).message;
   }
 }
 

@@ -22,6 +22,7 @@ import { AuthResponseDto, AuthUserDto } from './dto/auth-response.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Public } from '../../common/decorators/public.decorator.js';
+import { RateLimit } from '../../infra/rate-limit.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 
 @ApiTags('Auth')
@@ -30,6 +31,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
   @Public()
+  @RateLimit(5, 60)
   @Post('register')
   @ApiOperation({ summary: 'Register a customer account and sign in' })
   @ApiResponse({ status: 201, description: 'Account created; returns the user and an access token', type: AuthResponseDto })
@@ -40,6 +42,7 @@ export class AuthController {
   }
 
   @Public()
+  @RateLimit(10, 60)
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -62,6 +65,7 @@ export class AuthController {
   }
 
   @Public()
+  @RateLimit(10, 60)
   @Post('admin/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

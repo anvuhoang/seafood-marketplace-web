@@ -40,12 +40,51 @@ export default () => ({
     linkTtlMinutes: Number(process.env.PAYOS_LINK_TTL_MINUTES ?? 15),
   },
 
+  // Shared state. Without REDIS_URL the rate limits and the cache live in this process's memory, which is right
+  // for one API process; with several processes behind a load balancer set REDIS_URL so they share them.
+  redis: {
+    url: process.env.REDIS_URL ?? '',
+    keyPrefix: process.env.REDIS_KEY_PREFIX ?? 'haisan:',
+  },
+
+  // Requests per IP address and window for every route that has no limit of its own (see @RateLimit).
+  rateLimit: {
+    enabled: process.env.RATE_LIMIT_ENABLED !== 'false',
+    defaultLimit: Number(process.env.RATE_LIMIT_DEFAULT ?? 300),
+    defaultWindowSeconds: Number(process.env.RATE_LIMIT_WINDOW_SECONDS ?? 60),
+    // Trust the "X-Internal-Request: 1" header, which only nginx's internal port sets (and its public port strips),
+    // to leave the website server's own calls out of the per-IP count. They all come from one address on behalf of
+    // many visitors, so counting them would put every visitor in one bucket. Switch on only behind that nginx.
+    trustInternalHeader: process.env.RATE_LIMIT_TRUST_INTERNAL === 'true',
+  },
+
+  // Product search with Elasticsearch: typo-tolerant, accent-free, ranked by relevance, plus suggestions while typing.
+  // Without ELASTICSEARCH_URL (or while it is down) the shop searches as before, in memory.
+  search: {
+    url: process.env.ELASTICSEARCH_URL || '',
+    index: process.env.ELASTICSEARCH_INDEX || 'haisan-products',
+    timeoutMs: Number(process.env.ELASTICSEARCH_TIMEOUT_MS ?? 1500),
+    // How many best matches a search asks Elasticsearch for; the other filters are applied to these.
+    maxResults: Number(process.env.SEARCH_MAX_RESULTS ?? 300),
+  },
+
+  // Cache of the product catalogue (listing and categories). Short, because stock changes with every order.
+  cache: {
+    enabled: process.env.CACHE_ENABLED !== 'false',
+    catalogTtlSeconds: Number(process.env.CACHE_CATALOG_TTL_SECONDS ?? 30),
+  },
+
+  // Behind a reverse proxy or load balancer, how many proxies to trust so request.ip is the visitor and not the
+  // proxy: a number of hops ("1"), "true", or a list of addresses ("loopback, 10.0.0.0/8"). Empty = no proxy.
+  trustProxy: process.env.TRUST_PROXY ?? '',
+
   // Chatbot (shopping assistant). The key stays on the server.
   // 'off' until GEMINI_API_KEY is set; 'mock' is a local stand-in that needs no key, for development and tests.
   chat: {
     enabled: process.env.CHATBOT_ENABLED !== 'false',
+    // `||`, not `??`: an empty CHAT_PROVIDER (as docker compose passes when it is not set) means "not set".
     provider:
-      process.env.CHAT_PROVIDER ??
+      process.env.CHAT_PROVIDER ||
       (process.env.GEMINI_API_KEY ? 'gemini' : 'off'),
     geminiApiKey: process.env.GEMINI_API_KEY ?? '',
     chatModel: process.env.GEMINI_CHAT_MODEL ?? 'gemini-2.5-flash',
@@ -70,7 +109,7 @@ export default () => ({
   // 'off' until GROQ_API_KEY is set; 'mock' is a local stand-in that needs no key.
   smartImport: {
     provider:
-      process.env.SMART_IMPORT_PROVIDER ??
+      process.env.SMART_IMPORT_PROVIDER ||
       (process.env.GROQ_API_KEY ? 'groq' : 'off'),
     groqApiKey: process.env.GROQ_API_KEY ?? '',
     transcribeModel:

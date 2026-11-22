@@ -23,6 +23,8 @@ import {
   SmartImportService,
 } from './smart-import.service.js';
 import { AiProviderError } from './smart-import.types.js';
+import { MemoryKeyValueStore } from '../../infra/kv-store.js';
+import { RateLimiterService } from '../../infra/rate-limiter.service.js';
 import { VENDOR_NOT_FOUND, VENDOR_READ_ONLY } from '../vendor/shared/vendor-access.js';
 
 const CATEGORY = '11111111-1111-4111-8111-111111111111';
@@ -63,7 +65,7 @@ function build({
   const service = new SmartImportService(
     prisma as never,
     config,
-    new SmartImportLimiter(),
+    new SmartImportLimiter(new RateLimiterService(new MemoryKeyValueStore())),
     { transcribe } as never,
     { extract } as never,
   );
@@ -216,10 +218,12 @@ describe('validateAudio', () => {
 });
 
 describe('SmartImportLimiter', () => {
-  it('allows calls again once the window has passed', () => {
-    const limiter = new SmartImportLimiter();
-    for (let i = 0; i < SMART_IMPORT_MAX_CALLS; i += 1) limiter.consume('a', 1_000);
-    expect(() => limiter.consume('a', 1_000)).toThrow(HttpException);
-    expect(() => limiter.consume('a', 1_000 + SMART_IMPORT_WINDOW_MS)).not.toThrow();
+  it('allows calls again once the window has passed', async () => {
+    let now = 1_000;
+    const limiter = new SmartImportLimiter(new RateLimiterService(new MemoryKeyValueStore(() => now)));
+    for (let i = 0; i < SMART_IMPORT_MAX_CALLS; i += 1) await limiter.consume('a');
+    await expect(limiter.consume('a')).rejects.toBeInstanceOf(HttpException);
+    now += SMART_IMPORT_WINDOW_MS;
+    await expect(limiter.consume('a')).resolves.toBeUndefined();
   });
 });

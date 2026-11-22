@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Prisma, VendorOrderStatus } from '@prisma/client';
 import type { Vendor } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
@@ -18,6 +18,8 @@ import type {
   VendorDashboardOrderDto,
   VendorDashboardStatusCountDto,
 } from './dto/vendor-dashboard.dto.js';
+import { CacheService } from '../../infra/cache.service.js';
+import { InvalidatesCatalog } from '../../infra/catalog-cache.js';
 
 const SELLABLE_OFFER_WHERE = {
   status: 'ACTIVE',
@@ -82,6 +84,7 @@ export class VendorService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
+    @Optional() private readonly cache?: CacheService,
   ) {}
 
   /** The signed-in user's own store. Always looked up by owner, never by an id from the client. */
@@ -94,6 +97,7 @@ export class VendorService {
    * pending, active and rejected stores can be edited. New images must come from
    * this store's own upload folder on our Cloudinary account.
    */
+  @InvalidatesCatalog()
   async updateMyStore(userId: string, dto: UpdateVendorStoreDto): Promise<VendorStoreDto> {
     const current = await this.findOwnStore(userId);
     if (current.status === 'SUSPENDED') {

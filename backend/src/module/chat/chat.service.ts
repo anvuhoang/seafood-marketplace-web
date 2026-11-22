@@ -112,7 +112,7 @@ export class ChatService {
 
     const checked = checkUserMessage(input.message, settings.maxMessageLength);
     if (!checked.ok) throw new BadRequestException(checked.message);
-    this.consumeLimit(identity);
+    await this.consumeLimit(identity);
 
     const conversationId = input.conversationId
       ? await this.openConversation(identity, input.conversationId)
@@ -257,9 +257,9 @@ export class ChatService {
   }
 
   /** Counts one message against the limits; the limit that refuses it is noted for the admin page. */
-  private consumeLimit(identity: ChatIdentity): void {
+  private async consumeLimit(identity: ChatIdentity): Promise<void> {
     try {
-      this.limiter.consume(identity.userId ?? `ip:${identity.ip}`);
+      await this.limiter.consume(identity.userId ?? `ip:${identity.ip}`);
     } catch (error) {
       if (error instanceof ChatLimitError) void this.record(error.kind);
       throw error;
@@ -418,7 +418,7 @@ export class ChatService {
       select: { id: true },
     });
     if (!conversation) throw new NotFoundException(CONVERSATION_NOT_FOUND);
-    this.consumeLimit(identity);
+    await this.consumeLimit(identity);
 
     const handoff = await this.prisma.chatHandoff.create({
       data: {

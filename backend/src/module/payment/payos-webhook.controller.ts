@@ -3,6 +3,7 @@ import { ApiExcludeController } from '@nestjs/swagger';
 import type { Webhook } from '@payos/node';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { PaymentService } from './payment.service.js';
+import { SkipRateLimit } from '../../infra/rate-limit.guard.js';
 
 /**
  * Called by PayOS, not by a signed-in user, so it has no JWT. The signature in the body is what
@@ -10,6 +11,7 @@ import { PaymentService } from './payment.service.js';
  */
 @ApiExcludeController()
 @Public()
+@SkipRateLimit()
 @Controller('payments/payos')
 export class PayosWebhookController {
   constructor(private readonly payments: PaymentService) {}

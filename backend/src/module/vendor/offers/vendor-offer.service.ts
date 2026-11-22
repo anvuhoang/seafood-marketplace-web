@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import {
@@ -28,6 +24,8 @@ import {
   findWritableVendor,
   pageWindow,
 } from '../shared/vendor-access.js';
+import { CacheService } from '../../../infra/cache.service.js';
+import { InvalidatesCatalog } from '../../../infra/catalog-cache.js';
 
 /** An ACTIVE offer at or below this stock counts as running low (same rule as the dashboard). */
 export const LOW_STOCK_THRESHOLD = 5;
@@ -139,7 +137,10 @@ export function matchesKeywords(
 
 @Injectable()
 export class VendorOfferService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly cache?: CacheService,
+  ) {}
 
   /**
    * The signed-in vendor's offers, newest change first. Discontinued offers are
@@ -336,6 +337,7 @@ export class VendorOfferService {
   }
 
   /** Start selling one active variant of a published product, or of the vendor's own draft. */
+  @InvalidatesCatalog()
   async createOffer(
     userId: string,
     dto: CreateVendorOfferDto,
@@ -391,6 +393,7 @@ export class VendorOfferService {
   }
 
   /** Change price and/or stock of one of the vendor's own offers. */
+  @InvalidatesCatalog()
   async updateOffer(
     userId: string,
     offerId: string,
@@ -423,6 +426,7 @@ export class VendorOfferService {
    * offer's status only: orders, payments and carts are left as they are, and
    * checkout must re-check each offer itself.
    */
+  @InvalidatesCatalog()
   async changeStatus(
     userId: string,
     offerId: string,

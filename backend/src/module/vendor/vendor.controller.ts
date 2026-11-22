@@ -10,6 +10,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
+import { RateLimit } from '../../infra/rate-limit.guard.js';
 
 @ApiTags('Vendors')
 @Controller('vendors')
@@ -68,6 +69,7 @@ export class VendorController {
     return this.vendorService.updateMyStore(userId, dto);
   }
 
+  @RateLimit(20, 60)
   @Post('me/store/upload-signature')
   @HttpCode(HttpStatus.OK)
   @Roles('VENDOR')

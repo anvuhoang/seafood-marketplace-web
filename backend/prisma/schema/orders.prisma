@@ -70,5 +70,8 @@ model OrderItem {
   review      Review?
 
   @@index([vendorOrderId])
+  /// Postgres does not index a foreign key by itself. Without this, counting how often an offer was sold (the
+  /// vendor's product editor does it for every offer) reads the whole table: 170 ms with 1.3 million rows, 0.4 ms with it.
+  @@index([offerId])
   @@map("order_items")
 }
