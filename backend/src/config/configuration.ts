@@ -53,4 +53,15 @@ export default () => ({
       process.env.SMART_IMPORT_EXTRACT_MODEL ?? 'openai/gpt-oss-120b',
     timeoutMs: Number(process.env.SMART_IMPORT_TIMEOUT_MS ?? 20000),
   },
+
+  // Visual Search (customers find seafood from a photo). Uses the same Groq key,
+  // which stays on the server. 'off' until GROQ_API_KEY is set; there is no mock.
+  visualSearch: {
+    provider:
+      process.env.VISUAL_SEARCH_PROVIDER ??
+      (process.env.GROQ_API_KEY ? 'groq' : 'off'),
+    groqApiKey: process.env.GROQ_API_KEY ?? '',
+    model: process.env.VISUAL_SEARCH_MODEL ?? 'qwen/qwen3.8-27b',
+    timeoutMs: Number(process.env.VISUAL_SEARCH_TIMEOUT_MS ?? 20000),
+  },
 });
