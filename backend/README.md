@@ -88,3 +88,50 @@ Sample accounts: vendors use `Vendor@123456`, customers (e.g.
 npm test          # unit tests
 npm run lint
 ```
+
+> On Windows, run `npm test` from a terminal whose path starts with a capital drive letter (`C:\...`,
+> PowerShell or cmd). From Git Bash (`/c/...`) vitest can load two copies of itself and fail with
+> "Cannot read properties of undefined (reading 'config')".
+
+## Chatbot (shopping assistant)
+
+A chat widget on the storefront ("Cá Voi") answers questions about products, the customer's own
+orders, and the shop's policies. Code: `src/module/chat/`; admin page: `/admin/chatbot`.
+
+How it works, in one paragraph: the model (Gemini) never touches the database. It can only ask the API to
+run **tools** (`search_products`, `get_my_order`, `list_my_recent_orders`, `search_knowledge`,
+`propose_add_to_cart`, `propose_reorder`, `remember_preference`, `contact_support`). Live data (price,
+stock, order status) always comes from tools that call the same services as the shop; policies and
+how-tos come from the help documents (RAG). The customer is identified by the token, never by the model,
+and "add to cart" is only a proposal: the cart changes when the customer presses the button.
+
+```env
+GEMINI_API_KEY=...        # https://aistudio.google.com/apikey ; empty = chatbot off
+CHAT_PROVIDER=mock        # optional: no key, no network (keyword stub, for development and tests)
+CHATBOT_ENABLED=false     # switch it off whatever else is set
+```
+
+Other settings (model names, limits) are in `.env.example`. The chat has a per-person rate limit and a
+daily budget, so a script cannot spend the model quota.
+
+**Help documents (RAG).** Markdown files in `backend/knowledge/`, one `##` section per passage. The API
+syncs them at start-up; after editing run `npm run knowledge:ingest` (or press "Đồng bộ tài liệu" in
+the admin page). Passages are embedded once and kept in `knowledge_chunks` as a plain number array and
+searched with cosine similarity plus keywords, so no `pgvector` extension is needed. Move to pgvector if
+the corpus grows to many thousands of passages.
+
+**Evaluation.** `npm run chat:eval` asks ~30 questions (`src/module/chat/eval/chat-eval.cases.ts`) as a
+guest, a customer and another customer, checks which tools were called, which cards appeared and what the
+answer says, and writes `chat-eval-report.md`. It needs the seed data and a real model
+(`GEMINI_API_KEY`); with `CHAT_PROVIDER=mock` it only checks that the harness works. It puts back what it
+changed (conversations, remembered notes) unless you pass `--keep`.
+
+**Adding a tool.** Write a class implementing `ChatTool` in `src/module/chat/tools/`, add it to
+`ChatModule.providers` and to `ChatToolRegistry`, and describe it in the eval cases.
+
+**Monitoring.** `/admin/chatbot` has a "Hiệu năng & hạn mức" part (API: `GET /api/admin/chat/health`):
+latency (average, p50, p95, per day), tokens in and out, today's messages against the daily budget, and
+a log of incidents (model 429 / timeout / errors, blocked answers, failing tools, people who hit the rate
+limit, takeover attempts) with warnings. Tokens come from the model's own count. Google does not offer an
+API for the remaining Gemini quota, so a rising number of "429" incidents is the signal that the quota is
+used up (the real figures are in Google AI Studio).
