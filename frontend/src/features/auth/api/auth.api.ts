@@ -177,3 +177,56 @@ export async function adminLoginApi(
     },
   };
 }
+
+/** Which sign-in methods the site offers. The Google client ID is public by design. */
+export interface AuthProviders {
+  google: { enabled: boolean; clientId: string | null };
+}
+
+export async function getAuthProvidersApi(): Promise<AuthProviders> {
+  const response = await fetch(`${API_BASE_URL}/auth/providers`);
+  return handleResponse<AuthProviders>(response);
+}
+
+/** Sign in (or sign up) with the ID token Google gave the browser. */
+export async function googleLoginApi(credential: string): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential }),
+  });
+
+  const result = await handleResponse<AuthResponse>(response);
+
+  return {
+    ...result,
+    user: {
+      ...result.user,
+      name: result.user.fullName,
+      emailOrPhone: result.user.phone || result.user.email,
+    },
+  };
+}
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return handleResponse<T>(response);
+}
+
+/** Always succeeds the same way, whether or not the address has an account. */
+export function forgotPasswordApi(email: string): Promise<{ message: string }> {
+  return postJson("/auth/forgot-password", { email });
+}
+
+export async function verifyResetTokenApi(token: string): Promise<boolean> {
+  const result = await postJson<{ valid: boolean }>("/auth/reset-password/verify", { token });
+  return result.valid;
+}
+
+export function resetPasswordApi(token: string, password: string): Promise<{ message: string }> {
+  return postJson("/auth/reset-password", { token, password });
+}
