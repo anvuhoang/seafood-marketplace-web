@@ -104,7 +104,7 @@ export class AuthService {
    */
   async adminLogin(dto: LoginDto, clientKey: string): Promise<AuthResult> {
     const limiterKey = `${clientKey}|${dto.emailOrPhone.trim().toLowerCase()}`;
-    this.loginLimiter.assertAllowed(limiterKey);
+    await this.loginLimiter.assertAllowed(limiterKey);
 
     const failure = new UnauthorizedException(
       'Email/Số điện thoại hoặc mật khẩu không chính xác.',
@@ -115,18 +115,18 @@ export class AuthService {
       user = await this.verifyCredentials(dto);
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        this.loginLimiter.recordFailure(limiterKey);
+        await this.loginLimiter.recordFailure(limiterKey);
         throw failure;
       }
       throw error;
     }
 
     if (user.role !== 'ADMIN' || user.status !== 'ACTIVE') {
-      this.loginLimiter.recordFailure(limiterKey);
+      await this.loginLimiter.recordFailure(limiterKey);
       throw failure;
     }
 
-    this.loginLimiter.reset(limiterKey);
+    await this.loginLimiter.reset(limiterKey);
     const accessToken = await this.generateToken(
       user.id,
       user.email,

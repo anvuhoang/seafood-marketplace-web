@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type {
@@ -11,6 +11,8 @@ import type {
   VendorDecisionActionValue,
   VendorDecisionDto,
 } from './dto/admin-vendor.dto.js';
+import { CacheService } from '../../infra/cache.service.js';
+import { InvalidatesCatalog } from '../../infra/catalog-cache.js';
 
 /** Which status each decision may start from, where it ends, and the owner's resulting role. */
 const TRANSITIONS: Record<
@@ -47,7 +49,10 @@ function toDecisionDto(row: DecisionRow): VendorDecisionDto {
 
 @Injectable()
 export class AdminVendorService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly cache?: CacheService,
+  ) {}
 
   async list(query: AdminVendorListQueryDto): Promise<AdminVendorListDto> {
     const page = query.page ?? 1;
@@ -137,18 +142,22 @@ export class AdminVendorService {
     };
   }
 
+  @InvalidatesCatalog()
   approve(vendorId: string, adminId: string) {
     return this.decide(vendorId, adminId, 'APPROVE');
   }
 
+  @InvalidatesCatalog()
   reject(vendorId: string, adminId: string, reason: string) {
     return this.decide(vendorId, adminId, 'REJECT', reason);
   }
 
+  @InvalidatesCatalog()
   suspend(vendorId: string, adminId: string, reason: string) {
     return this.decide(vendorId, adminId, 'SUSPEND', reason);
   }
 
+  @InvalidatesCatalog()
   reactivate(vendorId: string, adminId: string) {
     return this.decide(vendorId, adminId, 'REACTIVATE');
   }

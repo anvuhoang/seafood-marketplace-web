@@ -1,7 +1,7 @@
 import { authenticatedRequest } from "@/features/auth/api/auth.api";
 import type { VendorStats, VendorStatsQuery } from "../types/vendor-stats.types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 
 /** Revenue and order statistics of the signed-in vendor's store. The store comes from the token. */
 export function getMyStats(token: string, query: VendorStatsQuery): Promise<VendorStats> {

@@ -1,8 +1,7 @@
 import { authenticatedRequest } from "@/features/auth/api/auth.api";
 import { AdminUserList, AdminUserQuery } from "../types/admin-user.types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 
 export function getAdminUsers(token: string, query: AdminUserQuery): Promise<AdminUserList> {
   const params = new URLSearchParams();

@@ -81,7 +81,7 @@ export class SmartImportService {
     await findWritableVendor(this.prisma, userId);
     this.assertEnabled();
     const audio = validateAudio(file);
-    this.limiter.consume(userId);
+    await this.limiter.consume(userId);
 
     try {
       return await this.speech.transcribe(audio.buffer, audio.filename, audio.mimeType);
@@ -94,7 +94,7 @@ export class SmartImportService {
   async createDraft(userId: string, text: string): Promise<NormalizedDraft> {
     await findWritableVendor(this.prisma, userId);
     this.assertEnabled();
-    this.limiter.consume(userId);
+    await this.limiter.consume(userId);
 
     const context = await this.loadContext();
     try {

@@ -1,7 +1,7 @@
 import { authenticatedRequest, handleResponse } from "@/features/auth/api/auth.api";
 import type { CartLine, CartView, MergeResult, QuoteView } from "../types/cart.types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 const CART = `${API_BASE_URL}/cart`;
 
 const json = (method: string, body: unknown): RequestInit => ({

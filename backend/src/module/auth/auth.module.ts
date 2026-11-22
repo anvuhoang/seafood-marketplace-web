@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import type { StringValue } from 'ms';
 import { PrismaModule } from '../../prisma/prisma.module.js';
+import { InfraModule } from '../../infra/infra.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { LoginAttemptLimiter } from './security/login-attempt.limiter.js';
@@ -13,6 +14,8 @@ import { RolesGuard } from '../../common/guards/roles.guard.js';
 @Module({
   imports: [
     PrismaModule,
+    // The sign-in limit keeps its counters in the shared store.
+    InfraModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   ActiveCategory,
@@ -14,6 +14,9 @@ import type {
   ProductListingQueryDto,
   RegionSummaryDto,
 } from './dto/product-listing.dto.js';
+import { CacheService } from '../../infra/cache.service.js';
+import { CATALOG_PRODUCTS_KEY } from '../../infra/catalog-cache.js';
+import { ProductSearchService } from '../search/product-search.service.js';
 
 /** URL-friendly key for Vietnamese text, e.g. "Phú Quốc" -> "phu-quoc". */
 export function slugify(text: string): string {
@@ -70,7 +73,20 @@ interface ListingProduct {
   offers: ListingOffer[];
 }
 
+/** A product as it is kept in the cache: JSON has no Set and no Date, so those become an array and a string. */
+type StoredProduct = Omit<ListingProduct, 'categorySlugs' | 'createdAt'> & { categorySlugs: string[]; createdAt: string };
+
+function toStored(product: ListingProduct): StoredProduct {
+  return { ...product, categorySlugs: [...product.categorySlugs], createdAt: product.createdAt.toISOString() };
+}
+
+function fromStored(stored: StoredProduct): ListingProduct {
+  return { ...stored, categorySlugs: new Set(stored.categorySlugs), createdAt: new Date(stored.createdAt) };
+}
+
 interface ListingFilters {
+  /** Product id with its relevance, from the search engine; when present only these products match the words. */
+  ranked?: Map<string, number>;
   keywords: string[];
   categories: string[];
   regions: string[];
@@ -103,6 +119,8 @@ export class ProductListingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly categoryService: CategoryService,
+    @Optional() private readonly cache?: CacheService,
+    @Optional() private readonly search?: ProductSearchService,
   ) {}
 
   async listProducts(
@@ -122,8 +140,13 @@ export class ProductListingService {
         ? [query.maxPrice, query.minPrice]
         : [query.minPrice, query.maxPrice];
 
+    // With Elasticsearch the words are matched there (without accents, with typos, ranked by relevance) and the shop
+    // keeps the products it names; without it, or when it does not answer, every word must start a word of the product.
+    const ranked = query.q?.trim() && this.search?.enabled ? await this.search.search(query.q) : null;
+
     const filters: ListingFilters = {
-      keywords: searchTokens(query.q),
+      ranked: ranked ?? undefined,
+      keywords: ranked ? [] : searchTokens(query.q),
       categories: splitList(query.category),
       regions: splitList(query.region),
       vendors: splitList(query.vendor),
@@ -137,7 +160,7 @@ export class ProductListingService {
       .filter(({ offers }) => offers.length > 0);
 
     const items = matched.map(({ product, offers }) => this.toItem(product, offers));
-    this.sortItems(items, matched, query.sort ?? 'featured');
+    this.sortItems(items, matched, query.sort ?? 'featured', ranked ?? undefined);
 
     const limit = query.limit ?? DEFAULT_PAGE_SIZE;
     const totalPages = Math.max(1, Math.ceil(items.length / limit));
@@ -149,6 +172,28 @@ export class ProductListingService {
       totalProducts: products.length,
       facets: this.buildFacets(scoped, filters, visibleCategories),
     };
+  }
+
+  /**
+   * Product names to offer while the visitor types: the search engine when it answers, otherwise the names in which
+   * every typed word starts a word (no accents needed). Best matches first, at most `limit`.
+   */
+  async suggest(text: string, limit = 8): Promise<Array<{ name: string; slug: string }>> {
+    const fromEngine = this.search?.enabled ? await this.search.suggest(text, limit) : null;
+    if (fromEngine) return fromEngine;
+
+    const tokens = searchTokens(text);
+    if (tokens.length === 0) return [];
+    const visibleCategories = await this.categoryService.findVisibleCategories();
+    const products = await this.loadProducts(visibleCategories);
+    return products
+      .filter((product) => {
+        const words = ` ${normalizeSearchText(product.name)}`;
+        return tokens.every((token) => words.includes(` ${token}`));
+      })
+      .sort((a, b) => Number(b.isFeatured) - Number(a.isFeatured) || a.name.localeCompare(b.name, 'vi'))
+      .slice(0, limit)
+      .map((product) => ({ name: product.name, slug: product.slug }));
   }
 
   /**
@@ -199,7 +244,16 @@ export class ProductListingService {
       .sort((a, b) => b.productCount - a.productCount || a.district.localeCompare(b.district, 'vi'));
   }
 
+  /** All sellable products, from the cache when there is one (kept for a few seconds, see InvalidatesCatalog). */
   private async loadProducts(visibleCategories: ActiveCategory[]): Promise<ListingProduct[]> {
+    if (!this.cache) return this.queryProducts(visibleCategories);
+    const stored = await this.cache.wrap(CATALOG_PRODUCTS_KEY, this.cache.catalogTtlSeconds, async () =>
+      (await this.queryProducts(visibleCategories)).map(toStored),
+    );
+    return stored.map(fromStored);
+  }
+
+  private async queryProducts(visibleCategories: ActiveCategory[]): Promise<ListingProduct[]> {
     const rows = await this.prisma.product.findMany({
       where: SELLABLE_PRODUCT_WHERE,
       select: {
@@ -292,7 +346,10 @@ export class ProductListingService {
     filters: ListingFilters,
     skip?: FacetKey,
   ): ListingOffer[] {
-    // Keywords apply to every facet; each keyword must appear as a word prefix.
+    // The words apply to every facet. Ranked by the search engine: the product must be one of its matches.
+    if (filters.ranked && !filters.ranked.has(product.id)) return [];
+
+    // Without the engine each keyword must appear as a word prefix.
     const words = ` ${product.searchText}`;
     if (filters.keywords.some((keyword) => !words.includes(` ${keyword}`))) {
       return [];
@@ -394,6 +451,7 @@ export class ProductListingService {
     items: ProductListingItemDto[],
     matched: Array<{ product: ListingProduct }>,
     sort: NonNullable<ProductListingQueryDto['sort']>,
+    ranked?: Map<string, number>,
   ): void {
     const createdAt = new Map(matched.map(({ product }) => [product.id, product.createdAt.getTime()]));
     const newest = (a: ProductListingItemDto, b: ProductListingItemDto) =>
@@ -408,6 +466,8 @@ export class ProductListingService {
         case 'newest':
           return newest(a, b);
         default:
+          // A search without a chosen order lists the best match first.
+          if (ranked) return (ranked.get(b.id) ?? 0) - (ranked.get(a.id) ?? 0) || newest(a, b);
           return Number(b.isFeatured) - Number(a.isFeatured) || newest(a, b);
       }
     });

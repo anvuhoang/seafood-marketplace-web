@@ -27,6 +27,7 @@ import { useMyStoreSlug } from "@/features/vendor/hooks/useMyStoreSlug";
 import { formatPrice } from "@/lib/utils";
 import { BrandLogo } from "./BrandLogo";
 import { SUPPORT_HOTLINE } from "@/lib/constants/contact";
+import { ProductSearchInput } from "@/features/catalog/components/ProductSearchInput";
 
 const NAV_LINKS = [
   { name: "Trang chủ", href: "/" },
@@ -128,11 +129,13 @@ export function CustomerHeader() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const goToSearch = (text: string) => {
+    if (text.trim()) router.push(`/products?q=${encodeURIComponent(text.trim())}`);
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
+    goToSearch(searchQuery);
   };
 
   const handleLogout = () => {
@@ -213,7 +216,8 @@ export function CustomerHeader() {
       </div>
 
       {/* 2. Main Navbar */}
-      <div className="border-b border-slate-100 bg-white/90 backdrop-blur-md">
+      {/* relative z-20: backdrop-blur makes this its own layer, which the category bar below would otherwise paint over (it hid the search suggestions). */}
+      <div className="relative z-20 border-b border-slate-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:gap-8 lg:px-8">
           <Link href="/" className="flex shrink-0 items-center">
             <BrandLogo className="h-9 sm:h-10" />
@@ -226,10 +230,10 @@ export function CustomerHeader() {
           >
             <div className="flex flex-1 items-center px-3">
               <Search className="h-4 w-4 text-slate-400 shrink-0" />
-              <input
-                type="text"
+              <ProductSearchInput
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={setSearchQuery}
+                onPick={goToSearch}
                 placeholder="Tìm cá, tôm, cua, mực tươi bơi lội..."
                 className="w-full bg-transparent px-2.5 py-1.5 text-sm text-slate-800 placeholder-slate-400 outline-none"
               />
@@ -468,10 +472,10 @@ export function CustomerHeader() {
             onSubmit={handleSearch}
             className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1"
           >
-            <input
-              type="text"
+            <ProductSearchInput
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={setSearchQuery}
+              onPick={goToSearch}
               placeholder="Tìm cá, tôm, cua tươi bơi lội..."
               className="w-full bg-transparent px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 outline-none"
             />

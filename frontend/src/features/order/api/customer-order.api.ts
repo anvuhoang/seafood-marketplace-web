@@ -1,7 +1,7 @@
 import { authenticatedRequest } from "@/features/auth/api/auth.api";
 import type { CustomerOrderDetail, CustomerOrderList, OrderStatus, PaymentStatus, ReorderResult } from "../types/order.types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 const ME = `${API_BASE_URL}/orders/me`;
 
 export function listMyOrders(

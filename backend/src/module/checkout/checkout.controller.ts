@@ -22,6 +22,7 @@ import {
   PlaceOrderDto,
   PlaceOrderResultDto,
 } from './dto/checkout.dto.js';
+import { RateLimit } from '../../infra/rate-limit.guard.js';
 
 const ApiNoToken = () =>
   ApiResponse({
@@ -58,6 +59,7 @@ export class CheckoutController {
     return this.checkout.preview(userId, dto);
   }
 
+  @RateLimit(10, 60)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({

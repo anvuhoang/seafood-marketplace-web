@@ -20,6 +20,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { orderNumberPipe } from '../order/customer-order.controller.js';
 import { PaymentDetailDto } from './dto/payment.dto.js';
 import { PaymentService } from './payment.service.js';
+import { RateLimit } from '../../infra/rate-limit.guard.js';
 
 /** The payment of the signed-in user's own orders, always scoped by the token's user id. */
 @ApiTags('My payments')
@@ -58,6 +59,7 @@ export class PaymentController {
     return this.payments.getPayment(userId, orderNumber);
   }
 
+  @RateLimit(10, 60)
   @Post(':orderNumber/payment/qr')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -94,6 +96,7 @@ export class PaymentController {
     return this.payments.createLink(userId, orderNumber);
   }
 
+  @RateLimit(30, 60)
   @Post(':orderNumber/payment/sync')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

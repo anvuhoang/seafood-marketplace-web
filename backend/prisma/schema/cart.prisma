@@ -23,5 +23,8 @@ model CartItem {
   offer VendorOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
 
   @@unique([cartId, offerId])
+  /// The unique key above starts with cartId, so it cannot find the carts that hold one offer (the vendor's
+  /// product editor counts them before an offer may be removed).
+  @@index([offerId])
   @@map("cart_items")
 }

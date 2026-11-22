@@ -6,7 +6,7 @@ import type {
   VendorOrderTarget,
 } from "../types/vendor-order.types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 const ORDERS = `${API_BASE_URL}/vendors/me/orders`;
 
 /** The signed-in vendor's orders with store-wide counts per status. */

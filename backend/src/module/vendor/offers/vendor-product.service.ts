@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { CloudinaryService } from '../../../common/cloudinary/cloudinary.service.js';
@@ -28,6 +23,8 @@ import {
   type OwnVendor,
 } from '../shared/vendor-access.js';
 import { toDecimal } from './vendor-offer.service.js';
+import { CacheService } from '../../../infra/cache.service.js';
+import { InvalidatesCatalog } from '../../../infra/catalog-cache.js';
 
 export const PRODUCT_NOT_FOUND =
   'Không tìm thấy sản phẩm này trong gian hàng của bạn.';
@@ -116,6 +113,7 @@ export class VendorProductService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
+    @Optional() private readonly cache?: CacheService,
   ) {}
 
   async getProduct(
@@ -127,6 +125,7 @@ export class VendorProductService {
   }
 
   /** Product, variants and optional offers are created together in one transaction. */
+  @InvalidatesCatalog()
   async createProduct(
     userId: string,
     dto: CreateVendorProductDto,
@@ -174,6 +173,7 @@ export class VendorProductService {
    * The slug is kept when the name changes. Variants already in a cart or an
    * order cannot be removed.
    */
+  @InvalidatesCatalog()
   async updateProduct(
     userId: string,
     productId: string,

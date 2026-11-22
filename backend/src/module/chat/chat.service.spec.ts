@@ -5,6 +5,8 @@ vi.mock('@nestjs/config', () => ({ ConfigService: class ConfigService {} }));
 import { BadRequestException, HttpException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { ChatLimiter, ChatLimitError } from './chat.limiter.js';
+import { MemoryKeyValueStore } from '../../infra/kv-store.js';
+import { RateLimiterService } from '../../infra/rate-limiter.service.js';
 import { CHAT_DISABLED, ChatService, type ChatIdentity } from './chat.service.js';
 import { CHAT_BUSY_MESSAGE, type ChatEvent, type ChatTool } from './chat.types.js';
 import { INJECTION_REPLY } from './guardrails.js';
@@ -130,7 +132,7 @@ function build(options: { script?: Array<LlmChunk[] | Error>; tools?: Record<str
     get: (name: string) => tools[name],
   };
   const context = { categoryList: async () => '- tom-song: Tôm sống', userBlock: vi.fn(async (userId: string | null) => (userId ? `Khách: ${userId}` : null)) };
-  const service = new ChatService(prisma as never, config, new ChatLimiter(config), context as never, registry as never, llm);
+  const service = new ChatService(prisma as never, config, new ChatLimiter(config, new RateLimiterService(new MemoryKeyValueStore())), context as never, registry as never, llm);
   return { service, prisma, requests, context };
 }
 

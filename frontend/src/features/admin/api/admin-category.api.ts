@@ -1,8 +1,7 @@
 import { authenticatedRequest } from "@/features/auth/api/auth.api";
 import { AdminCategory, AdminCategoryList, CategoryInput } from "../types/admin-category.types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 
 const BASE = `${API_BASE_URL}/admin/categories`;
 const JSON_HEADERS = { "Content-Type": "application/json" };

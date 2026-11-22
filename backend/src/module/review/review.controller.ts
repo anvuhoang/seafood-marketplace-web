@@ -5,6 +5,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ReviewService } from './review.service.js';
 import { CreateReviewDto } from './dto/review.dto.js';
 import type { ReviewCenterDto, ReviewUploadSignatureDto, SubmittedReviewDto } from './dto/review.dto.js';
+import { RateLimit } from '../../infra/rate-limit.guard.js';
 
 /** The signed-in customer's reviews of delivered order items. */
 @ApiTags('Account reviews')
@@ -21,6 +22,7 @@ export class ReviewController {
     return this.reviewService.getReviewCenter(userId);
   }
 
+  @RateLimit(10, 60)
   @Post()
   @ApiOperation({ summary: 'Review a delivered order item' })
   @ApiResponse({ status: 400, description: 'Order not delivered yet or invalid images' })
@@ -30,6 +32,7 @@ export class ReviewController {
     return this.reviewService.createReview(userId, dto);
   }
 
+  @RateLimit(20, 60)
   @Post('upload-signature')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Signature for uploading one review photo directly to Cloudinary' })

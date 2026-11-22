@@ -135,3 +135,12 @@ a log of incidents (model 429 / timeout / errors, blocked answers, failing tools
 limit, takeover attempts) with warnings. Tokens come from the model's own count. Google does not offer an
 API for the remaining Gemini quota, so a rising number of "429" incidents is the signal that the quota is
 used up (the real figures are in Google AI Studio).
+
+## Product search (Elasticsearch)
+
+With `ELASTICSEARCH_URL` set, the words typed in the search box are matched in Elasticsearch: no accents needed, a slip
+in a word is forgiven, the best match comes first, and product names are suggested while typing
+(`GET /api/search/suggest?q=`). Without it, or while it is down, the shop searches in memory as before. The index is
+built when the API starts and follows changes to products, offers, categories and vendors; to rebuild it by hand run
+`npm run search:reindex` (or `POST /api/admin/search/reindex`). Code: `src/module/search/`; how it works and the
+measured database indexes: [docs/deployment.md](../docs/deployment.md).

@@ -1,7 +1,7 @@
 import { authenticatedRequest } from "@/features/auth/api/auth.api";
 import type { CheckoutPreview, PlaceOrderInput, PlaceOrderResult } from "../types/checkout.types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "@/lib/api-base";
 const CHECKOUT = `${API_BASE_URL}/checkout`;
 
 const json = (body: unknown, headers: Record<string, string> = {}): RequestInit => ({

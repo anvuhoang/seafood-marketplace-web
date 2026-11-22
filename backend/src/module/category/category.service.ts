@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type {
   CategoryListingDto,
   CategoryProductDto,
   CategorySummaryDto,
 } from './dto/category.dto.js';
+import { CacheService } from '../../infra/cache.service.js';
+import { CATALOG_CATEGORIES_KEY } from '../../infra/catalog-cache.js';
 
 export const DEFAULT_PAGE_SIZE = 12;
 export const MAX_PAGE_SIZE = 48;
@@ -45,7 +47,10 @@ const CATEGORY_EXAMPLE_LIMIT = 3;
 
 @Injectable()
 export class CategoryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly cache?: CacheService,
+  ) {}
 
   /**
    * Active categories visible to customers, with the number of products
@@ -143,6 +148,11 @@ export class CategoryService {
    * Active categories whose parent (if any) is also active, in display order.
    */
   async findVisibleCategories(): Promise<ActiveCategory[]> {
+    if (!this.cache) return this.queryVisibleCategories();
+    return this.cache.wrap(CATALOG_CATEGORIES_KEY, this.cache.catalogTtlSeconds, () => this.queryVisibleCategories());
+  }
+
+  private async queryVisibleCategories(): Promise<ActiveCategory[]> {
     const categories = await this.prisma.category.findMany({
       where: { isActive: true },
       select: {

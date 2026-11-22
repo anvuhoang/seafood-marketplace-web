@@ -26,12 +26,15 @@
     "db:status": "prisma migrate status",
     "postinstall": "prisma skills sync || exit 0",
     "knowledge:ingest": "nest build && node dist/module/chat/knowledge/ingest.cli.js",
-    "chat:eval": "nest build && node dist/module/chat/eval/run-eval.js"
+    "chat:eval": "nest build && node dist/module/chat/eval/run-eval.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "search:reindex": "nest build && node dist/module/search/reindex.cli.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@elastic/elasticsearch": "^8.19.2",
     "@nestjs/common": "^12.0.1",
     "@nestjs/config": "^12.0.1",
     "@nestjs/core": "^12.0.1",
@@ -47,6 +50,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "dotenv": "^18.0.9",
+    "ioredis": "^5.11.1",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
@@ -61,6 +65,7 @@
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.0.0",
     "@vitest/coverage-v8": "^4.1.2",
+    "ioredis-mock": "^8.13.1",
     "oxlint": "^1.58.0",
     "prettier": "^3.4.2",
     "prisma": "^7.10.1",

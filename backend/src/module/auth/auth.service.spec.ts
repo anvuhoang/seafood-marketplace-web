@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { LoginAttemptLimiter } from './security/login-attempt.limiter.js';
+import { KV_STORE, MemoryKeyValueStore } from '../../infra/kv-store.js';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -56,6 +57,7 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: jwtService },
         { provide: ConfigService, useValue: { get: (_key: string, fallback?: unknown) => fallback } },
         LoginAttemptLimiter,
+        { provide: KV_STORE, useValue: new MemoryKeyValueStore() },
       ],
     }).compile();
 

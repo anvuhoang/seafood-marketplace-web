@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // A self-contained server (server.js plus only the files it needs), so the Docker image stays small.
+  output: "standalone",
   /* config options here */
   experimental: {
     agentFeedback: true,

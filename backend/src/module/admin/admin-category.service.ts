@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { slugify } from '../product/product-listing.service.js';
@@ -14,6 +9,8 @@ import type {
   CreateCategoryDto,
   UpdateCategoryDto,
 } from './dto/admin-category.dto.js';
+import { CacheService } from '../../infra/cache.service.js';
+import { InvalidatesCatalog } from '../../infra/catalog-cache.js';
 
 /** Room left under the 150-character slug column for a "-12" style suffix. */
 const SLUG_BASE_MAX_LENGTH = 140;
@@ -46,7 +43,10 @@ function toDto(row: CategoryRow): AdminCategoryDto {
 
 @Injectable()
 export class AdminCategoryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly cache?: CacheService,
+  ) {}
 
   /** Every category, inactive ones included. Counts ignore the filters, like the vendor tabs. */
   async list(query: AdminCategoryListQueryDto): Promise<AdminCategoryListDto> {
@@ -68,6 +68,7 @@ export class AdminCategoryService {
     return { items, counts: { total: rows.length, active, inactive: rows.length - active } };
   }
 
+  @InvalidatesCatalog()
   async create(dto: CreateCategoryDto): Promise<AdminCategoryDto> {
     const parentId = dto.parentId ?? null;
     await this.assertValidParent(parentId, null);
@@ -97,6 +98,7 @@ export class AdminCategoryService {
   }
 
   /** Only the fields sent change. The slug is kept when the name changes, so links to the category keep working. */
+  @InvalidatesCatalog()
   async update(id: string, dto: UpdateCategoryDto): Promise<AdminCategoryDto> {
     const current = await this.prisma.category.findUnique({
       where: { id },
@@ -125,10 +127,12 @@ export class AdminCategoryService {
     return toDto(row);
   }
 
+  @InvalidatesCatalog()
   deactivate(id: string): Promise<AdminCategoryDto> {
     return this.setActive(id, false);
   }
 
+  @InvalidatesCatalog()
   reactivate(id: string): Promise<AdminCategoryDto> {
     return this.setActive(id, true);
   }
@@ -137,6 +141,7 @@ export class AdminCategoryService {
    * Deletes a category nobody uses. A category with products is refused, because
    * removing it would silently untag those products; it is deactivated instead.
    */
+  @InvalidatesCatalog()
   async remove(id: string): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       const row = await tx.category.findUnique({
