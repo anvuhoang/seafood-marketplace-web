@@ -5,8 +5,9 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import type { Prisma, VendorOrderStatus } from '@prisma/client';
+import type { OrderStatus, Prisma, VendorOrderStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { OrderMailer } from '../mail/order-mailer.js';
 import { PayosService } from '../payment/payos.service.js';
 import {
   acceptBlockedReason,
@@ -29,6 +30,13 @@ const PAYMENT_LINK_CANCEL_REASON = 'Đơn hàng đã bị hủy';
 
 type Tx = Prisma.TransactionClient;
 
+/** What a status change left behind: a payment link to close, and the order's own status change (for the mail). */
+interface SyncResult {
+  orderId: string;
+  closedLink: bigint | null;
+  change: { from: OrderStatus; to: OrderStatus } | null;
+}
+
 export interface VendorOrderChange {
   vendorOrderId: string;
   vendorId: string;
@@ -50,6 +58,7 @@ export class OrderLifecycleService {
     private readonly prisma: PrismaService,
     // Optional so the order rules can be used (and tested) without PayOS.
     @Optional() private readonly payos?: PayosService,
+    @Optional() private readonly mailer?: OrderMailer,
   ) {}
 
   /**
@@ -68,7 +77,7 @@ export class OrderLifecycleService {
 
   /** Move one vendor order one step. 404 when it is not this vendor's, 409 when the rules refuse it. */
   async changeVendorOrderStatus(change: VendorOrderChange): Promise<void> {
-    const closedLink = await this.prisma.$transaction(async (tx) => {
+    const synced = await this.prisma.$transaction(async (tx) => {
       const found = await tx.vendorOrder.findFirst({
         where: { id: change.vendorOrderId, vendorId: change.vendorId },
         select: { orderId: true },
@@ -105,7 +114,8 @@ export class OrderLifecycleService {
       });
       return syncOrder(tx, current.orderId);
     });
-    await this.closePaymentLink(closedLink);
+    await this.closePaymentLink(synced.closedLink);
+    if (this.mailer && synced.change) void this.mailer.statusChanged(synced.orderId, synced.change.from, synced.change.to);
   }
 
   /**
@@ -113,7 +123,7 @@ export class OrderLifecycleService {
    * running is PENDING. Each one is cancelled and restocked once.
    */
   async cancelOrderByCustomer(userId: string, orderNumber: string): Promise<void> {
-    const closedLink = await this.prisma.$transaction(async (tx) => {
+    const synced = await this.prisma.$transaction(async (tx) => {
       const found = await tx.order.findFirst({
         where: { orderNumber, userId },
         select: { id: true },
@@ -153,7 +163,8 @@ export class OrderLifecycleService {
       }
       return syncOrder(tx, found.id);
     });
-    await this.closePaymentLink(closedLink);
+    await this.closePaymentLink(synced.closedLink);
+    if (this.mailer && synced.change) void this.mailer.statusChanged(synced.orderId, synced.change.from, synced.change.to);
   }
 }
 
@@ -220,7 +231,7 @@ async function moveVendorOrder(
  * Recompute the parent order's status and, when the rules say so, its payment. Returns the PayOS order
  * code of an unpaid payment that was just closed because the order was cancelled, so its link can be closed.
  */
-async function syncOrder(tx: Tx, orderId: string): Promise<bigint | null> {
+async function syncOrder(tx: Tx, orderId: string): Promise<SyncResult> {
   const order = await tx.order.findUniqueOrThrow({
     where: { id: orderId },
     select: {
@@ -235,10 +246,12 @@ async function syncOrder(tx: Tx, orderId: string): Promise<bigint | null> {
   if (status !== order.status) {
     await tx.order.update({ where: { id: orderId }, data: { status } });
   }
+  const change = status !== order.status ? { from: order.status, to: status } : null;
+  const result = (closedLink: bigint | null): SyncResult => ({ orderId, closedLink, change });
 
-  if (!order.payment) return null;
+  if (!order.payment) return result(null);
   const paymentStatus = nextPaymentStatus(order.payment, statuses);
-  if (!paymentStatus) return null;
+  if (!paymentStatus) return result(null);
   const { status: before, orderCode } = order.payment;
   const { count } = await tx.payment.updateMany({
     where: { orderId, status: before },
@@ -248,5 +261,5 @@ async function syncOrder(tx: Tx, orderId: string): Promise<bigint | null> {
     },
   });
   const closedUnpaid = count === 1 && before === 'PENDING' && paymentStatus === 'FAILED';
-  return closedUnpaid ? (orderCode ?? null) : null;
+  return result(closedUnpaid ? (orderCode ?? null) : null);
 }

@@ -40,6 +40,31 @@ export default () => ({
     linkTtlMinutes: Number(process.env.PAYOS_LINK_TTL_MINUTES ?? 15),
   },
 
+  // Email. 'smtp' sends through a mail server (Gmail: smtp.gmail.com with an app password); 'log' only writes the mail
+  // in the API log (development, and the default until SMTP_USER is set); 'off' sends and logs nothing.
+  mail: {
+    provider: process.env.MAIL_PROVIDER || (process.env.SMTP_USER ? 'smtp' : 'log'),
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: Number(process.env.SMTP_PORT ?? 465),
+    // Port 465 is TLS from the start; 587 starts plain and upgrades (STARTTLS), which needs secure=false.
+    secure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : Number(process.env.SMTP_PORT ?? 465) === 465,
+    user: process.env.SMTP_USER ?? '',
+    pass: process.env.SMTP_PASS ?? '',
+    // The sender shown to the customer. Gmail only sends as the signed-in address (or an alias set up in Gmail).
+    from: process.env.MAIL_FROM || (process.env.SMTP_USER ? `"HaiSan Express" <${process.env.SMTP_USER}>` : '"HaiSan Express" <no-reply@haisanexpress.local>'),
+    // Where the links in the mails lead: the address of the website.
+    appUrl: (process.env.APP_URL || (process.env.FRONTEND_URL ?? 'http://localhost:3000').split(',')[0] || 'http://localhost:3000').trim().replace(/\/+$/, ''),
+  },
+
+  // How long the link of a password reset works, in minutes.
+  passwordResetTtlMinutes: Number(process.env.PASSWORD_RESET_TTL_MINUTES ?? 30),
+
+  // "Sign in with Google". Needs an OAuth client ID (Google Cloud Console, type "Web application"); the button is
+  // hidden and the API refuses while it is empty. The client ID is public, there is no secret to keep.
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+  },
+
   // Shared state. Without REDIS_URL the rate limits and the cache live in this process's memory, which is right
   // for one API process; with several processes behind a load balancer set REDIS_URL so they share them.
   redis: {

@@ -6,6 +6,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Webhook } from '@payos/node';
@@ -14,6 +15,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { ORDER_NOT_FOUND } from '../order/order-lifecycle.service.js';
 import type { PaymentDetailDto } from './dto/payment.dto.js';
 import { newOrderCode } from './order-code.js';
+import { OrderMailer } from '../mail/order-mailer.js';
 import { PayosService } from './payos.service.js';
 
 export const PAYMENT_NOT_FOUND = 'Đơn hàng này chưa có thông tin thanh toán.';
@@ -104,6 +106,7 @@ export class PaymentService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly payos: PayosService,
+    @Optional() private readonly mailer?: OrderMailer,
   ) {}
 
   /** 404 for someone else's order too, so order numbers reveal nothing. Never calls PayOS. */
@@ -297,7 +300,10 @@ export class PaymentService {
         failureReason: null,
       },
     });
-    return result.count === 1;
+    const done = result.count === 1;
+    // Only the request that actually moved it to PAID sends the mail, so the webhook and a sync never both do.
+    if (done && this.mailer) void this.mailer.paymentReceived(orderCode);
+    return done;
   }
 
   /** The customer's order with its payment. A QR past its time is saved as EXPIRED on the way. */
