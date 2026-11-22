@@ -50,6 +50,8 @@ interface GoogleSignInButtonProps {
   onCredential: (credential: string) => void;
   onError?: (message: string) => void;
   disabled?: boolean;
+  /** The words on the divider above the button. */
+  dividerLabel?: string;
 }
 
 /**
@@ -57,7 +59,7 @@ interface GoogleSignInButtonProps {
  * shows nothing (no divider either) instead of a button that does not work. Google's library draws the button and gives back a signed
  * ID token; the server checks that token, so nothing here is trusted.
  */
-export function GoogleSignInButton({ onCredential, onError, disabled = false }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({ onCredential, onError, disabled = false, dividerLabel = "HOẶC ĐĂNG NHẬP VỚI" }: GoogleSignInButtonProps) {
   const container = useRef<HTMLDivElement>(null);
   const [clientId, setClientId] = useState<string | null>(null);
   const handlers = useRef({ onCredential, onError });
@@ -119,7 +121,7 @@ export function GoogleSignInButton({ onCredential, onError, disabled = false }: 
     <>
       <div className="relative my-4 flex items-center justify-center">
         <div className="w-full border-t border-slate-200" />
-        <span className="absolute bg-white px-3 text-[10px] font-bold text-slate-400">HOẶC ĐĂNG NHẬP VỚI</span>
+        <span className="absolute bg-white px-3 text-[10px] font-bold text-slate-400">{dividerLabel}</span>
       </div>
       <div className="relative" aria-label="Tiếp tục với Google">
         <div ref={container} className="flex w-full justify-center" />
