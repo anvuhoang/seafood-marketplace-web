@@ -15,12 +15,15 @@ import {
 } from '../cart/cart-offers.js';
 import { toCart } from '../cart/cart.service.js';
 import { CustomerOrderService } from '../order/customer-order.service.js';
+import { PayosService } from '../payment/payos.service.js';
 import { newOrderNumber, priceOrder } from './checkout-pricing.js';
 import {
   CheckoutPreviewDto,
   CheckoutSelectionDto,
   PlaceOrderDto,
+  PaymentMethodName,
   PlaceOrderResultDto,
+  QR_PAYMENT_METHOD,
   SUPPORTED_PAYMENT_METHODS,
 } from './dto/checkout.dto.js';
 
@@ -35,7 +38,7 @@ export const SHIPPING_REQUIRED = 'Vui lòng nhập thông tin giao hàng.';
 export const SHIPPING_ONE_ONLY =
   'Chỉ chọn một: địa chỉ đã lưu hoặc nhập địa chỉ mới.';
 export const PAYMENT_NOT_SUPPORTED =
-  'Phương thức thanh toán này chưa được hỗ trợ. Vui lòng chọn thanh toán khi nhận hàng (COD).';
+  'Phương thức thanh toán này hiện chưa được hỗ trợ. Vui lòng chọn một phương thức khác.';
 
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9_-]{8,100}$/;
 const ORDER_NUMBER_ATTEMPTS = 3;
@@ -83,7 +86,15 @@ export class CheckoutService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly orders: CustomerOrderService,
+    private readonly payos: PayosService,
   ) {}
+
+  /** Cash on delivery, plus QR transfer once PayOS is set up. */
+  private supportedMethods(): PaymentMethodName[] {
+    return this.payos.isConfigured()
+      ? [...SUPPORTED_PAYMENT_METHODS, QR_PAYMENT_METHOD]
+      : [...SUPPORTED_PAYMENT_METHODS];
+  }
 
   private shippingFeePerVendor(): Prisma.Decimal {
     const fee = this.config.get<{ shippingFeePerVendor?: number }>('checkout')
@@ -97,7 +108,7 @@ export class CheckoutService {
     selection: CheckoutSelectionDto,
   ): Promise<CheckoutPreviewDto> {
     const lines = await this.readCartLines(this.prisma, userId, selection.items);
-    const supportedPaymentMethods = [...SUPPORTED_PAYMENT_METHODS];
+    const supportedPaymentMethods = this.supportedMethods();
     if (lines.length === 0) {
       return {
         vendors: [],
@@ -164,7 +175,7 @@ export class CheckoutService {
     const earlier = await this.findByKey(userId, idempotencyKey);
     if (earlier) return this.replay(userId, earlier);
 
-    if (!SUPPORTED_PAYMENT_METHODS.includes(dto.paymentMethod)) {
+    if (!this.supportedMethods().includes(dto.paymentMethod)) {
       throw new BadRequestException(PAYMENT_NOT_SUPPORTED);
     }
     const shipping = await this.resolveShipping(userId, dto);
@@ -293,6 +304,8 @@ export class CheckoutService {
             method: dto.paymentMethod,
             status: 'PENDING',
             amount: priced.grandTotal,
+            // The QR is created later, on the payment screen, with PayOS.
+            ...(dto.paymentMethod === QR_PAYMENT_METHOD && { provider: 'PAYOS' }),
           },
         },
       },

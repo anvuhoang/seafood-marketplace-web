@@ -213,6 +213,7 @@ const order = (overrides: Partial<PlaceOrderDto> = {}): PlaceOrderDto =>
 let db: FakeDb;
 let service: CheckoutService;
 let getOrder: ReturnType<typeof vi.fn>;
+let payosConfigured: boolean;
 
 beforeEach(() => {
   db = new FakeDb();
@@ -221,7 +222,9 @@ beforeEach(() => {
   db.offers.set(BOAT, makeOffer({ id: BOAT, price: '300000', stock: '10', vendorId: 'vendor-2', name: 'Ghẹ' }));
   getOrder = vi.fn((_userId: string, orderNumber: string) => Promise.resolve({ orderNumber }));
   const config = { get: () => ({ shippingFeePerVendor: 30000 }) };
-  service = new CheckoutService(db as never, config as never, { getOrder } as never);
+  payosConfigured = false;
+  const payos = { isConfigured: () => payosConfigured };
+  service = new CheckoutService(db as never, config as never, { getOrder } as never, payos as never);
 });
 
 const rejection = async (promise: Promise<unknown>) =>
@@ -565,11 +568,17 @@ describe('placeOrder: shipping and payment', () => {
     expect(error?.message).toBe(ADDRESS_INVALID);
   });
 
-  it.each(['BANK_TRANSFER', 'E_WALLET', 'CARD'] as const)('only cash on delivery works for now, not %s', async (method) => {
+  it.each(['BANK_TRANSFER', 'E_WALLET', 'CARD'] as const)('only cash on delivery works while PayOS is off, not %s', async (method) => {
     const error = await rejection(service.placeOrder(ALICE, KEY, order({ paymentMethod: method })));
     expect(error?.message).toBe(PAYMENT_NOT_SUPPORTED);
     expect(db.orders).toHaveLength(0);
     expect(db.stockOf(SHRIMP)).toBe(10);
+  });
+
+  it.each(['E_WALLET', 'CARD'] as const)('still refuses %s once PayOS is on', async (method) => {
+    payosConfigured = true;
+    const error = await rejection(service.placeOrder(ALICE, KEY, order({ paymentMethod: method })));
+    expect(error?.message).toBe(PAYMENT_NOT_SUPPORTED);
   });
 });
 
@@ -629,5 +638,21 @@ describe('request validation', () => {
 
   it('does not accept a price tucked into the shipping part either', async () => {
     expect(await messages({ paymentMethod: 'COD', shipping: { ...SHIPPING, shippingFee: 0 } })).toContain('shippingFee should not exist');
+  });
+});
+
+describe('paying by QR transfer', () => {
+  it('is offered only while PayOS is configured', async () => {
+    db.addToCart(ALICE, SHRIMP, 1);
+    expect((await service.preview(ALICE, {})).supportedPaymentMethods).toEqual(['COD']);
+    payosConfigured = true;
+    expect((await service.preview(ALICE, {})).supportedPaymentMethods).toEqual(['COD', 'BANK_TRANSFER']);
+  });
+
+  it('records a PENDING payment for PayOS, with no QR yet', async () => {
+    payosConfigured = true;
+    db.addToCart(ALICE, SHRIMP, 1);
+    await service.placeOrder(ALICE, KEY, order({ paymentMethod: 'BANK_TRANSFER' }));
+    expect(db.orders[0].payment).toMatchObject({ method: 'BANK_TRANSFER', status: 'PENDING', provider: 'PAYOS' });
   });
 });

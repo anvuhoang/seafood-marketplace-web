@@ -21,8 +21,10 @@ import { CustomerOrderDetailDto } from '../../order/dto/customer-order.dto.js';
 export const PAYMENT_METHODS = ['COD', 'BANK_TRANSFER', 'E_WALLET', 'CARD'] as const;
 export type PaymentMethodName = (typeof PAYMENT_METHODS)[number];
 
-/** There is no payment gateway yet, so only cash on delivery can be chosen. */
+/** Always available: cash on delivery. */
 export const SUPPORTED_PAYMENT_METHODS: readonly PaymentMethodName[] = ['COD'];
+/** Paying by QR transfer through PayOS. Offered only while PayOS is configured. */
+export const QR_PAYMENT_METHOD: PaymentMethodName = 'BANK_TRANSFER';
 
 export const CHECKOUT_MAX_LINES = 50;
 export const NOTE_MAX = 500;

@@ -13,6 +13,8 @@ export const PAYMENT_STATUSES = [
   'PAID',
   'FAILED',
   'REFUNDED',
+  'CANCELLED',
+  'EXPIRED',
 ] as const satisfies readonly PaymentStatus[];
 
 export class OrderPaymentDto {

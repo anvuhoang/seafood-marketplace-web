@@ -30,6 +30,16 @@ export default () => ({
     shippingFeePerVendor: Number(process.env.SHIPPING_FEE_PER_VENDOR ?? 30000),
   },
 
+  // PayOS (QR bank transfer). The keys stay on the server; QR payment is off while any is missing.
+  // Create them in the PayOS dashboard (sandbox/test channel is fine for a demo).
+  payos: {
+    clientId: process.env.PAYOS_CLIENT_ID ?? '',
+    apiKey: process.env.PAYOS_API_KEY ?? '',
+    checksumKey: process.env.PAYOS_CHECKSUM_KEY ?? '',
+    // How long a QR stays valid, in minutes.
+    linkTtlMinutes: Number(process.env.PAYOS_LINK_TTL_MINUTES ?? 15),
+  },
+
   // Smart Import (vendor product drafts from text or voice). The key stays on the server.
   // 'off' until GROQ_API_KEY is set; 'mock' is a local stand-in that needs no key.
   smartImport: {
