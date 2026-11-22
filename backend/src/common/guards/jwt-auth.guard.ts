@@ -2,17 +2,21 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { SessionRevocationService } from './session-revocation.service.js';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 
 export interface AuthenticatedUser {
   sub: string;
   email: string;
   role: string;
+  /** When the token was issued (seconds). */
+  iat?: number;
 }
 
 export interface AuthenticatedRequest extends Request {
@@ -24,6 +28,7 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
+    @Optional() private readonly revocation?: SessionRevocationService,
   ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -50,6 +55,9 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync<AuthenticatedUser>(token);
+      if (payload.iat !== undefined && (await this.revocation?.isRevoked(payload.sub, payload.iat))) {
+        throw new Error('revoked');
+      }
       request.user = payload;
       return true;
     } catch {

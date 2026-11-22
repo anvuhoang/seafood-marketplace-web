@@ -25,7 +25,12 @@ const PROTECTED_ROUTES: {
     { prefix: "/admin", roles: ["ADMIN"] },
   ];
 
-const AUTH_PAGES = ["/customer/login", "/customer/register"];
+const AUTH_PAGES = [
+  "/customer/login",
+  "/customer/register",
+  "/customer/forgot-password",
+  // Not the reset page: a signed-in person who opens the link from their mail must still reach it.
+];
 
 const ADMIN_LOGIN = "/admin/login";
 

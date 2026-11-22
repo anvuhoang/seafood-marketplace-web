@@ -18,6 +18,7 @@ import {
 
 import {
   loginApi,
+  googleLoginApi,
   adminLoginApi,
   registerApi,
   getMeApi,
@@ -32,6 +33,11 @@ interface AuthContextType extends AuthState {
 
   register: (
     data: RegisterFormData,
+  ) => Promise<{ success: boolean; error?: string; user?: User }>;
+
+  /** Sign in (or sign up) with the ID token Google gave the browser. */
+  loginWithGoogle: (
+    credential: string,
   ) => Promise<{ success: boolean; error?: string; user?: User }>;
 
   /** Sign in to the admin site. Rejects every account that is not an ADMIN. */
@@ -358,6 +364,9 @@ export function AuthProvider({
 
   const login = (data: LoginFormData) => authenticate(loginApi, data);
 
+  const loginWithGoogle = (credential: string) =>
+    authenticate(() => googleLoginApi(credential), { emailOrPhone: "", password: "", rememberMe: true });
+
   // Admin sessions last only until the browser closes; the token is short-lived anyway.
   const loginAdmin = (data: LoginFormData) =>
     authenticate(adminLoginApi, { ...data, rememberMe: false });
@@ -418,6 +427,7 @@ export function AuthProvider({
         isAuthenticated: Boolean(user && accessToken),
         isLoading,
         login,
+        loginWithGoogle,
         loginAdmin,
         register,
         logout,

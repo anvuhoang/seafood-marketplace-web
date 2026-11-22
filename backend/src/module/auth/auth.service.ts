@@ -17,6 +17,18 @@ import type { AuthResponseDto, AuthUserDto } from './dto/auth-response.dto.js';
 export type SafeUser = AuthUserDto;
 export type AuthResult = AuthResponseDto;
 
+interface SessionUser {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  avatarUrl: string | null;
+  role: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -200,20 +212,26 @@ export class AuthService {
     return this.jwtService.signAsync(payload, expiresIn ? { expiresIn } : undefined);
   }
 
-  private sanitizeUser(user: {
-    id: string;
-    email: string;
-    passwordHash: string;
-    fullName: string;
-    phone: string | null;
-    avatarUrl: string | null;
-    role: string;
-    status: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }): SafeUser {
-    // Exclude passwordHash from user object
-    const { passwordHash: _, ...safeUser } = user;
-    return safeUser;
+  /** Signs a customer/vendor in: the token and the safe view of the account. Used by sign-in methods other than the password form. */
+  async createSession(user: SessionUser): Promise<AuthResult> {
+    return {
+      user: this.sanitizeUser(user),
+      accessToken: await this.generateToken(user.id, user.email, user.role),
+    };
+  }
+
+  /** Only what the app needs: listing the fields means a column added later (Google id, hashes) is not sent by accident. */
+  private sanitizeUser(user: SessionUser): SafeUser {
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      phone: user.phone,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+      status: user.status,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 }

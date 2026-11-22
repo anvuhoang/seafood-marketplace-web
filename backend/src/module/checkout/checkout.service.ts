@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
@@ -14,7 +15,10 @@ import {
   offerInclude,
 } from '../cart/cart-offers.js';
 import { toCart } from '../cart/cart.service.js';
+import type { OrderMailData } from '../mail/mail.templates.js';
+import { OrderMailer } from '../mail/order-mailer.js';
 import { CustomerOrderService } from '../order/customer-order.service.js';
+import type { CustomerOrderDetailDto } from '../order/dto/customer-order.dto.js';
 import { PayosService } from '../payment/payos.service.js';
 import { newOrderNumber, priceOrder } from './checkout-pricing.js';
 import {
@@ -66,6 +70,32 @@ interface Shipping {
   note: string | null;
 }
 
+/** What the confirmation mail needs from the order that was just placed. */
+function toMailData(order: CustomerOrderDetailDto): OrderMailData {
+  return {
+    orderNumber: order.orderNumber,
+    createdAt: order.createdAt,
+    subtotal: order.subtotal,
+    shippingTotal: order.shippingTotal,
+    grandTotal: order.grandTotal,
+    paymentMethod: order.payment?.method ?? null,
+    paymentStatus: order.payment?.status ?? null,
+    recipient: order.recipient,
+    customerNote: order.customerNote,
+    parts: order.vendorOrders.map((part) => ({
+      vendorName: part.vendor.name,
+      shippingFee: part.shippingFee,
+      items: part.items.map((item) => ({
+        name: item.productName,
+        variant: item.variantName,
+        quantity: item.quantity,
+        unit: item.unit,
+        lineTotal: item.lineTotal,
+      })),
+    })),
+  };
+}
+
 /** True for a unique-constraint error, and for which column when the database says. */
 function isUniqueViolation(error: unknown, column: string): boolean {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false;
@@ -87,6 +117,8 @@ export class CheckoutService {
     private readonly config: ConfigService,
     private readonly orders: CustomerOrderService,
     private readonly payos: PayosService,
+    // Optional so the order rules can be tested without mail.
+    @Optional() private readonly mailer?: OrderMailer,
   ) {}
 
   /** Cash on delivery, plus QR transfer once PayOS is set up. */
@@ -186,7 +218,10 @@ export class CheckoutService {
           (tx) => this.createOrder(tx, userId, idempotencyKey, dto, shipping),
           { timeout: 20_000 },
         );
-        return { order: await this.orders.getOrder(userId, orderNumber), alreadyPlaced: false };
+        const order = await this.orders.getOrder(userId, orderNumber);
+        // Only a new order is announced; a repeated request must not send the mail again.
+        if (this.mailer) void this.mailer.orderPlaced(userId, toMailData(order));
+        return { order, alreadyPlaced: false };
       } catch (error) {
         if (error instanceof AlreadyPlaced) return this.replay(userId, error.orderNumber);
         // Two requests with the same key at the same moment: the database lets one in; the other gets its order.
