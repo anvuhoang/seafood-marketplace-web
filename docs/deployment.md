@@ -116,6 +116,36 @@ on the server with `docker compose up --build -d`). The website has its public a
 (Settings, Secrets and variables, Actions, Variables). Automatic deployment needs a server to deploy to; add a job
 that connects to it (SSH) when there is one.
 
+## Email and sign-in with Google
+
+**Email** (`backend/src/module/mail`). The API sends the password reset link, a "password changed" notice, the order
+confirmation, the payment receipt and the shipped / delivered / cancelled notices. Mail never holds up an order: it is
+queued in the API process, retried twice, and a failure is only logged (the address masked).
+
+| Setting | Meaning |
+|---|---|
+| `SMTP_USER`, `SMTP_PASS` | A Gmail address and its **App password** (Google account, Security, 2-Step Verification, App passwords). With `SMTP_USER` empty, mails are written to the API log instead, so development works without a mailbox. |
+| `MAIL_PROVIDER` | `smtp`, `log` or `off`. Chosen from `SMTP_USER` when not set. |
+| `MAIL_FROM`, `APP_URL` | Sender, and the website address used in links (defaults to the first `FRONTEND_URL`). |
+
+Gmail allows about 500 mails a day, which is plenty for a project like this; a real shop would move to a mail service
+(SendGrid, SES) by adding a transport next to `smtp.transport.ts`.
+
+**Forgot password.** `POST /api/auth/forgot-password` always answers the same, whether or not the address has an
+account. The mail holds a link with a random token that works once, for 30 minutes; only its SHA-256 is stored. An
+address gets at most 3 mails an hour. Finishing a reset signs the account out everywhere (tokens issued earlier are
+refused, using a timestamp in Redis or memory) and sends a notice. Admin accounts cannot be reset this way.
+
+**Sign in with Google.** Set `GOOGLE_CLIENT_ID` (an OAuth client of type *Web application*; add the website address
+under *Authorized JavaScript origins*). The browser gets an ID token from Google and the API checks its signature,
+audience and expiry. Without the client ID the button is hidden. Nobody who registered with a password has proved they
+own the mailbox, so when Google links to such an account its old password is replaced by one nobody knows, its
+sessions end and the owner is told by mail (they can pick a new password with *Forgot password*). Admins never sign in
+with Google.
+
+If the sessions are revoked on one API process, the others must see it: run Redis (`REDIS_URL`) when there is more
+than one process, as for the rate limits.
+
 ## Things to know
 
 - **Fixed-window limits.** A burst can straddle two windows and briefly reach twice the limit. That is fine for
