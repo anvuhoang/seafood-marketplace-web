@@ -104,12 +104,13 @@ gained next to nothing). A new index is worth adding when `EXPLAIN ANALYZE` of a
 |---|---|---|
 | `.github/workflows/ci.yml` | push and pull request to `dev` / `main` | **Backend**: lint, type check, unit tests, `prisma migrate deploy` on an empty PostgreSQL, `prisma migrate diff --exit-code` (the schema files and the migrations agree), build. **Frontend**: lint, build. **Containers**: both images build, `docker compose config` is valid, the nginx config passes `nginx -t`. |
 | `.github/workflows/docker-publish.yml` | push to `main`, tags `v*`, manual | Builds the API and website images and pushes them to `ghcr.io/<owner>/<repo>-api` and `-web`, tagged with the branch, the release and the commit. |
+| `.github/workflows/deploy.yml` | after "Publish images" succeeds on `main`, or by hand | Pulls the images on the server over SSH, migrates, restarts, health-checks, and rolls back if unhealthy. |
 | `.github/dependabot.yml` | weekly | Pull requests for npm, Docker and Actions updates, minor and patch grouped. |
 
 Recommended on GitHub (Settings, Branches): protect `dev` and `main` and require the **Backend**, **Frontend** and
 **Containers** checks before merging. Branch protection is a setting on github.com; it cannot be committed.
 
-**Deploying** is the last step and is done by hand for now: on the server, `docker compose pull && docker compose up -d`
+**Deploying** to a server is described in "Deploy to a server (Azure)" below. The plain manual way is: on the server, `docker compose pull && docker compose up -d`
 (use the published images by replacing `build:` with `image: ghcr.io/...` in a `docker-compose.prod.yml`, or build
 on the server with `docker compose up --build -d`). The website has its public address written in when it is built
 (`NEXT_PUBLIC_API_URL`), so the published image is built for the address in the repository variable `PUBLIC_URL`
@@ -145,6 +146,72 @@ with Google.
 
 If the sessions are revoked on one API process, the others must see it: run Redis (`REDIS_URL`) when there is more
 than one process, as for the rate limits.
+
+## Deploy to a server (Azure)
+
+The shop runs on one small Linux server: the same Docker Compose stack as on a laptop, plus **Caddy** in front of nginx for
+HTTPS. GitHub builds the images and the server only pulls them.
+
+```
+merge into main ─> Publish images (GitHub builds API + web, pushes to ghcr.io) ─> Deploy (SSH) ─> server:
+visitor ──https──> Caddy ──> nginx ──> website / 2 API processes ──> PostgreSQL, Redis, Elasticsearch
+```
+
+| File | What it is |
+|---|---|
+| `docker-compose.prod.yml` | Overrides the compose file: images from ghcr.io instead of builds, memory limits, Caddy, nginx not published |
+| `deploy/caddy/Caddyfile` | HTTPS for `$DOMAIN`, streaming for the chatbot, security headers |
+| `deploy/prod.env.example` | The `.env` of the server (domain, images, secrets, optional keys) |
+| `deploy/server-setup.sh` | One-time setup of a fresh Ubuntu server: Docker, 2 GiB swap, `/opt/haisan`, security updates |
+| `deploy/deploy.sh` | Pulls the images, runs the migration, starts the shop, checks `/api/health`, and **goes back to the previous images** if it is not healthy |
+| `.github/workflows/deploy.yml` | Runs `deploy.sh` on the server over SSH after "Publish images" succeeds on `main`, or by hand |
+
+### The server
+
+Tested sizing: **2 vCPU and 4 GiB RAM** (Azure `Standard_B2als_v2`, region East Asia, Ubuntu 24.04, 64 GiB disk, static public
+IP). Open ports **22, 80 and 443**. Give the public IP a DNS name label in the Azure portal (Overview > DNS name), for
+example `haisan.eastasia.cloudapp.azure.com`: Caddy gets a free certificate for it, so no domain has to be bought.
+
+### First time
+
+1. **Set up the machine.** `ssh -i haisan-vm_key.pem azureuser@<dns name>`, then run `deploy/server-setup.sh` (it installs
+   Docker, adds swap, creates `/opt/haisan`). Log out and in again.
+2. **Write the settings.** On the server, create `/opt/haisan/.env` from `deploy/prod.env.example`: set `DOMAIN`,
+   `PUBLIC_URL`, `API_IMAGE`, `WEB_IMAGE`, `POSTGRES_PASSWORD`, `JWT_SECRET` (long and random), and whichever optional
+   keys you have (Gmail App password, Google client ID, PayOS, Cloudinary, chatbot). Run `chmod 600 .env`.
+3. **Tell GitHub where the shop is.** Settings > Secrets and variables > Actions:
+   variables `PUBLIC_URL` (`https://<dns name>`), `DEPLOY_HOST` (`<dns name>`), `DEPLOY_USER` (`azureuser`), and the secret
+   `DEPLOY_SSH_KEY` (the whole content of the `.pem` file). `PUBLIC_URL` is written into the website when its image is
+   built, so set it **before** the first build. Also create the environment `production` (Settings > Environments); add
+   yourself as a required reviewer if you want to approve each deploy.
+4. **Publish and deploy.** Merge `dev` into `main` (a pull request). "Publish images" builds the two images, then "Deploy" runs.
+   If the packages are private, the workflow logs the server in to ghcr.io with its own token.
+5. **Load the sample data once** (the first deploy leaves an empty shop): on the server,
+   `cd /opt/haisan && bash deploy/deploy.sh --seed`.
+6. Open `https://<dns name>` and sign in with the demo accounts.
+
+Deploying by hand needs no GitHub: copy `docker-compose.yml`, `docker-compose.prod.yml` and `deploy/` to `/opt/haisan`,
+and run `bash deploy/deploy.sh`.
+
+### After the first deploy
+
+- **Google sign-in:** add `https://<dns name>` to the OAuth client's "Authorized JavaScript origins", and set
+  `GOOGLE_CLIENT_ID` in the server's `.env`.
+- **PayOS:** register `https://<dns name>/api/payments/payos/webhook` as the webhook.
+- **Mail:** set `SMTP_USER` and `SMTP_PASS`; without them mails are only written to the API log.
+- A changed `.env` needs `bash deploy/deploy.sh` (it recreates the containers whose settings changed).
+
+### Day to day
+
+| To | Run on the server (in `/opt/haisan`) |
+|---|---|
+| See what runs | `docker compose -f docker-compose.yml -f docker-compose.prod.yml ps` |
+| Read the API log | `docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f api` |
+| Back up the database | `docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T db pg_dump -U haisan haisan > backup.sql` |
+| Go back one release | `deploy.sh` does it by itself when the new release is unhealthy; later, set `API_IMAGE` and `WEB_IMAGE` to an older tag and run `deploy.sh` |
+
+**Cost.** On Azure for Students the machine uses the free credit, roughly 1.5 USD a day while it runs. Stop it in the portal
+(Stop, and check it says "Stopped (deallocated)") when it is not needed, and delete the resource group when the demo is over.
 
 ## Things to know
 
