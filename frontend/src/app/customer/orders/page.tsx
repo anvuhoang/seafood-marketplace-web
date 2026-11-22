@@ -11,9 +11,9 @@ export const metadata = {
 export default function CustomerOrdersPage() {
   return (
     <ProtectedRoute allowedRoles={["CUSTOMER", "VENDOR", "ADMIN"]}>
-      <div className="flex min-h-screen flex-col bg-slate-50/50">
+      <div className="flex min-h-screen flex-col bg-[#EEF4FB]">
         <CustomerHeader />
-        <main className="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-8 sm:px-6 lg:px-8">
           <CustomerOrdersView />
         </main>
         <CustomerFooter />
