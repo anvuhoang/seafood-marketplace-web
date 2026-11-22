@@ -68,7 +68,9 @@ web_modules/
 # dotenv environment variable files
 .env
 .env.*
+# The examples are committed; the real files hold secrets.
 !.env.example
+!.env.docker.example
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

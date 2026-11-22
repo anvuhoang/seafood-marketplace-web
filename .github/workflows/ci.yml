@@ -1,0 +1,149 @@
+name: CI
+
+# Every push to dev or main, and every pull request into them, must build and pass its tests.
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+# A newer push to the same branch cancels the run that is still going.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "24"
+
+jobs:
+  backend:
+    name: Backend (lint, types, tests, migrations, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: haisan_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/haisan_ci?schema=public
+      JWT_SECRET: ci-only-secret-0123456789-0123456789-0123456789
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      # --ignore-scripts: the postinstall only syncs agent skills; the client is generated on the next line.
+      - run: npm ci --ignore-scripts
+      - run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+
+      # The migrations must build the schema from an empty database, and the schema file must not have
+      # changes that no migration carries (someone edited schema/*.prisma and forgot `migrate dev`).
+      - name: Migrations apply to an empty database
+        run: npx prisma migrate deploy
+      - name: Schema and migrations agree
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema --exit-code
+
+      - name: Build
+        run: npm run build
+
+  frontend:
+    name: Frontend (lint, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      NEXT_PUBLIC_API_URL: http://localhost:5000/api
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      # `next build` also type-checks. The API is not needed: pages that call it are rendered on request.
+      - name: Build
+        run: npm run build
+
+  containers:
+    name: Containers (images, compose, nginx)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the API image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: false
+          tags: haisan-api:ci
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+
+      - name: Build the website image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          push: false
+          tags: haisan-web:ci
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
+      - name: The compose file is valid
+        env:
+          POSTGRES_PASSWORD: ci
+          JWT_SECRET: ci-only-secret-0123456789-0123456789-0123456789
+        run: docker compose config --quiet
+
+      # nginx looks the API and the website up when a request arrives, not when it starts, so the check needs no hosts.
+      - name: The nginx config is valid
+        run: >-
+          docker run --rm
+          -v "$PWD/deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro"
+          nginx:1.27-alpine nginx -t
