@@ -199,6 +199,13 @@ and run `bash deploy/deploy.sh`.
   `GOOGLE_CLIENT_ID` in the server's `.env`.
 - **PayOS:** register `https://<dns name>/api/payments/payos/webhook` as the webhook.
 - **Mail:** set `SMTP_USER` and `SMTP_PASS`; without them mails are only written to the API log.
+- **Chatbot and the region of the server:** Gemini refuses requests from some regions. A server in Hong Kong (Azure
+  *East Asia*) gets `User location is not supported for the API use` in the API log, and the chat answers "Trợ lý đang bận".
+  Set `CHAT_PROVIDER=groq` in the server's `.env` to answer with a model on Groq instead; it uses the same `GROQ_API_KEY` as Smart
+  Import and Visual Search, and `GROQ_CHAT_MODEL` (default `openai/gpt-oss-120b`) picks the model. Groq has no embedding model,
+  so the help documents are searched with a word-based vector computed on the server: it finds a document when the question uses
+  its words, but understands meaning less well than Gemini. After changing the provider the documents are embedded again at the
+  next start. To keep Gemini, put the server in a region it supports.
 - A changed `.env` needs `bash deploy/deploy.sh` (it recreates the containers whose settings changed).
 
 ### Day to day
