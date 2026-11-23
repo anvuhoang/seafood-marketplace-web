@@ -184,10 +184,13 @@ example `haisan.eastasia.cloudapp.azure.com`: Caddy gets a free certificate for 
    `DEPLOY_SSH_KEY` (the whole content of the `.pem` file). `PUBLIC_URL` is written into the website when its image is
    built, so set it **before** the first build. Also create the environment `production` (Settings > Environments); add
    yourself as a required reviewer if you want to approve each deploy.
-4. **Publish and deploy.** Merge `dev` into `main` (a pull request). "Publish images" builds the two images, then "Deploy" runs.
-   If the packages are private, the workflow logs the server in to ghcr.io with its own token.
+4. **Publish and deploy.** Merge `dev` into `main` (a pull request). "Publish images" builds the two images (tagged `main` and with the commit), then "Deploy" runs.
+   The images contain no secrets. Make both packages **public** (your GitHub profile > Packages > the package > Package
+   settings > Change visibility): the workflow logs the server in with a token that lasts only while it runs, so a manual
+   `deploy.sh` later could not pull private images.
 5. **Load the sample data once** (the first deploy leaves an empty shop): on the server,
-   `cd /opt/haisan && bash deploy/deploy.sh --seed`.
+   `cd /opt/haisan && bash deploy/deploy.sh --seed`. For a shop that looks real (300 products, 900 orders, reviews)
+   use `--seed-demo` instead: see [demo data](demo-data.md).
 6. Open `https://<dns name>` and sign in with the demo accounts.
 
 Deploying by hand needs no GitHub: copy `docker-compose.yml`, `docker-compose.prod.yml` and `deploy/` to `/opt/haisan`,
@@ -199,7 +202,26 @@ and run `bash deploy/deploy.sh`.
   `GOOGLE_CLIENT_ID` in the server's `.env`.
 - **PayOS:** register `https://<dns name>/api/payments/payos/webhook` as the webhook.
 - **Mail:** set `SMTP_USER` and `SMTP_PASS`; without them mails are only written to the API log.
+- **Chatbot and the region of the server:** Gemini refuses requests from some regions. A server in Hong Kong (Azure
+  *East Asia*) gets `User location is not supported for the API use` in the API log, and the chat answers "Trợ lý đang bận".
+  Set `CHAT_PROVIDER=groq` in the server's `.env` to answer with a model on Groq instead; it uses the same `GROQ_API_KEY` as Smart
+  Import and Visual Search, and `GROQ_CHAT_MODEL` (default `openai/gpt-oss-120b`) picks the model. Groq has no embedding model,
+  so the help documents are searched with a word-based vector computed on the server: it finds a document when the question uses
+  its words, but understands meaning less well than Gemini. After changing the provider the documents are embedded again at the
+  next start. To keep Gemini, put the server in a region it supports.
 - A changed `.env` needs `bash deploy/deploy.sh` (it recreates the containers whose settings changed).
+
+### Troubleshooting a first deploy
+
+| What you see | Cause | Fix |
+|---|---|---|
+| `not found` for `...-api:latest` | Only the default branch (`dev`) gets the `latest` tag; images built from `main` are tagged `main` | Use `:main` in `API_IMAGE` and `WEB_IMAGE` |
+| `denied` or `unauthorized` pulling an image | The package is private and the server's login has expired | Make the package public; `docker logout ghcr.io` on the server |
+| `syntax error near unexpected token` from `.env` | A value with a space, `<`, `>` or `&` in `.env` was read as a shell command (older `deploy.sh`) | Use the current `deploy.sh`, which does not run the file; quote odd values with single quotes |
+| Search finds nothing after `--seed` | The seed writes to the database directly, so the index is empty | `POST /api/admin/search/reindex` as admin |
+| Chatbot "Trợ lý đang bận", log says `User location is not supported` | Gemini refuses the server's region (Hong Kong) | `CHAT_PROVIDER=groq` in `.env`, then `deploy.sh` |
+| Google `origin_mismatch` | The address is not an *Authorized JavaScript origin* | Add `https://<dns name>` (no trailing slash) |
+| The website calls the wrong address | `PUBLIC_URL` was set after the image was built | Set the variable, run "Publish images" again |
 
 ### Day to day
 

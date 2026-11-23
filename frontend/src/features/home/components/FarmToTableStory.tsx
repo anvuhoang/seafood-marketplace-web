@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BackgroundVideo } from "@/components/ui/BackgroundVideo";
 
 interface Chapter {
   label: string;
   title: string;
   description: string;
-  media: { kind: "video"; src: string; poster: string } | { kind: "image"; src: string };
+  media: { src: string };
 }
 
 const CHAPTERS: Chapter[] = [
@@ -16,14 +15,18 @@ const CHAPTERS: Chapter[] = [
     title: "Hàng về khi thuyền vừa cập bến",
     description:
       "Vựa tuyển ngay tại bến những mẻ cá, tôm, cua tươi nhất trong ngày. Không qua nhiều tầng trung gian nên hàng tới tay bạn nhanh hơn và giá minh bạch hơn.",
-    media: { kind: "video", src: "/videos/story-fresh-catch.mp4", poster: "/videos/story-fresh-catch-poster.jpg" },
+    media: {
+      src: "https://images.unsplash.com/photo-1574781330855-d0db8cc6a79c?auto=format&fit=crop&w=1400&h=1400&q=80",
+    },
   },
   {
     label: "Giữ lạnh",
     title: "Ướp đá và đóng thùng oxy ngay tại vựa",
     description:
       "Cá ướp đá vảy giữ độ tươi, tôm cua sống được đóng thùng xốp có sục oxy. Chuỗi lạnh không bị ngắt từ lúc rời vựa.",
-    media: { kind: "video", src: "/videos/story-cold-chain.mp4", poster: "/videos/story-cold-chain-poster.jpg" },
+    media: {
+      src: "https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?auto=format&fit=crop&w=1400&h=1400&q=80",
+    },
   },
   {
     label: "Tới bếp",
@@ -31,18 +34,23 @@ const CHAPTERS: Chapter[] = [
     description:
       "Shipper giao thẳng từ vựa. Bạn được mở thùng kiểm tra trước khi thanh toán, hải sản không đạt được đổi mới.",
     media: {
-      kind: "image",
-      src: "https://images.unsplash.com/photo-1625943553852-781c6dd46faa?auto=format&fit=crop&w=1200&q=75",
+      src: "https://images.unsplash.com/photo-1625943553852-781c6dd46faa?auto=format&fit=crop&w=1400&h=1400&q=80",
     },
   },
 ];
 
+/** A chapter's photo. A thin dark wash and vignette give the three photos one look. */
 function ChapterMedia({ chapter, className = "" }: { chapter: Chapter; className?: string }) {
-  return chapter.media.kind === "video" ? (
-    <BackgroundVideo src={chapter.media.src} poster={chapter.media.poster} className={className} />
-  ) : (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={chapter.media.src} alt="" loading="lazy" className={`object-cover ${className}`} />
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={chapter.media.src} alt="" loading="lazy" className="h-full w-full object-cover object-[35%_50%]" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[#0B2540]/15 mix-blend-multiply" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(11,37,64,0.45)_100%)]"
+      />
+    </div>
   );
 }
 
