@@ -14,6 +14,7 @@ import { ChatLimiter } from './chat.limiter.js';
 import { ChatService } from './chat.service.js';
 import { KnowledgeService } from './knowledge/knowledge.service.js';
 import { GeminiProvider } from './llm/gemini.provider.js';
+import { GroqProvider } from './llm/groq.provider.js';
 import { LLM_PROVIDER, LlmError, type LlmProvider } from './llm/llm.types.js';
 import { MockLlmProvider } from './llm/mock.provider.js';
 import { OptionalAuthGuard } from './optional-auth.guard.js';
@@ -34,9 +35,10 @@ const disabledProvider: LlmProvider = {
 };
 
 /** One setting (CHAT_PROVIDER) decides who answers; the rest of the module only knows the LlmProvider type. */
-function pickProvider(config: ConfigService, gemini: GeminiProvider, mock: MockLlmProvider): LlmProvider {
+function pickProvider(config: ConfigService, gemini: GeminiProvider, groq: GroqProvider, mock: MockLlmProvider): LlmProvider {
   const provider = config.get<{ provider?: string }>('chat')?.provider;
   if (provider === 'gemini') return gemini;
+  if (provider === 'groq') return groq;
   if (provider === 'mock') return mock;
   return disabledProvider;
 }
@@ -61,10 +63,11 @@ function pickProvider(config: ConfigService, gemini: GeminiProvider, mock: MockL
     RememberPreferenceTool,
     ContactSupportTool,
     GeminiProvider,
+    GroqProvider,
     MockLlmProvider,
     {
       provide: LLM_PROVIDER,
-      inject: [ConfigService, GeminiProvider, MockLlmProvider],
+      inject: [ConfigService, GeminiProvider, GroqProvider, MockLlmProvider],
       useFactory: pickProvider,
     },
   ],

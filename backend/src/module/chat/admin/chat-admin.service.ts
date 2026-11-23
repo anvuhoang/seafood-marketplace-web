@@ -116,7 +116,7 @@ export class ChatAdminService {
     const inLastHour = (kind: string) => lastHour.find((row) => row.kind === kind)?.count ?? 0;
 
     const warnings: string[] = [];
-    if (!enabled) warnings.push('Chatbot đang tắt (chưa có GEMINI_API_KEY hoặc CHATBOT_ENABLED=false).');
+    if (!enabled) warnings.push('Chatbot đang tắt (chưa có GEMINI_API_KEY, hoặc CHAT_PROVIDER=groq với GROQ_API_KEY, hoặc CHATBOT_ENABLED=false).');
     if (usedPercent >= 80) warnings.push(`Đã dùng ${usedPercent}% ngân sách tin nhắn hôm nay (${usedToday}/${dailyBudget}).`);
     if (inLastHour('MODEL_RATE_LIMITED') > 0) {
       warnings.push(`Mô hình báo vượt hạn mức (429) ${inLastHour('MODEL_RATE_LIMITED')} lần trong 1 giờ qua. Hãy kiểm tra quota trên Google AI Studio.`);
