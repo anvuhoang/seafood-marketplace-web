@@ -20,6 +20,22 @@ describe('groqPost', () => {
     expect(fetch.mock.calls[0][1].headers.Authorization).toBe('Bearer key-1');
   });
 
+  it('calls the address in GROQ_BASE_URL (a relay) when it is set', async () => {
+    const previous = process.env.GROQ_BASE_URL;
+    process.env.GROQ_BASE_URL = 'https://relay.example/api/openai/v1/';
+    try {
+      vi.resetModules();
+      const relayed = await import('./groq-client.js');
+      const fetch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+      vi.stubGlobal('fetch', fetch);
+      await relayed.groqPost('key-1', 1000, '/chat/completions', '{}');
+      expect(fetch.mock.calls[0][0]).toBe('https://relay.example/api/openai/v1/chat/completions');
+    } finally {
+      if (previous === undefined) delete process.env.GROQ_BASE_URL;
+      else process.env.GROQ_BASE_URL = previous;
+      vi.resetModules();
+    }
+  });
   it.each([
     [429, 'rate_limited'],
     [401, 'unavailable'],

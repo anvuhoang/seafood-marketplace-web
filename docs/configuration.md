@@ -111,6 +111,7 @@ tests).
 | `GEMINI_CHAT_MODEL` / `GEMINI_EMBED_MODEL` / `GEMINI_EMBED_DIMENSIONS` | `gemini-2.5-flash` / `gemini-embedding-001` / `768` | Models |
 | `GROQ_API_KEY` | empty | Key from <https://console.groq.com>. Turns Smart Import and Visual Search on, and serves the chatbot with `CHAT_PROVIDER=groq` |
 | `GROQ_CHAT_MODEL` | `openai/gpt-oss-120b` | Chatbot model when `CHAT_PROVIDER=groq` |
+| `GROQ_BASE_URL` | `https://api.groq.com/openai/v1` | Where the Groq calls go (chatbot, Smart Import, Visual Search). Set it to a relay, for example `https://<your-relay>/api/openai/v1`, when the server's region is refused by Groq. The key still comes from `GROQ_API_KEY` |
 | `CHAT_RATE_LIMIT_MESSAGES` / `CHAT_RATE_LIMIT_WINDOW_MINUTES` | `20` / `10` | Messages per person in the window |
 | `CHAT_DAILY_BUDGET` | `2000` | Messages the whole shop may send a day |
 | `CHAT_MAX_MESSAGE_LENGTH` | `500` | Longer messages are refused |
