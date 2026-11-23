@@ -34,7 +34,7 @@ In Docker Compose these come from `POSTGRES_PASSWORD` (the database password) an
 | `FRONTEND_URL` | `http://localhost:3000` | Browser addresses the API accepts (CORS), comma separated. Add the admin address too if it is separate. |
 | `JWT_EXPIRES_IN` | `7d` | Life of a customer or vendor session |
 | `ADMIN_JWT_EXPIRES_IN` | `2h` | Life of an admin session |
-| `API_DOCS_ENABLED` | on outside production | `true`/`false`: Swagger at `/api/docs` |
+| `API_DOCS_ENABLED` | on outside production; **on** in the Docker stack and on the server | `true`/`false`: Swagger at `/api/docs` and `/api/docs-json` (public, no sign-in). Set `false` in `.env` to hide it |
 | `TRUST_PROXY` | empty | How many proxies stand in front of the API (`1` behind nginx) so the visitor's address is used, not the proxy's |
 | `SHIPPING_FEE_PER_VENDOR` | `30000` | Flat shipping fee (VND) charged once for each vendor in an order |
 
