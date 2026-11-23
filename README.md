@@ -9,7 +9,7 @@ English.
 | | |
 |---|---|
 | **Live demo** | https://haisan.eastasia.cloudapp.azure.com (a student server; it may be switched off outside the demo) |
-| **API documentation** | `/api/docs` (Swagger) when the API runs in development |
+| **API documentation** | Public Swagger UI at `/api/docs` (OpenAPI at `/api/docs-json`), e.g. <https://haisan.eastasia.cloudapp.azure.com/api/docs> |
 | **Documentation** | [Architecture](docs/architecture.md) · [Configuration](docs/configuration.md) · [API](docs/api.md) · [Testing](docs/testing.md) · [Deployment](docs/deployment.md) · [Demo guide](docs/demo-guide.md) · [Demo data](docs/demo-data.md) · [Contributing](docs/contributing.md) |
 
 ![Home page](docs/images/home.jpg)

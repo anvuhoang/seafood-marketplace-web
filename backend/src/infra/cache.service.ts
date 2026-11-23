@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'node:crypto';
 import { KV_STORE, type KeyValueStore } from './kv-store.js';
 
 export interface CacheStats {
@@ -11,6 +12,10 @@ export interface CacheStats {
 }
 
 const WARN_EVERY_MS = 30_000;
+
+/** Holds a token that changes at every invalidation, in the store the API processes share. */
+const VERSION_KEY = 'cache-version';
+const VERSION_TTL_MS = 24 * 60 * 60 * 1000;
 
 /**
  * "Read this from the cache, or compute it and keep it for a while." Values are stored as JSON, so what is cached
@@ -82,11 +87,27 @@ export class CacheService {
     return loadAndKeep;
   }
 
+  /**
+   * A token that changes whenever anything was invalidated, by any API process. Something that keeps a result in its own
+   * memory (the product listing) compares the token to know that another process changed the data. Null when the cache is
+   * off or the store cannot be reached: then nothing may be kept.
+   */
+  async version(): Promise<string | null> {
+    if (!this.enabled) return null;
+    try {
+      return (await this.store.get(VERSION_KEY)) ?? '';
+    } catch (error) {
+      this.fail(error);
+      return null;
+    }
+  }
+
   /** Forgets every cached value whose key starts with the prefix, e.g. "catalog:" after the catalogue changed. */
   async invalidate(prefix: string): Promise<void> {
     this.generation++;
     try {
       await this.store.deleteByPrefix(`cache:${prefix}`);
+      await this.store.set(VERSION_KEY, randomUUID(), VERSION_TTL_MS);
     } catch (error) {
       this.fail(error);
     }

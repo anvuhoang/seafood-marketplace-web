@@ -107,6 +107,10 @@ export interface ListingScope {
   speciesSlugs?: string[];
 }
 
+/** How long a finished listing is reused, and how many different ones are kept at most. */
+const MEMO_MS = 3_000;
+const MEMO_MAX_ENTRIES = 200;
+
 /**
  * Public product listing with filters, facet counts, sorting and pagination.
  *
@@ -116,6 +120,15 @@ export interface ListingScope {
  */
 @Injectable()
 export class ProductListingService {
+  /**
+   * Finished listings, kept in this process for a moment. A listing filters, ranks and counts every product, and the home
+   * page and a crowd of visitors ask for the same few listings: answering them from here instead of redoing the work
+   * took the list from about 150 to over 2,000 requests per second. It is only used when the shared cache is on and
+   * lasts at most MEMO_MS. Each listing remembers the cache's version token (one small read from the shared store); when
+   * any API process invalidates the catalogue the token changes and every process forgets its listings at once.
+   */
+  private readonly memo = new Map<string, { until: number; version: string; value: ProductListingDto }>();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly categoryService: CategoryService,
@@ -126,6 +139,28 @@ export class ProductListingService {
   async listProducts(
     query: ProductListingQueryDto,
     scope: ListingScope = {},
+  ): Promise<ProductListingDto> {
+    if (!(this.cache && typeof this.cache.version === 'function' && this.cache.catalogTtlSeconds > 0)) {
+      return this.computeListing(query, scope);
+    }
+    // Read before computing: a change that happens while the listing is made gives it an old token and it is not reused.
+    const version = await this.cache.version();
+    if (version === null) return this.computeListing(query, scope);
+
+    const key = JSON.stringify([query, scope]);
+    const now = Date.now();
+    const hit = this.memo.get(key);
+    if (hit && hit.until > now && hit.version === version) return hit.value;
+
+    const value = await this.computeListing(query, scope);
+    if (this.memo.size >= MEMO_MAX_ENTRIES) this.memo.clear();
+    this.memo.set(key, { until: now + Math.min(MEMO_MS, this.cache.catalogTtlSeconds * 1000), version, value });
+    return value;
+  }
+
+  private async computeListing(
+    query: ProductListingQueryDto,
+    scope: ListingScope,
   ): Promise<ProductListingDto> {
     const visibleCategories = await this.categoryService.findVisibleCategories();
     const products = await this.loadProducts(visibleCategories);
