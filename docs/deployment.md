@@ -189,7 +189,8 @@ example `haisan.eastasia.cloudapp.azure.com`: Caddy gets a free certificate for 
    settings > Change visibility): the workflow logs the server in with a token that lasts only while it runs, so a manual
    `deploy.sh` later could not pull private images.
 5. **Load the sample data once** (the first deploy leaves an empty shop): on the server,
-   `cd /opt/haisan && bash deploy/deploy.sh --seed`.
+   `cd /opt/haisan && bash deploy/deploy.sh --seed`. For a shop that looks real (300 products, 900 orders, reviews)
+   use `--seed-demo` instead: see [demo data](demo-data.md).
 6. Open `https://<dns name>` and sign in with the demo accounts.
 
 Deploying by hand needs no GitHub: copy `docker-compose.yml`, `docker-compose.prod.yml` and `deploy/` to `/opt/haisan`,

@@ -10,7 +10,7 @@ English.
 |---|---|
 | **Live demo** | https://haisan.eastasia.cloudapp.azure.com (a student server; it may be switched off outside the demo) |
 | **API documentation** | `/api/docs` (Swagger) when the API runs in development |
-| **Documentation** | [Architecture](docs/architecture.md) · [Configuration](docs/configuration.md) · [API](docs/api.md) · [Testing](docs/testing.md) · [Deployment](docs/deployment.md) · [Demo guide](docs/demo-guide.md) · [Contributing](docs/contributing.md) |
+| **Documentation** | [Architecture](docs/architecture.md) · [Configuration](docs/configuration.md) · [API](docs/api.md) · [Testing](docs/testing.md) · [Deployment](docs/deployment.md) · [Demo guide](docs/demo-guide.md) · [Demo data](docs/demo-data.md) · [Contributing](docs/contributing.md) |
 
 ![Home page](docs/images/home.jpg)
 
@@ -125,6 +125,7 @@ You need Docker with Compose.
 cp .env.docker.example .env                 # set POSTGRES_PASSWORD and JWT_SECRET
 docker compose up --build -d                # the shop at http://localhost:8088
 docker compose --profile tools run --rm seed   # sample vendors, products, customers, orders
+docker compose --profile tools run --rm seed-demo   # optional: 300 products, 900 orders, reviews (docs/demo-data.md)
 ```
 
 Open http://localhost:8088. Optional keys (mail, Google, PayOS, chatbot, photos) go in the same `.env`; without
@@ -163,6 +164,8 @@ Created by the seed (`npm run seed`). All of them are demo data.
 | Vendor | `/customer/login` (goes to the vendor console) | `phuquocxanh@haisanexpress.vn` (also `nhatrangxanh@`, `duyenhaiphanthiet@`, `condaoxanh@`, `camaudatmui@`, `vandon@`, `halongtamngung@haisanexpress.vn`) | `Vendor@123456` |
 | Admin | `/admin/login` | `admin@haisanexpress.vn` | `Admin@123456` |
 
+The demo seed ([docs/demo-data.md](docs/demo-data.md)) adds 12 more stores (owners such as `catbaxanh@haisanexpress.vn`, password `Vendor@123456`) and 120 customers.
+
 Three customers (`hai.dang@example.com` and two more) have a store application waiting for the admin to approve.
 Change these passwords before showing the shop to anyone outside a demo.
 
@@ -195,6 +198,7 @@ docker-compose.yml      the whole shop; docker-compose.prod.yml adds Caddy and r
 | `backend` | `npm run db:migrate -- --name <what>` | create and apply a migration after editing the schema |
 | `backend` | `npm run db:deploy` | apply the committed migrations (servers, CI) |
 | `backend` | `npm run seed` | sample data (safe to run again) |
+| `backend` | `npm run seed:demo` | after `seed`: a full-looking shop, 300 products and 900 orders ([demo data](docs/demo-data.md)) |
 | `backend` | `npm run search:reindex` | rebuild the Elasticsearch index |
 | `backend` | `npm run knowledge:ingest` | embed the chatbot's help documents |
 | `backend` | `npm run chat:eval` | ask the chatbot ~30 questions and write a report |

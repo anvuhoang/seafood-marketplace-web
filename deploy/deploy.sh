@@ -3,6 +3,7 @@
 #
 #   bash deploy/deploy.sh                # pull the images named in .env and restart what changed
 #   bash deploy/deploy.sh --seed         # also load the sample data (first time only)
+#   bash deploy/deploy.sh --seed-demo    # the sample data plus a full-looking shop: 300 products, 900 orders (docs/demo-data.md)
 #
 # Before it changes anything it keeps the current images under the name ...:rollback. After it starts the new ones it
 # asks the shop whether it is healthy; if it is not, it puts the old images back.
@@ -27,7 +28,9 @@ export API_IMAGE WEB_IMAGE DOMAIN
 
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
 SEED=false
+SEED_DEMO=false
 [ "${1:-}" = "--seed" ] && SEED=true
+if [ "${1:-}" = "--seed-demo" ]; then SEED=true; SEED_DEMO=true; fi
 
 keep() { # keep <image> : remember the image that runs now, if there is one
   if docker image inspect "$1" >/dev/null 2>&1; then docker tag "$1" "${1%%:*}:rollback"; return 0; fi
@@ -47,6 +50,12 @@ $COMPOSE up -d --no-build --remove-orphans
 if $SEED; then
   echo "==> Loading the sample data"
   $COMPOSE --profile tools run --rm seed
+fi
+if $SEED_DEMO; then
+  echo "==> Loading the demo shop (300 products, 900 orders, reviews)"
+  $COMPOSE --profile tools run --rm seed-demo
+  echo "==> Restarting the API so search indexes the new products"
+  $COMPOSE restart api
 fi
 
 healthy() {

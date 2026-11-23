@@ -3,6 +3,7 @@
 #   cp .env.docker.example .env      # then set POSTGRES_PASSWORD and JWT_SECRET
 #   docker compose up --build        # open http://localhost:8088
 #   docker compose --profile tools run --rm seed     # optional: sample vendors, products and customers
+#   docker compose --profile tools run --rm seed-demo # optional, after seed: a full-looking shop (docs/demo-data.md)
 #
 # More in docs/deployment.md.
 
@@ -151,6 +152,18 @@ services:
     profiles: ["tools"]
     image: haisan-api:local
     command: ["npx", "tsx", "prisma/seed.ts"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-haisan}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-haisan}?schema=public
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
+  # Optional: a shop that looks real (300 products, 900 orders, reviews). Run the seed first. See docs/demo-data.md.
+  seed-demo:
+    profiles: ["tools"]
+    image: haisan-api:local
+    command: ["npx", "tsx", "prisma/seed-demo.ts"]
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-haisan}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-haisan}?schema=public
     depends_on:

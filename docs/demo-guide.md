@@ -8,7 +8,7 @@ Accounts are in the [README](../README.md#demo-accounts).
 | Do | Why |
 |---|---|
 | Open the address on your laptop **and on a phone using mobile data** (not the home Wi-Fi) | Proves a visitor from outside can reach it |
-| Make sure the sample data is loaded (the home page shows products) | A new server starts empty: `bash deploy/deploy.sh --seed` |
+| Make sure the sample data is loaded (the home page shows products) | A new server starts empty: `bash deploy/deploy.sh --seed-demo` (a full shop, see [demo data](demo-data.md)) or `--seed` (a few products) |
 | Rebuild the search index if "tom hum" finds nothing | Data loaded outside the API is not indexed: `POST /api/admin/search/reindex` as admin |
 | Check the optional services you will show: chatbot answers, mail arrives (also look in Spam), Google button appears | Each is off until its key is set ([configuration](configuration.md)) |
 | Sign out everywhere, clear the cart | A clean start |
