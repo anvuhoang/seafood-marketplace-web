@@ -257,6 +257,9 @@ describe('ProductSearchService', () => {
 
 // ----- keeping the index up to date ------------------------------------------------------------------------------
 
+/** The options every request of an index build carries (a build is slow; a search is not). */
+const LONG_REQUEST = { requestTimeout: 60_000 };
+
 describe('ProductIndexerService', () => {
   const sellable = [
     {
@@ -314,10 +317,14 @@ describe('ProductIndexerService', () => {
     expect(operations[1]).toMatchObject({ id: 'p1', name: 'Tôm sú', categories: ['Tôm sống'], vendors: ['Vựa A'] });
     expect(operations).toHaveLength(4);
 
-    expect(es.indices.refresh).toHaveBeenCalledWith({ index: created.index });
-    expect(es.indices.updateAliases).toHaveBeenCalledWith({
-      actions: [{ remove: { index: 'haisan-products-v1-111', alias: 'haisan-products' } }, { add: { index: created.index, alias: 'haisan-products' } }],
-    });
+    expect(es.indices.refresh).toHaveBeenCalledWith({ index: created.index }, LONG_REQUEST);
+    expect(es.indices.updateAliases).toHaveBeenCalledWith(
+      { actions: [{ remove: { index: 'haisan-products-v1-111', alias: 'haisan-products' } }, { add: { index: created.index, alias: 'haisan-products' } }] },
+      LONG_REQUEST,
+    );
+    // Building is slow work: none of its requests may use the short search timeout.
+    expect(es.indices.create).toHaveBeenCalledWith(expect.anything(), LONG_REQUEST);
+    expect(es.bulk).toHaveBeenCalledWith(expect.anything(), LONG_REQUEST);
     // Every older index of the family goes, the new one stays.
     const deleted = es.indices.delete.mock.calls.map((call) => ((call as unknown[])[0] as { index: string }).index);
     expect(deleted.sort()).toEqual(['haisan-products-v1-111', 'haisan-products-v1-orphan']);
@@ -392,7 +399,7 @@ describe('ProductIndexerService', () => {
     await expect(build().reindex()).rejects.toThrow('refused');
 
     const created = (es.indices.create.mock.calls[0] as unknown as [{ index: string }])[0].index;
-    expect(es.indices.delete).toHaveBeenCalledWith({ index: created }, { ignore: [404] });
+    expect(es.indices.delete).toHaveBeenCalledWith({ index: created }, { ...LONG_REQUEST, ignore: [404] });
     expect(es.indices.updateAliases).not.toHaveBeenCalled();
     expect((await build().reindex()).ran).toBe(true);
   });
