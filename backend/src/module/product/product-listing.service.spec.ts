@@ -242,6 +242,68 @@ describe('ProductListingService', () => {
     expect((await service.listProducts({}, { speciesSlugs: ['muc-ong'] })).items).toEqual([]);
   });
 
+  describe('reusing a finished listing', () => {
+    // A cache that never holds anything (every load runs), so what is tested is the listing's own short-lived reuse.
+    const makeService = () => {
+      const listeners: Array<() => void> = [];
+      const cache = {
+        catalogTtlSeconds: 30,
+        wrap: vi.fn(async (_key: string, _ttl: number, load: () => Promise<unknown>) => load()),
+        onInvalidate: vi.fn((listener: () => void) => listeners.push(listener)),
+      };
+      const withCache = new ProductListingService(prisma as PrismaService, new CategoryService(prisma as PrismaService), cache as never);
+      return { withCache, listeners };
+    };
+
+    it('answers the same question again without asking the database', async () => {
+      const { withCache } = makeService();
+      const first = await withCache.listProducts({ category: 'tom-song' });
+      const calls = prisma.product.findMany.mock.calls.length;
+
+      const second = await withCache.listProducts({ category: 'tom-song' });
+      expect(second).toBe(first);
+      expect(prisma.product.findMany.mock.calls.length).toBe(calls);
+
+      // Another question is its own listing.
+      const other = await withCache.listProducts({ category: 'cua-ghe' });
+      expect(other.items.map((item) => item.id)).toEqual(['cua-both']);
+    });
+
+    it('forgets everything as soon as the catalogue changes', async () => {
+      const { withCache, listeners } = makeService();
+      await withCache.listProducts({});
+      const calls = prisma.product.findMany.mock.calls.length;
+
+      listeners.forEach((listener) => listener());
+      await withCache.listProducts({});
+      expect(prisma.product.findMany.mock.calls.length).toBeGreaterThan(calls);
+    });
+
+    it('does not keep a listing that was being made while the catalogue changed', async () => {
+      const { withCache, listeners } = makeService();
+      let release: () => void = () => undefined;
+      prisma.product.findMany.mockImplementationOnce(
+        () => new Promise((resolve) => { release = () => resolve(PRODUCTS); }),
+      );
+      const pending = withCache.listProducts({});
+      await vi.waitFor(() => expect(prisma.product.findMany).toHaveBeenCalled());
+      listeners.forEach((listener) => listener());
+      release();
+      await pending;
+
+      const calls = prisma.product.findMany.mock.calls.length;
+      await withCache.listProducts({});
+      expect(prisma.product.findMany.mock.calls.length).toBeGreaterThan(calls);
+    });
+
+    it('does nothing of the kind without the shared cache', async () => {
+      await service.listProducts({});
+      const calls = prisma.product.findMany.mock.calls.length;
+      await service.listProducts({});
+      expect(prisma.product.findMany.mock.calls.length).toBeGreaterThan(calls);
+    });
+  });
+
   describe('query validation', () => {
     const errorsFor = async (query: Record<string, string>) =>
       (await validate(plainToInstance(ProductListingQueryDto, query))).map((e) => e.property);
