@@ -12,7 +12,7 @@ import { API_BASE_URL } from "@/lib/api-base";
  * Fetch approved vendors for public discovery.
  */
 export async function getActiveVendors(): Promise<VendorSummary[]> {
-  const res = await fetch(`${API_BASE_URL}/vendors`, { cache: "no-store" });
+  const res = await fetch(`${API_BASE_URL}/vendors`, { next: { revalidate: 10 } });
 
   if (!res.ok) {
     throw new Error(`Vendor list request failed with status ${res.status}`);
