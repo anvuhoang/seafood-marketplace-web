@@ -1,6 +1,10 @@
 import { AiProviderError } from './ai-provider-error.js';
 
-export const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
+/**
+ * Where the Groq API is called. Defaults to Groq itself; set GROQ_BASE_URL to a relay when the server's region is refused
+ * (for example https://your-relay.example/api/openai/v1). Only the address changes: the key and the requests are the same.
+ */
+export const GROQ_BASE_URL = (process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').replace(/\/+$/, '');
 
 /**
  * One authenticated call to Groq's OpenAI-compatible API. Network failures,

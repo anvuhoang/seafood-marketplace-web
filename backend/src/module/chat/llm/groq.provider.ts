@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { GROQ_BASE_URL } from '../../../common/ai/groq-client.js';
 import { parseSse } from './gemini.provider.js';
 import { localEmbeddings } from './local-embedding.js';
 import {
@@ -12,7 +13,6 @@ import {
   type LlmToolDeclaration,
 } from './llm.types.js';
 
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 export interface GroqSettings {
   groqApiKey: string;
@@ -167,7 +167,7 @@ export class GroqProvider implements LlmProvider {
     const timeout = AbortSignal.timeout(settings.timeoutMs);
     let response: Response;
     try {
-      response = await fetch(GROQ_URL, {
+      response = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${settings.groqApiKey}` },
         body: JSON.stringify(body),
