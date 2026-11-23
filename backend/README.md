@@ -1,6 +1,8 @@
-# seafood-marketplace-web — Backend
+# HaiSan Express — API
 
-NestJS API with Prisma and PostgreSQL.
+NestJS 12 API with Prisma 7 and PostgreSQL. The overall picture is in the [root README](../README.md); the design in
+[docs/architecture.md](../docs/architecture.md); every endpoint in [docs/api.md](../docs/api.md); every setting in
+[docs/configuration.md](../docs/configuration.md).
 
 ## Setup
 
@@ -13,7 +15,12 @@ npm run seed                # optional: sample vendors, products, reviews
 npm run start:dev
 ```
 
-`.env` needs at least `DATABASE_URL`, `PORT`, `FRONTEND_URL` and `JWT_SECRET`.
+`.env` needs at least `DATABASE_URL` and `JWT_SECRET` (`PORT` and `FRONTEND_URL` have defaults). Everything else is
+optional and switches a feature on: email, Google sign-in, QR payment, photos, the chatbot, Elasticsearch, Redis. The
+shop runs without them.
+
+Redis and Elasticsearch for development: `docker compose up -d redis elasticsearch` from the repository root, then set
+`REDIS_URL=redis://localhost:6379` and `ELASTICSEARCH_URL=http://localhost:9200`.
 
 Review photos are uploaded straight from the browser to Cloudinary with a
 signature from this API. Add the keys from the Cloudinary dashboard
@@ -79,19 +86,42 @@ everything from the migrations.
 `npm run seed` is safe to run repeatedly. It only upserts sample data and
 never overwrites names, images or descriptions that were edited later.
 
-Sample accounts: vendors use `Vendor@123456`, customers (e.g.
-`lan.nguyen@example.com`) use `Customer@123456`.
+Sample accounts: vendors (e.g. `phuquocxanh@haisanexpress.vn`) use `Vendor@123456`, customers (e.g.
+`nam.le@example.com`) use `Customer@123456`, and the admin is `admin@haisanexpress.vn` / `Admin@123456` (sign in at
+`/admin/login`). The full list is in the [root README](../README.md#demo-accounts).
+
+The seed writes to the database directly, so the Elasticsearch index does not know about it until the API restarts or you
+run `npm run search:reindex`.
 
 ## Tests
 
 ```bash
-npm test          # unit tests
+npm test            # unit tests (~1,190)
 npm run lint
+npm run typecheck
 ```
+
+End-to-end tests (browser and HTTP, against a running shop) live in [`../frontend/e2e`](../frontend/e2e/README.md); see
+[docs/testing.md](../docs/testing.md).
 
 > On Windows, run `npm test` from a terminal whose path starts with a capital drive letter (`C:\...`,
 > PowerShell or cmd). From Git Bash (`/c/...`) vitest can load two copies of itself and fail with
 > "Cannot read properties of undefined (reading 'config')".
+
+## Email, password reset and Google sign-in
+
+`src/module/mail/` sends mail without ever holding up or breaking a request: it is queued, retried, and a failure is
+only logged. With `SMTP_USER` and `SMTP_PASS` (a Gmail address and its App password) it sends; without them the mails are
+written to the API log, so development needs no mailbox. Mails: order confirmation, payment received, shipped,
+delivered, cancelled, password reset and changed, Google linked.
+
+`POST /api/auth/forgot-password` always answers the same, whether or not the address has an account; the link holds a
+random token that works once for 30 minutes (only its SHA-256 is stored). A finished reset signs the account out
+everywhere (`SessionRevocationService`: tokens issued before it are refused).
+
+`POST /api/auth/google` takes the ID token from Google's button and checks its signature, audience (`GOOGLE_CLIENT_ID`),
+expiry and `email_verified`. Linking an existing password account whose mailbox was never proved replaces its password
+and ends its sessions. Admins never sign in this way.
 
 ## Chatbot (shopping assistant)
 
@@ -107,9 +137,15 @@ and "add to cart" is only a proposal: the cart changes when the customer presses
 
 ```env
 GEMINI_API_KEY=...        # https://aistudio.google.com/apikey ; empty = chatbot off
+CHAT_PROVIDER=groq        # optional: answer with a model on Groq (GROQ_API_KEY) instead of Gemini
 CHAT_PROVIDER=mock        # optional: no key, no network (keyword stub, for development and tests)
 CHATBOT_ENABLED=false     # switch it off whatever else is set
 ```
+
+Gemini refuses requests from some regions (a server in Hong Kong gets `User location is not supported`); then use
+`CHAT_PROVIDER=groq`. Groq has no embedding model, so the help documents are embedded locally (a word-based vector,
+`llm/local-embedding.ts`): the search finds a document when the question uses its words, but understands meaning less
+well than Gemini.
 
 Other settings (model names, limits) are in `.env.example`. The chat has a per-person rate limit and a
 daily budget, so a script cannot spend the model quota.
@@ -125,6 +161,9 @@ guest, a customer and another customer, checks which tools were called, which ca
 answer says, and writes `chat-eval-report.md`. It needs the seed data and a real model
 (`GEMINI_API_KEY`); with `CHAT_PROVIDER=mock` it only checks that the harness works. It puts back what it
 changed (conversations, remembered notes) unless you pass `--keep`.
+
+**Adding a provider.** Implement `LlmProvider` (`llm/llm.types.ts`): `generate()` streams text pieces and tool calls,
+`embed()` returns vectors. Add it to `ChatModule` (`pickProvider`) and give it a spec like `gemini.provider.spec.ts`.
 
 **Adding a tool.** Write a class implementing `ChatTool` in `src/module/chat/tools/`, add it to
 `ChatModule.providers` and to `ChatToolRegistry`, and describe it in the eval cases.
