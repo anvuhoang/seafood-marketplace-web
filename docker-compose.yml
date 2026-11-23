@@ -88,6 +88,9 @@ services:
       discovery.type: single-node
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: -Xms512m -Xmx512m
+      # One node, nowhere to move shards to: with a disk more than 90% full (a CI runner after the Docker builds, a small
+      # server) Elasticsearch would refuse to create the product index at all and the shop would search in memory.
+      cluster.routing.allocation.disk.threshold_enabled: "false"
     mem_limit: 1g
     volumes:
       - esdata:/usr/share/elasticsearch/data

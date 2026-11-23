@@ -32,6 +32,13 @@ export interface SearchStatus {
 }
 
 const LOCK_KEY = 'lock:search:reindex';
+
+/**
+ * Building the index is not a search: creating an index, writing the products and switching the alias take seconds on a small
+ * server. They must not use the client's short search timeout (1.5 s), or the build fails on every try and the shop stays on
+ * the in-memory search (seen on a CI runner: "Request timed out").
+ */
+const BUILD_REQUEST = { requestTimeout: 60_000 };
 const LOCK_MS = 2 * 60 * 1000;
 const BATCH = 500;
 /** A burst of changes (a vendor editing several products) is indexed once, this long after the last one. */
@@ -108,7 +115,7 @@ export class ProductIndexerService implements OnApplicationBootstrap {
   private async isCurrent(): Promise<boolean> {
     const alias = this.settings.index;
     try {
-      const found = await this.es!.indices.getAlias({ name: alias });
+      const found = await this.es!.indices.getAlias({ name: alias }, BUILD_REQUEST);
       return Object.keys(found).some((name) => name.startsWith(`${alias}-v${PRODUCT_INDEX_VERSION}-`));
     } catch (error) {
       if ((error as { meta?: { statusCode?: number } }).meta?.statusCode === 404) return false;
@@ -159,18 +166,19 @@ export class ProductIndexerService implements OnApplicationBootstrap {
     const index = `${alias}-v${PRODUCT_INDEX_VERSION}-${startedAt}`;
     try {
       const documents = await this.loadDocuments();
-      await this.es.indices.create({ index, ...PRODUCT_INDEX_BODY } as never);
+      await this.es.indices.create({ index, ...PRODUCT_INDEX_BODY } as never, BUILD_REQUEST);
       for (let start = 0; start < documents.length; start += BATCH) {
-        const result = await this.es.bulk({
-          operations: documents.slice(start, start + BATCH).flatMap((document) => [{ index: { _index: index, _id: document.id } }, document]),
-        });
+        const result = await this.es.bulk(
+          { operations: documents.slice(start, start + BATCH).flatMap((document) => [{ index: { _index: index, _id: document.id } }, document]) },
+          BUILD_REQUEST,
+        );
         if (result.errors) throw new Error('Elasticsearch refused some of the products');
       }
-      await this.es.indices.refresh({ index });
+      await this.es.indices.refresh({ index }, BUILD_REQUEST);
       const live = await this.switchAlias(alias, index, startedAt);
       return { ran: true, index: live ? index : undefined, documents: documents.length, tookMs: Date.now() - startedAt };
     } catch (error) {
-      await this.es.indices.delete({ index }, { ignore: [404] }).catch(() => undefined);
+      await this.es.indices.delete({ index }, { ...BUILD_REQUEST, ignore: [404] }).catch(() => undefined);
       throw error;
     } finally {
       this.running = false;
@@ -196,24 +204,25 @@ export class ProductIndexerService implements OnApplicationBootstrap {
    */
   private async switchAlias(alias: string, index: string, stamp: number): Promise<boolean> {
     const holders = await this.es!.indices
-      .getAlias({ name: alias })
+      .getAlias({ name: alias }, BUILD_REQUEST)
       .then((found) => Object.keys(found))
       .catch(() => [] as string[]);
 
     if (holders.some((name) => this.stamp(name) > stamp)) {
-      await this.es!.indices.delete({ index }, { ignore: [404] }).catch(() => undefined);
+      await this.es!.indices.delete({ index }, { ...BUILD_REQUEST, ignore: [404] }).catch(() => undefined);
       return false;
     }
 
-    await this.es!.indices.updateAliases({
-      actions: [...holders.map((name) => ({ remove: { index: name, alias } })), { add: { index, alias } }],
-    });
+    await this.es!.indices.updateAliases(
+      { actions: [...holders.map((name) => ({ remove: { index: name, alias } })), { add: { index, alias } }] },
+      BUILD_REQUEST,
+    );
 
     // Every older index of this family goes: the ones the alias pointed to, and any left behind by a build that failed.
-    const family = (await this.es!.cat.indices({ index: `${alias}-v*`, h: 'index', format: 'json' }).catch(() => [])) as Array<{ index: string }>;
+    const family = (await this.es!.cat.indices({ index: `${alias}-v*`, h: 'index', format: 'json' }, BUILD_REQUEST).catch(() => [])) as Array<{ index: string }>;
     for (const { index: name } of family) {
       if (name !== index && this.stamp(name) < stamp) {
-        await this.es!.indices.delete({ index: name }, { ignore: [404] }).catch(() => undefined);
+        await this.es!.indices.delete({ index: name }, { ...BUILD_REQUEST, ignore: [404] }).catch(() => undefined);
       }
     }
     return true;
