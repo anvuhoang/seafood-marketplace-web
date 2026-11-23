@@ -104,7 +104,7 @@ export default () => ({
   trustProxy: process.env.TRUST_PROXY ?? '',
 
   // Chatbot (shopping assistant). The key stays on the server.
-  // 'off' until GEMINI_API_KEY is set; 'mock' is a local stand-in that needs no key, for development and tests.
+  // 'off' until GEMINI_API_KEY is set (or CHAT_PROVIDER=groq with GROQ_API_KEY); 'mock' is a local stand-in that needs no key, for development and tests.
   chat: {
     enabled: process.env.CHATBOT_ENABLED !== 'false',
     // `||`, not `??`: an empty CHAT_PROVIDER (as docker compose passes when it is not set) means "not set".
@@ -112,6 +112,10 @@ export default () => ({
       process.env.CHAT_PROVIDER ||
       (process.env.GEMINI_API_KEY ? 'gemini' : 'off'),
     geminiApiKey: process.env.GEMINI_API_KEY ?? '',
+    // CHAT_PROVIDER=groq answers with a model on Groq (the same GROQ_API_KEY as Smart Import). It exists because Gemini
+    // refuses requests from some regions; `||` so an empty value from docker compose means "not set".
+    groqApiKey: process.env.GROQ_API_KEY ?? '',
+    groqChatModel: process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b',
     chatModel: process.env.GEMINI_CHAT_MODEL ?? 'gemini-2.5-flash',
     embedModel: process.env.GEMINI_EMBED_MODEL ?? 'gemini-embedding-001',
     embedDimensions: Number(process.env.GEMINI_EMBED_DIMENSIONS ?? 768),

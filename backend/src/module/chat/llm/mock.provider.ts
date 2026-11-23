@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { extractOrderNumber, foldVietnamese, tokenize, truncate } from '../text.js';
-import { normalize } from '../knowledge/vector.js';
+import { extractOrderNumber, foldVietnamese, truncate } from '../text.js';
+import { localEmbeddings } from './local-embedding.js';
 import type {
   LlmChunk,
   LlmMessage,
@@ -10,8 +10,6 @@ import type {
   LlmToolCall,
   LlmToolResult,
 } from './llm.types.js';
-
-const EMBED_SIZE = 512;
 
 /** Words that make the mock look for products. */
 const PRODUCT_WORDS = [
@@ -56,30 +54,13 @@ export class MockLlmProvider implements LlmProvider {
 
   /** Hashes words and word pairs into a fixed-size vector: similar wording gives similar vectors. */
   async embed(texts: string[], _task: LlmTask): Promise<number[][]> {
-    return texts.map((text) => {
-      const vector = Array.from({ length: EMBED_SIZE }, () => 0);
-      const words = tokenize(text);
-      for (let i = 0; i < words.length; i++) {
-        vector[hash(words[i]) % EMBED_SIZE] += 1;
-        if (i + 1 < words.length) vector[hash(`${words[i]} ${words[i + 1]}`) % EMBED_SIZE] += 0.5;
-      }
-      return normalize(vector);
-    });
+    return localEmbeddings(texts);
   }
 }
 
 /** About one token per four characters: close enough for a stand-in that has no real tokenizer. */
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
-}
-
-function hash(text: string): number {
-  let value = 2166136261;
-  for (let i = 0; i < text.length; i++) {
-    value ^= text.charCodeAt(i);
-    value = Math.imul(value, 16777619);
-  }
-  return value >>> 0;
 }
 
 /** Splits an answer into small pieces, so the mock streams like a real model. */
