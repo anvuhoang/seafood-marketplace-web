@@ -10,10 +10,20 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 [ -f .env ] || { echo "No .env here. Copy deploy/prod.env.example to .env and fill it in." >&2; exit 1; }
-set -a
-# shellcheck disable=SC1091
-. ./.env
-set +a
+
+# Read only the three settings this script needs, as plain text. The file is NOT run as a shell script: a value with a
+# space, <, >, & or ( ) in it (a password, a mail sender) would be taken as a command and stop the deploy. Docker
+# Compose reads the whole file itself, with its own rules.
+env_value() { # env_value NAME : the value after NAME=, without surrounding quotes
+  grep -E "^$1=" .env | tail -n 1 | cut -d= -f2- | sed -e "s/^[\"']//" -e "s/[\"']\$//"
+}
+API_IMAGE=$(env_value API_IMAGE)
+WEB_IMAGE=$(env_value WEB_IMAGE)
+DOMAIN=$(env_value DOMAIN)
+for name in API_IMAGE WEB_IMAGE DOMAIN; do
+  [ -n "${!name}" ] || { echo "$name is missing in .env" >&2; exit 1; }
+done
+export API_IMAGE WEB_IMAGE DOMAIN
 
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
 SEED=false
