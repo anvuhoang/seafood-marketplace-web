@@ -24,6 +24,9 @@ services:
   seed:
     image: ${API_IMAGE}
 
+  seed-demo:
+    image: ${API_IMAGE}
+
   web:
     image: ${WEB_IMAGE:?set WEB_IMAGE in .env, for example ghcr.io/owner/repo-web:latest}
     pull_policy: always
