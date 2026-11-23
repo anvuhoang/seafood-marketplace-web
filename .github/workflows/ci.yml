@@ -177,6 +177,22 @@ jobs:
       - name: Load the sample data
         run: docker compose --profile tools run --rm seed
 
+      # The API builds the search index a little after it starts. Wait here until the shop forgives a typo (only the
+      # Elasticsearch search does). When it never does, print what Elasticsearch and the API say, so the log shows why.
+      - name: Wait for the search index
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS "http://localhost:8088/api/products?q=tom+sus&limit=5" | grep -q "Tôm Sú"; then
+              echo "Search forgives a typo after about $((i * 5)) s"; exit 0
+            fi
+            sleep 5
+          done
+          echo "The search did not forgive a typo after 300 s"
+          docker compose exec -T elasticsearch curl -sS "localhost:9200/_cluster/health?pretty" || true
+          docker compose exec -T elasticsearch curl -sS "localhost:9200/_cat/indices?v" || true
+          docker compose logs --no-color api elasticsearch | grep -i -E "product index|searching in memory|Elasticsearch (failed|did not)|timed out|OutOfMemory|watermark" | tail -40 || true
+          exit 1
+
       - name: Install the browser
         working-directory: frontend
         run: |
@@ -199,4 +215,7 @@ jobs:
 
       - name: Show the logs when it failed
         if: failure()
-        run: docker compose logs --no-color --tail 200
+        run: |
+          # The index is built when the API starts, long before the end of the run: show those lines first.
+          docker compose logs --no-color api elasticsearch | grep -i -E "product index|searching in memory|Elasticsearch (failed|did not)|timed out" | tail -40 || true
+          docker compose logs --no-color --tail 200
