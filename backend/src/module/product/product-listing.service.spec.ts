@@ -4,6 +4,9 @@ import { validate } from 'class-validator';
 import { ProductListingService, searchTokens, slugify } from './product-listing.service.js';
 import { ProductListingQueryDto } from './dto/product-listing.dto.js';
 import { CategoryService } from '../category/category.service.js';
+import { CacheService } from '../../infra/cache.service.js';
+import { MemoryKeyValueStore } from '../../infra/kv-store.js';
+import type { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service.js';
 
 const categories = [
@@ -243,64 +246,69 @@ describe('ProductListingService', () => {
   });
 
   describe('reusing a finished listing', () => {
-    // A cache that never holds anything (every load runs), so what is tested is the listing's own short-lived reuse.
-    const makeService = () => {
-      const listeners: Array<() => void> = [];
-      const cache = {
-        catalogTtlSeconds: 30,
-        wrap: vi.fn(async (_key: string, _ttl: number, load: () => Promise<unknown>) => load()),
-        onInvalidate: vi.fn((listener: () => void) => listeners.push(listener)),
-      };
-      const withCache = new ProductListingService(prisma as PrismaService, new CategoryService(prisma as PrismaService), cache as never);
-      return { withCache, listeners };
+    // The real cache over a store that two "API processes" share. The category lookup (one database call for each listing
+    // made) shows whether a listing was made again.
+    const processOf = (store: MemoryKeyValueStore) => {
+      const cache = new CacheService(store, { get: () => ({ enabled: true, catalogTtlSeconds: 30 }) } as unknown as ConfigService);
+      return { cache, service: new ProductListingService(prisma as PrismaService, new CategoryService(prisma as PrismaService), cache) };
     };
+    const listingsMade = () => prisma.category.findMany.mock.calls.length;
 
-    it('answers the same question again without asking the database', async () => {
-      const { withCache } = makeService();
-      const first = await withCache.listProducts({ category: 'tom-song' });
-      const calls = prisma.product.findMany.mock.calls.length;
+    it('answers the same question again without making the listing again', async () => {
+      const { service: one } = processOf(new MemoryKeyValueStore());
+      const first = await one.listProducts({ category: 'tom-song' });
+      const made = listingsMade();
 
-      const second = await withCache.listProducts({ category: 'tom-song' });
-      expect(second).toBe(first);
-      expect(prisma.product.findMany.mock.calls.length).toBe(calls);
+      expect(await one.listProducts({ category: 'tom-song' })).toBe(first);
+      expect(listingsMade()).toBe(made);
 
       // Another question is its own listing.
-      const other = await withCache.listProducts({ category: 'cua-ghe' });
+      const other = await one.listProducts({ category: 'cua-ghe' });
       expect(other.items.map((item) => item.id)).toEqual(['cua-both']);
     });
 
     it('forgets everything as soon as the catalogue changes', async () => {
-      const { withCache, listeners } = makeService();
-      await withCache.listProducts({});
-      const calls = prisma.product.findMany.mock.calls.length;
+      const { service: one, cache } = processOf(new MemoryKeyValueStore());
+      await one.listProducts({});
+      const made = listingsMade();
 
-      listeners.forEach((listener) => listener());
-      await withCache.listProducts({});
-      expect(prisma.product.findMany.mock.calls.length).toBeGreaterThan(calls);
+      await cache.invalidate('catalog:');
+      await one.listProducts({});
+      expect(listingsMade()).toBeGreaterThan(made);
+    });
+
+    it('forgets it when ANOTHER API process changes the catalogue', async () => {
+      const store = new MemoryKeyValueStore();
+      const { service: one } = processOf(store);
+      const { cache: otherCache } = processOf(store);
+      await one.listProducts({});
+      const made = listingsMade();
+
+      await otherCache.invalidate('catalog:');
+      await one.listProducts({});
+      expect(listingsMade()).toBeGreaterThan(made);
     });
 
     it('does not keep a listing that was being made while the catalogue changed', async () => {
-      const { withCache, listeners } = makeService();
+      const { service: one, cache } = processOf(new MemoryKeyValueStore());
       let release: () => void = () => undefined;
-      prisma.product.findMany.mockImplementationOnce(
-        () => new Promise((resolve) => { release = () => resolve(PRODUCTS); }),
-      );
-      const pending = withCache.listProducts({});
-      await vi.waitFor(() => expect(prisma.product.findMany).toHaveBeenCalled());
-      listeners.forEach((listener) => listener());
+      prisma.category.findMany.mockImplementationOnce(() => new Promise((resolve) => { release = () => resolve(categories); }));
+      const pending = one.listProducts({});
+      await vi.waitFor(() => expect(prisma.category.findMany).toHaveBeenCalled());
+      await cache.invalidate('catalog:');
       release();
       await pending;
 
-      const calls = prisma.product.findMany.mock.calls.length;
-      await withCache.listProducts({});
-      expect(prisma.product.findMany.mock.calls.length).toBeGreaterThan(calls);
+      const made = listingsMade();
+      await one.listProducts({});
+      expect(listingsMade()).toBeGreaterThan(made);
     });
 
     it('does nothing of the kind without the shared cache', async () => {
       await service.listProducts({});
-      const calls = prisma.product.findMany.mock.calls.length;
+      const made = listingsMade();
       await service.listProducts({});
-      expect(prisma.product.findMany.mock.calls.length).toBeGreaterThan(calls);
+      expect(listingsMade()).toBeGreaterThan(made);
     });
   });
 
