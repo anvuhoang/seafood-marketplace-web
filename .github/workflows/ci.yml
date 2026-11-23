@@ -177,10 +177,13 @@ jobs:
       - name: Load the sample data
         run: docker compose --profile tools run --rm seed
 
-      # The API builds the search index a little after it starts. Wait here until the shop forgives a typo (only the
-      # Elasticsearch search does). When it never does, print what Elasticsearch and the API say, so the log shows why.
-      - name: Wait for the search index
+      # The API builds the search index when it starts, while the database is still empty (the seed above writes to the
+      # database directly), so the index holds 0 products. Ask for a new one as the admin does, then wait until the shop
+      # forgives a typo (only the Elasticsearch search does). When it never does, print what Elasticsearch and the API say.
+      - name: Build the search index and wait for it
         run: |
+          TOKEN=$(curl -fsS -X POST http://localhost:8088/api/auth/admin/login -H 'Content-Type: application/json' -d '{"emailOrPhone":"admin@haisanexpress.vn","password":"Admin@123456"}' | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
+          curl -fsS -X POST http://localhost:8088/api/admin/search/reindex -H "Authorization: Bearer $TOKEN"; echo
           for i in $(seq 1 60); do
             if curl -fsS "http://localhost:8088/api/products?q=tom+sus&limit=5" | grep -q "Tôm Sú"; then
               echo "Search forgives a typo after about $((i * 5)) s"; exit 0
