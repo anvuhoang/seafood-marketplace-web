@@ -36,7 +36,8 @@ x-api: &api
     TRUST_PROXY: "1"
     # The website's server calls the API through nginx's internal port; those calls are not counted per IP address.
     RATE_LIMIT_TRUST_INTERNAL: "true"
-    API_DOCS_ENABLED: "false"
+    # The API reference (Swagger at /api/docs) is public: the course requires it. API_DOCS_ENABLED=false in .env turns it off.
+    API_DOCS_ENABLED: ${API_DOCS_ENABLED:-true}
     CHAT_PROVIDER: ${CHAT_PROVIDER:-}
     SMTP_USER: ${SMTP_USER:-}
     SMTP_PASS: ${SMTP_PASS:-}
@@ -50,6 +51,8 @@ x-api: &api
     CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
     GROQ_API_KEY: ${GROQ_API_KEY:-}
     GROQ_CHAT_MODEL: ${GROQ_CHAT_MODEL:-}
+    # Only when Groq refuses the server's region: the address of a relay (see docs/configuration.md).
+    GROQ_BASE_URL: ${GROQ_BASE_URL:-}
 
 services:
   db:

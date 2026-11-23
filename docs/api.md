@@ -1,8 +1,8 @@
 # API
 
 The API is REST over JSON. Every path starts with `/api`. The interactive reference (Swagger UI) is at **`/api/docs`**
-and the raw OpenAPI document at `/api/docs-json`; both are on while the API runs in development and off in production
-(`API_DOCS_ENABLED=true` turns them on).
+and the raw OpenAPI document at `/api/docs-json`; both are public (no sign-in). They are on in development, in the Docker stack and on the demo server;
+`API_DOCS_ENABLED=false` in `.env` turns them off.
 
 ## Conventions
 
